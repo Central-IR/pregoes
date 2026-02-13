@@ -1367,22 +1367,22 @@ button.small {
 
 /* Status Badge Danger */
 .status-badge.danger {
-    background: rgba(239, 68, 68, 0.1);
-    color: #DC2626;
+    background: rgba(107, 114, 128, 0.1);
+    color: #6B7280;
 }
 
 /* Stat Card Danger */
 .stat-card-danger {
-    border-left: 4px solid #EF4444;
+    border-left: 4px solid #6B7280;
 }
 
 .stat-icon-danger {
-    background: rgba(239, 68, 68, 0.1);
-    color: #EF4444;
+    background: rgba(107, 114, 128, 0.1);
+    color: #6B7280;
 }
 
 .stat-value-danger {
-    color: #EF4444;
+    color: #6B7280;
 }
 
 /* Row Won (ganho) */
