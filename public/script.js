@@ -1133,34 +1133,6 @@ function criarTelaItens() {
         </div>
     `;
     return div;
-}>
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 40px; text-align: center;">
-                                <input type="checkbox" id="selectAllItens" onchange="toggleSelectAllItens()" 
-                                       style="cursor: pointer; width: 18px; height: 18px;">
-                            </th>
-                            <th style="width: 60px;">ITEM</th>
-                            <th style="min-width: 300px;">DESCRIÇÃO</th>
-                            <th style="width: 80px;">QTD</th>
-                            <th style="width: 80px;">UNIDADE</th>
-                            <th style="width: 120px;">MARCA</th>
-                            <th style="width: 120px;">MODELO</th>
-                            <th style="width: 120px;">ESTIMADO UNT</th>
-                            <th style="width: 120px;">ESTIMADO TOTAL</th>
-                            <th style="width: 120px;">CUSTO UNT</th>
-                            <th style="width: 120px;">CUSTO TOTAL</th>
-                            <th style="width: 120px;">VENDA UNT</th>
-                            <th style="width: 120px;">VENDA TOTAL</th>
-                        </tr>
-                    </thead>
-                    <tbody id="itensContainer"></tbody>
-                </table>
-            </div>
-        </div>
-    `;
-    return div;
 }
 
 function switchItemsView(view) {
