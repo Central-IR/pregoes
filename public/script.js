@@ -367,9 +367,17 @@ function displayPregoes(pregoesToDisplay) {
         
         return `
             <tr class="${rowClass}">
-                <td style="text-align: center;">
-                    <input type="checkbox" ${checked} onchange="toggleGanho('${pregao.id}', this.checked)" 
-                           style="cursor: pointer; width: 18px; height: 18px;">
+                <td style="text-align: center; padding: 8px;">
+                    <div class="checkbox-wrapper">
+                        <input 
+                            type="checkbox" 
+                            id="check-${pregao.id}"
+                            ${checked}
+                            onchange="toggleGanho('${pregao.id}', this.checked)"
+                            class="styled-checkbox"
+                        >
+                        <label for="check-${pregao.id}" class="checkbox-label-styled"></label>
+                    </div>
                 </td>
                 <td><strong>${pregao.responsavel || '-'}</strong></td>
                 <td>${dataFormatada}</td>
@@ -1033,63 +1041,99 @@ function criarTelaItens() {
     div.id = 'telaItens';
     div.className = 'container';
     div.innerHTML = `
+function criarTelaItens() {
+    const div = document.createElement('div');
+    div.id = 'telaItens';
+    div.className = 'container';
+    div.innerHTML = `
         <div class="header">
             <div class="header-left">
                 <div>
                     <h1>Itens do Pregão</h1>
                     <p class="pregao-info" id="pregaoInfoItens">Carregando...</p>
                 </div>
+                <div id="connectionStatus" class="connection-status offline">
+                    <span class="status-dot"></span>
+                </div>
+            </div>
+            <div style="display: flex; gap: 0.75rem;">
+                <button onclick="adicionarItem()" style="background: #22C55E; color: white; border: none; padding: 0.65rem 1.25rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600;">+ Item</button>
+                <button onclick="adicionarIntervalo()" style="background: #6B7280; color: white; border: none; padding: 0.65rem 1.25rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600;">+ Intervalo</button>
+                <button onclick="excluirItensSelecionados()" style="background: #EF4444; color: white; border: none; padding: 0.65rem 1.25rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600;">Excluir</button>
             </div>
         </div>
 
         <div class="search-bar-wrapper">
-            <div class="search-bar" style="display: flex; align-items: center; gap: 0.75rem; width: 100%; padding: 0.75rem 1rem;">
+            <div class="search-bar">
                 <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="11" cy="11" r="8"></circle>
                     <path d="m21 21-4.35-4.35"></path>
                 </svg>
-                <input type="text" id="searchItens" placeholder="Pesquisar itens" oninput="filterItens()" style="flex: 1; border: none; background: transparent; outline: none;">
+                <input type="text" id="searchItens" placeholder="Pesquisar itens" oninput="filterItens()">
                 
-                <button onclick="syncItens()" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); cursor: pointer; padding: 0.4rem; border-radius: 6px; display: flex; align-items: center;" title="Sincronizar">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="23 4 23 10 17 10"></polyline>
-                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                    </svg>
-                </button>
-                
-                <button onclick="voltarPregoes()" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); cursor: pointer; padding: 0.4rem; border-radius: 6px; display: flex; align-items: center;" title="Voltar">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                        <polyline points="16 17 21 12 16 7"></polyline>
-                        <line x1="21" y1="12" x2="9" y2="12"></line>
-                    </svg>
-                </button>
-                
-                <select id="filterMarcaItens" onchange="filterItens()" style="min-width: 150px;">
+                <select id="filterMarcaItens" onchange="filterItens()" style="margin-left: auto; min-width: 180px;">
                     <option value="">TODAS AS MARCAS</option>
                 </select>
                 
-                <button onclick="gerarPDFsProposta()" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); cursor: pointer; padding: 0.4rem; border-radius: 6px; display: flex; align-items: center;" title="Gerar PDFs">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <button onclick="gerarPDFsProposta()" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; margin-left: 0.5rem; display: flex; align-items: center;" title="Gerar PDFs">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                         <polyline points="14 2 14 8 20 8"></polyline>
                     </svg>
                 </button>
                 
-                <div style="display: flex; gap: 0; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden;">
-                    <button class="month-nav-btn active" onclick="switchItemsView('proposta')" id="btnProposta" style="font-size: 0.85rem; padding: 0.4rem 0.75rem; border: none; border-radius: 0;">Proposta</button>
-                    <button class="month-nav-btn" onclick="switchItemsView('exequibilidade')" id="btnExequibilidade" style="font-size: 0.85rem; padding: 0.4rem 0.75rem; border: none; border-radius: 0;">Exequibilidade</button>
-                </div>
+                <button onclick="syncItens()" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; display: flex; align-items: center;" title="Sincronizar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
+                </button>
                 
-                <button onclick="adicionarItem()" style="background: #3B82F6; color: white; border: none; padding: 0.4rem 0.75rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;">+ Item</button>
-                
-                <button onclick="adicionarIntervalo()" style="background: #6B7280; color: white; border: none; padding: 0.4rem 0.75rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;">+ Intervalo</button>
-                
-                <button onclick="excluirItensSelecionados()" style="background: #EF4444; color: white; border: none; padding: 0.4rem 0.75rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;">Excluir</button>
+                <button onclick="voltarPregoes()" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; display: flex; align-items: center;" title="Voltar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                </button>
             </div>
         </div>
 
-        <div class="card table-card" style="margin-top: 0;">
+        <div class="month-navigation">
+            <button class="month-nav-btn active" onclick="switchItemsView('proposta')" id="btnProposta">Proposta</button>
+            <button class="month-nav-btn" onclick="switchItemsView('exequibilidade')" id="btnExequibilidade">Comprovante de Exequibilidade</button>
+        </div>
+
+        <div class="card table-card">
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 40px; text-align: center;">
+                                <input type="checkbox" id="selectAllItens" onchange="toggleSelectAllItens()" 
+                                       style="cursor: pointer; width: 18px; height: 18px;">
+                            </th>
+                            <th style="width: 60px;">ITEM</th>
+                            <th style="min-width: 300px;">DESCRIÇÃO</th>
+                            <th style="width: 80px;">QTD</th>
+                            <th style="width: 80px;">UNIDADE</th>
+                            <th style="width: 120px;">MARCA</th>
+                            <th style="width: 120px;">MODELO</th>
+                            <th style="width: 120px;">ESTIMADO UNT</th>
+                            <th style="width: 120px;">ESTIMADO TOTAL</th>
+                            <th style="width: 120px;">CUSTO UNT</th>
+                            <th style="width: 120px;">CUSTO TOTAL</th>
+                            <th style="width: 120px;">VENDA UNT</th>
+                            <th style="width: 120px;">VENDA TOTAL</th>
+                        </tr>
+                    </thead>
+                    <tbody id="itensContainer"></tbody>
+                </table>
+            </div>
+        </div>
+    `;
+    return div;
+}>
                 <table>
                     <thead>
                         <tr>
