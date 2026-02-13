@@ -38,13 +38,7 @@ function setupUpperCaseInputs() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    if (DEVELOPMENT_MODE) {
-        console.log('⚠️ MODO DESENVOLVIMENTO ATIVADO');
-        sessionToken = 'dev-mode';
-        inicializarApp();
-    } else {
-        verificarAutenticacao();
-    }
+    verificarAutenticacao();
     populateMonthFilter();
 });
 
@@ -623,14 +617,21 @@ function switchTab(tabId) {
 function updateNavigationButtons() {
     const btnPrevious = document.getElementById('btnPrevious');
     const btnNext = document.getElementById('btnNext');
+    const btnCancel = document.getElementById('btnCancel');
     const btnSave = document.getElementById('btnSave');
     
+    // Anterior: visível apenas se não for a primeira aba
     btnPrevious.style.display = currentTab === 0 ? 'none' : 'inline-block';
     
+    // Cancelar: sempre visível
+    btnCancel.style.display = 'inline-block';
+    
     if (currentTab === tabs.length - 1) {
+        // Última aba: esconder Próximo, mostrar Salvar
         btnNext.style.display = 'none';
         btnSave.style.display = 'inline-block';
     } else {
+        // Outras abas: mostrar Próximo, esconder Salvar
         btnNext.style.display = 'inline-block';
         btnSave.style.display = 'none';
     }
