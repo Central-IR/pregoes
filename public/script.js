@@ -378,11 +378,11 @@ function displayPregoes(pregoesToDisplay) {
                 <td>${pregao.uasg || '-'}</td>
                 <td><span class="status-badge ${statusClass}">${pregao.status}</span></td>
                 <td class="actions-cell">
-                    <button class="action-btn btn-view" onclick="viewPregao('${pregao.id}')" title="Visualizar">Ver</button>
-                    <button class="action-btn btn-edit" onclick="editPregao('${pregao.id}')" title="Editar">Editar</button>
+                    <button class="action-btn view" onclick="viewPregao('${pregao.id}')" title="Visualizar">Ver</button>
+                    <button class="action-btn edit" onclick="editPregao('${pregao.id}')" title="Editar">Editar</button>
                     <button class="action-btn btn-items" onclick="openItems('${pregao.id}')" title="Itens">Itens</button>
                     <button class="action-btn btn-docs" onclick="openDocs('${pregao.id}')" title="Documentos">Documentos</button>
-                    <button class="action-btn btn-delete" onclick="openDeleteModal('${pregao.id}')" title="Excluir">Excluir</button>
+                    <button class="action-btn delete" onclick="openDeleteModal('${pregao.id}')" title="Excluir">Excluir</button>
                 </td>
             </tr>
         `;
