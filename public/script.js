@@ -1040,50 +1040,56 @@ function criarTelaItens() {
                     <p class="pregao-info" id="pregaoInfoItens">Carregando...</p>
                 </div>
             </div>
-            <div style="display: flex; gap: 0.75rem;">
-                <button onclick="voltarPregoes()" class="btn-back">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M19 12H5M12 19l-7-7 7-7"/>
-                    </svg>
-                    Voltar
-                </button>
-                <button onclick="syncItens()" class="btn-sync">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        </div>
+
+        <div class="search-bar-wrapper">
+            <div class="search-bar" style="display: flex; align-items: center; gap: 0.75rem; width: 100%; padding: 0.75rem 1rem;">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input type="text" id="searchItens" placeholder="Pesquisar itens" oninput="filterItens()" style="flex: 1; border: none; background: transparent; outline: none;">
+                
+                <button onclick="syncItens()" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); cursor: pointer; padding: 0.4rem; border-radius: 6px; display: flex; align-items: center;" title="Sincronizar">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="23 4 23 10 17 10"></polyline>
                         <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
                     </svg>
                 </button>
-            </div>
-        </div>
-
-        <div class="filter-actions-bar">
-            <div class="search-bar-wrapper">
-                <div class="search-bar">
-                    <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <path d="m21 21-4.35-4.35"></path>
+                
+                <button onclick="voltarPregoes()" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); cursor: pointer; padding: 0.4rem; border-radius: 6px; display: flex; align-items: center;" title="Voltar">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
                     </svg>
-                    <input type="text" id="searchItens" placeholder="Pesquisar itens" oninput="filterItens()">
-                </div>
-            </div>
-            
-            <div class="filter-marca">
-                <label>Marca:</label>
-                <select id="filterMarcaItens" onchange="filterItens()">
-                    <option value="">TODAS</option>
+                </button>
+                
+                <select id="filterMarcaItens" onchange="filterItens()" style="min-width: 150px;">
+                    <option value="">TODAS AS MARCAS</option>
                 </select>
-            </div>
-
-            <div class="actions-buttons">
-                <button onclick="gerarPDFsProposta()" class="btn-pdf">Gerar PDFs</button>
-                <button onclick="adicionarItem()" class="btn-add-item">+ Item</button>
-                <button onclick="adicionarIntervalo()" class="btn-add-interval">+ Intervalo</button>
-                <button onclick="excluirItensSelecionados()" class="btn-delete-selected">Excluir</button>
+                
+                <button onclick="gerarPDFsProposta()" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); cursor: pointer; padding: 0.4rem; border-radius: 6px; display: flex; align-items: center;" title="Gerar PDFs">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                </button>
+                
+                <div style="display: flex; gap: 0; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden;">
+                    <button class="month-nav-btn active" onclick="switchItemsView('proposta')" id="btnProposta" style="font-size: 0.85rem; padding: 0.4rem 0.75rem; border: none; border-radius: 0;">Proposta</button>
+                    <button class="month-nav-btn" onclick="switchItemsView('exequibilidade')" id="btnExequibilidade" style="font-size: 0.85rem; padding: 0.4rem 0.75rem; border: none; border-radius: 0;">Exequibilidade</button>
+                </div>
+                
+                <button onclick="adicionarItem()" style="background: #3B82F6; color: white; border: none; padding: 0.4rem 0.75rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;">+ Item</button>
+                
+                <button onclick="adicionarIntervalo()" style="background: #6B7280; color: white; border: none; padding: 0.4rem 0.75rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;">+ Intervalo</button>
+                
+                <button onclick="excluirItensSelecionados()" style="background: #EF4444; color: white; border: none; padding: 0.4rem 0.75rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;">Excluir</button>
             </div>
         </div>
 
-        <div class="card table-card">
-            <div style="overflow-x: auto;">
+        <div class="card table-card" style="margin-top: 0;">
                 <table>
                     <thead>
                         <tr>
@@ -1091,18 +1097,18 @@ function criarTelaItens() {
                                 <input type="checkbox" id="selectAllItens" onchange="toggleSelectAllItens()" 
                                        style="cursor: pointer; width: 18px; height: 18px;">
                             </th>
-                            <th style="width: 60px;">Item</th>
-                            <th style="min-width: 300px;">Descrição</th>
+                            <th style="width: 60px;">ITEM</th>
+                            <th style="min-width: 300px;">DESCRIÇÃO</th>
                             <th style="width: 80px;">QTD</th>
-                            <th style="width: 80px;">UN</th>
-                            <th style="width: 120px;">Marca</th>
-                            <th style="width: 120px;">Modelo</th>
-                            <th style="width: 120px;">Est. Unt</th>
-                            <th style="width: 120px;">Est. Total</th>
-                            <th style="width: 120px;">Custo Unt</th>
-                            <th style="width: 120px;">Custo Total</th>
-                            <th style="width: 120px;">Venda Unt</th>
-                            <th style="width: 120px;">Venda Total</th>
+                            <th style="width: 80px;">UNIDADE</th>
+                            <th style="width: 120px;">MARCA</th>
+                            <th style="width: 120px;">MODELO</th>
+                            <th style="width: 120px;">ESTIMADO UNT</th>
+                            <th style="width: 120px;">ESTIMADO TOTAL</th>
+                            <th style="width: 120px;">CUSTO UNT</th>
+                            <th style="width: 120px;">CUSTO TOTAL</th>
+                            <th style="width: 120px;">VENDA UNT</th>
+                            <th style="width: 120px;">VENDA TOTAL</th>
                         </tr>
                     </thead>
                     <tbody id="itensContainer"></tbody>
@@ -1111,6 +1117,13 @@ function criarTelaItens() {
         </div>
     `;
     return div;
+}
+
+function switchItemsView(view) {
+    currentItemsView = view;
+    document.getElementById('btnProposta').classList.toggle('active', view === 'proposta');
+    document.getElementById('btnExequibilidade').classList.toggle('active', view === 'exequibilidade');
+    // Por enquanto apenas muda a visualização
 }
 
 async function carregarItens(pregaoId) {
@@ -1184,10 +1197,12 @@ function renderItens(itensToRender = itens) {
         const rowClass = item.ganho ? 'item-ganho' : '';
         
         return `
-            <tr class="${rowClass}" ondblclick="editarItem('${item.id}')">
+            <tr class="${rowClass}" 
+                ondblclick="editarItem('${item.id}')" 
+                oncontextmenu="showItemContextMenu(event, '${item.id}')">
                 <td style="text-align: center;">
                     <input type="checkbox" ${checked} onchange="toggleItemSelection('${item.id}')" 
-                           style="cursor: pointer; width: 18px; height: 18px;">
+                           style="cursor: pointer; width: 18px; height: 18px;" onclick="event.stopPropagation()">
                 </td>
                 <td><strong>${item.numero}</strong></td>
                 <td class="descricao-cell">${item.descricao}</td>
@@ -1204,6 +1219,86 @@ function renderItens(itensToRender = itens) {
             </tr>
         `;
     }).join('');
+}
+
+function showItemContextMenu(event, itemId) {
+    event.preventDefault();
+    
+    // Remover menu existente se houver
+    const existingMenu = document.getElementById('contextMenu');
+    if (existingMenu) existingMenu.remove();
+    
+    // Criar menu de contexto
+    const menu = document.createElement('div');
+    menu.id = 'contextMenu';
+    menu.style.cssText = `
+        position: fixed;
+        left: ${event.clientX}px;
+        top: ${event.clientY}px;
+        background: white;
+        border: 1px solid #E5E7EB;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10000;
+        min-width: 150px;
+        padding: 0.5rem 0;
+    `;
+    
+    menu.innerHTML = `
+        <div onclick="excluirItemContexto('${itemId}')" style="
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            color: #EF4444;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        " onmouseover="this.style.background='#FEE2E2'" onmouseout="this.style.background='white'">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            Excluir
+        </div>
+    `;
+    
+    document.body.appendChild(menu);
+    
+    // Remover menu ao clicar fora
+    const closeMenu = () => {
+        menu.remove();
+        document.removeEventListener('click', closeMenu);
+    };
+    setTimeout(() => document.addEventListener('click', closeMenu), 100);
+}
+
+async function excluirItemContexto(itemId) {
+    if (!confirm('Deseja realmente excluir este item?')) return;
+    
+    try {
+        const headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        };
+        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        
+        if (!itemId.startsWith('temp-')) {
+            const response = await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens/${itemId}`, {
+                method: 'DELETE',
+                headers: headers
+            });
+            
+            if (!response.ok) throw new Error('Erro ao excluir');
+        }
+        
+        itens = itens.filter(item => item.id !== itemId);
+        selectedItens.delete(itemId);
+        renderItens();
+        showToast('Item excluído', 'success');
+    } catch (error) {
+        console.error('Erro:', error);
+        showToast('Erro ao excluir item', 'error');
+    }
 }
 
 function toggleItemSelection(id) {
