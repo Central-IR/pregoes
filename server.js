@@ -17,26 +17,8 @@ console.log('✅ Supabase configurado:', supabaseUrl);
 
 // CORS mais permissivo para desenvolvimento
 app.use(cors({
-    origin: function(origin, callback) {
-        // Permite requisições sem origin (mobile apps, curl, etc)
-        if (!origin) return callback(null, true);
-        
-        const allowedOrigins = [
-            'https://ordem-compra.onrender.com',
-            'http://localhost:3000',
-            'http://localhost:10000',
-            'http://127.0.0.1:3000',
-            'http://127.0.0.1:10000'
-        ];
-        
-        if (allowedOrigins.indexOf(origin) !== -1 || origin.includes('localhost')) {
-            callback(null, true);
-        } else {
-            callback(null, true); // Permitir todas as origens em desenvolvimento
-        }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Session-Token']
 }));
 
@@ -61,20 +43,18 @@ app.use((req, res, next) => {
 const PORTAL_URL = process.env.PORTAL_URL || 'https://ir-comercio-portal-zcan.onrender.com';
 
 async function verificarAutenticacao(req, res, next) {
-    const publicPaths = ['/', '/health', '/diagnostico.html', '/pregoes.html', '/index.html'];
-    if (publicPaths.includes(req.path)) return next();
-
-    // FORÇAR MODO DESENVOLVIMENTO - DESABILITAR PARA PRODUÇÃO
-    const DEVELOPMENT_MODE = true; // SEMPRE TRUE = SEM AUTENTICAÇÃO
-    if (DEVELOPMENT_MODE) {
-        console.log('⚠️ MODO DESENVOLVIMENTO - Autenticação desabilitada');
+    const publicPaths = ['/', '/health', '/pregoes.html', '/index.html'];
+    if (publicPaths.includes(req.path)) {
         return next();
     }
 
-    const sessionToken = req.headers['x-session-token'];
+    const sessionToken = req.headers['x-session-token'] || req.query.sessionToken;
+
     if (!sessionToken) {
-        console.log('❌ Token não fornecido');
-        return res.status(401).json({ error: 'Não autenticado' });
+        return res.status(401).json({
+            error: 'Não autenticado',
+            redirectToLogin: true
+        });
     }
 
     try {
@@ -85,23 +65,28 @@ async function verificarAutenticacao(req, res, next) {
         });
 
         if (!verifyResponse.ok) {
-            console.log('❌ Sessão inválida - Status:', verifyResponse.status);
-            return res.status(401).json({ error: 'Sessão inválida' });
+            return res.status(401).json({
+                error: 'Sessão inválida',
+                redirectToLogin: true
+            });
         }
 
         const sessionData = await verifyResponse.json();
+
         if (!sessionData.valid) {
-            console.log('❌ Sessão não válida');
-            return res.status(401).json({ error: 'Sessão inválida' });
+            return res.status(401).json({
+                error: 'Sessão inválida',
+                redirectToLogin: true
+            });
         }
 
         req.user = sessionData.session;
         req.sessionToken = sessionToken;
-        console.log('✅ Autenticação OK');
         next();
     } catch (error) {
-        console.error('❌ Erro ao verificar autenticação:', error.message);
-        return res.status(500).json({ error: 'Erro ao verificar autenticação', details: error.message });
+        return res.status(500).json({
+            error: 'Erro ao verificar autenticação'
+        });
     }
 }
 
@@ -109,7 +94,15 @@ async function verificarAutenticacao(req, res, next) {
 // ROTAS DA API - ORDEM DE COMPRA
 // ============================================
 
-app.get('/api/ordens', verificarAutenticacao, async (req, res) => {
+// Aplicar autenticação nas rotas de ordens
+app.use('/api/ordens', verificarAutenticacao);
+
+// HEAD request para ordens (usado para verificar conectividade)
+app.head('/api/ordens', (req, res) => {
+    res.status(200).end();
+});
+
+app.get('/api/ordens', async (req, res) => {
     try {
         console.log('📋 Listando ordens...');
         const { data, error } = await supabase
@@ -134,7 +127,7 @@ app.get('/api/ordens', verificarAutenticacao, async (req, res) => {
     }
 });
 
-app.get('/api/ordens/:id', verificarAutenticacao, async (req, res) => {
+app.get('/api/ordens/:id', async (req, res) => {
     try {
         console.log(`🔍 Buscando ordem ID: ${req.params.id}`);
         const { data, error } = await supabase
@@ -163,7 +156,7 @@ app.get('/api/ordens/:id', verificarAutenticacao, async (req, res) => {
     }
 });
 
-app.post('/api/ordens', verificarAutenticacao, async (req, res) => {
+app.post('/api/ordens', async (req, res) => {
     try {
         console.log('➕ Criando nova ordem...');
         
@@ -221,7 +214,7 @@ app.post('/api/ordens', verificarAutenticacao, async (req, res) => {
     }
 });
 
-app.put('/api/ordens/:id', verificarAutenticacao, async (req, res) => {
+app.put('/api/ordens/:id', async (req, res) => {
     try {
         console.log(`✏️ Atualizando ordem ID: ${req.params.id}`);
         
@@ -283,7 +276,7 @@ app.put('/api/ordens/:id', verificarAutenticacao, async (req, res) => {
     }
 });
 
-app.patch('/api/ordens/:id/status', verificarAutenticacao, async (req, res) => {
+app.patch('/api/ordens/:id/status', async (req, res) => {
     try {
         console.log(`🔄 Atualizando status da ordem ID: ${req.params.id}`);
         const updates = {
@@ -317,7 +310,7 @@ app.patch('/api/ordens/:id/status', verificarAutenticacao, async (req, res) => {
     }
 });
 
-app.delete('/api/ordens/:id', verificarAutenticacao, async (req, res) => {
+app.delete('/api/ordens/:id', async (req, res) => {
     try {
         console.log(`🗑️ Deletando ordem ID: ${req.params.id}`);
         const { error } = await supabase
@@ -343,7 +336,15 @@ app.delete('/api/ordens/:id', verificarAutenticacao, async (req, res) => {
 // ROTAS DA API - PREGÕES
 // ============================================
 
-app.get('/api/pregoes', verificarAutenticacao, async (req, res) => {
+// Aplicar autenticação nas rotas de pregões
+app.use('/api/pregoes', verificarAutenticacao);
+
+// HEAD request para pregões (usado para verificar conectividade)
+app.head('/api/pregoes', (req, res) => {
+    res.status(200).end();
+});
+
+app.get('/api/pregoes', async (req, res) => {
     try {
         console.log('📋 Listando pregões...');
         const { data, error } = await supabase
@@ -368,7 +369,7 @@ app.get('/api/pregoes', verificarAutenticacao, async (req, res) => {
     }
 });
 
-app.get('/api/pregoes/:id', verificarAutenticacao, async (req, res) => {
+app.get('/api/pregoes/:id', async (req, res) => {
     try {
         console.log(`🔍 Buscando pregão ID: ${req.params.id}`);
         const { data, error } = await supabase
@@ -397,7 +398,7 @@ app.get('/api/pregoes/:id', verificarAutenticacao, async (req, res) => {
     }
 });
 
-app.post('/api/pregoes', verificarAutenticacao, async (req, res) => {
+app.post('/api/pregoes', async (req, res) => {
     try {
         console.log('➕ Criando novo pregão...');
         
@@ -450,7 +451,7 @@ app.post('/api/pregoes', verificarAutenticacao, async (req, res) => {
     }
 });
 
-app.put('/api/pregoes/:id', verificarAutenticacao, async (req, res) => {
+app.put('/api/pregoes/:id', async (req, res) => {
     try {
         console.log(`✏️ Atualizando pregão ID: ${req.params.id}`);
         
@@ -507,7 +508,7 @@ app.put('/api/pregoes/:id', verificarAutenticacao, async (req, res) => {
     }
 });
 
-app.delete('/api/pregoes/:id', verificarAutenticacao, async (req, res) => {
+app.delete('/api/pregoes/:id', async (req, res) => {
     try {
         console.log(`🗑️ Deletando pregão ID: ${req.params.id}`);
         const { error } = await supabase
