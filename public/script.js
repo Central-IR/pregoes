@@ -652,17 +652,18 @@ function previousTab() {
 
 // Salvar pregão
 async function salvarPregao() {
-    const responsavel = document.getElementById('responsavel').value;
     const dataPregao = document.getElementById('dataPregao').value;
     const numeroPregao = toUpperCase(document.getElementById('numeroPregao').value);
     
-    if (!responsavel || !dataPregao || !numeroPregao) {
-        showToast('Preencha os campos obrigatórios', 'error');
+    if (!dataPregao || !numeroPregao) {
+        showToast('Preencha os campos obrigatórios (Data e Nº Pregão)', 'error');
         return;
     }
     
+    const responsavel = document.getElementById('responsavel').value;
+    
     const pregao = {
-        responsavel,
+        responsavel: responsavel || null,
         data: dataPregao,
         hora: document.getElementById('horaPregao').value || null,
         numero_pregao: numeroPregao,
@@ -676,7 +677,7 @@ async function salvarPregao() {
         prazo_entrega: toUpperCase(document.getElementById('prazoEntrega').value) || null,
         prazo_pagamento: toUpperCase(document.getElementById('prazoPagamento').value) || null,
         detalhes: detalhes,
-        banco: toUpperCase(document.getElementById('banco').value) || null,
+        banco: document.getElementById('banco').value || null,
         status: 'ABERTO',
         ganho: false
     };
@@ -892,6 +893,7 @@ function viewPregao(id) {
         </div>
         <div class="info-section">
             <p><strong>Banco:</strong> ${pregao.banco || '-'}</p>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; font-style: italic;">* Dados bancários completos serão incluídos no PDF da proposta</p>
         </div>
     `;
     
