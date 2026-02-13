@@ -1,6 +1,8 @@
-const DEVELOPMENT_MODE = true;
+// CONFIGURAÇÃO
 const PORTAL_URL = 'https://ir-comercio-portal-zcan.onrender.com';
-const API_URL = 'https://ordem-compra.onrender.com/api/pregoes'; // Usar a mesma base do servidor
+const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:10000/api'
+    : `${window.location.origin}/api`;
 
 let pregoes = [];
 let editingId = null;
@@ -17,7 +19,6 @@ const infoTabs = ['info-tab-geral', 'info-tab-orgao', 'info-tab-contato', 'info-
 
 console.log('🚀 Pregões iniciada');
 console.log('📍 API URL:', API_URL);
-console.log('🔧 Modo desenvolvimento:', DEVELOPMENT_MODE);
 
 function toUpperCase(value) {
     return value ? String(value).toUpperCase() : '';
@@ -90,17 +91,23 @@ async function checkServerStatus() {
             'Accept': 'application/json'
         };
         
-        if (!DEVELOPMENT_MODE && sessionToken) {
+        if (sessionToken) {
             headers['X-Session-Token'] = sessionToken;
         }
 
-        const response = await fetch(`${API_URL}`, {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+        const response = await fetch(`${API_URL}/pregoes`, {
             method: 'GET',
             headers: headers,
-            mode: 'cors'
+            mode: 'cors',
+            signal: controller.signal
         });
 
-        if (!DEVELOPMENT_MODE && response.status === 401) {
+        clearTimeout(timeoutId);
+
+        if (response.status === 401) {
             sessionStorage.removeItem('pregoesSession');
             mostrarTelaAcessoNegado('Sua sessão expirou');
             return false;
@@ -117,7 +124,7 @@ async function checkServerStatus() {
         updateConnectionStatus();
         return isOnline;
     } catch (error) {
-        console.error('❌ Erro ao verificar servidor:', error);
+        console.error('❌ Erro ao verificar servidor:', error.message);
         isOnline = false;
         updateConnectionStatus();
         return false;
@@ -139,24 +146,30 @@ function startPolling() {
 }
 
 async function loadPregoes() {
-    if (!isOnline && !DEVELOPMENT_MODE) return;
+    if (!isOnline) return;
 
     try {
         const headers = {
             'Accept': 'application/json'
         };
         
-        if (!DEVELOPMENT_MODE && sessionToken) {
+        if (sessionToken) {
             headers['X-Session-Token'] = sessionToken;
         }
 
-        const response = await fetch(`${API_URL}`, {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+        const response = await fetch(`${API_URL}/pregoes`, {
             method: 'GET',
             headers: headers,
-            mode: 'cors'
+            mode: 'cors',
+            signal: controller.signal
         });
 
-        if (!DEVELOPMENT_MODE && response.status === 401) {
+        clearTimeout(timeoutId);
+
+        if (response.status === 401) {
             sessionStorage.removeItem('pregoesSession');
             mostrarTelaAcessoNegado('Sua sessão expirou');
             return;
@@ -179,7 +192,11 @@ async function loadPregoes() {
             updateDisplay();
         }
     } catch (error) {
-        console.error('❌ Erro ao carregar:', error);
+        if (error.name === 'AbortError') {
+            console.error('❌ Timeout ao carregar pregões');
+        } else {
+            console.error('❌ Erro ao carregar:', error);
+        }
     }
 }
 
@@ -201,7 +218,7 @@ function atualizarStatusOcorridos() {
 async function syncData() {
     console.log('🔄 Iniciando sincronização...');
     
-    if (!isOnline && !DEVELOPMENT_MODE) {
+    if (!isOnline) {
         showToast('Erro ao sincronizar', 'error');
         console.log('❌ Sincronização cancelada: servidor offline');
         return;
@@ -212,18 +229,24 @@ async function syncData() {
             'Accept': 'application/json'
         };
         
-        if (!DEVELOPMENT_MODE && sessionToken) {
+        if (sessionToken) {
             headers['X-Session-Token'] = sessionToken;
         }
 
-        const response = await fetch(`${API_URL}`, {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+        const response = await fetch(`${API_URL}/pregoes`, {
             method: 'GET',
             headers: headers,
             mode: 'cors',
-            cache: 'no-cache'
+            cache: 'no-cache',
+            signal: controller.signal
         });
 
-        if (!DEVELOPMENT_MODE && response.status === 401) {
+        clearTimeout(timeoutId);
+
+        if (response.status === 401) {
             sessionStorage.removeItem('pregoesSession');
             mostrarTelaAcessoNegado('Sua sessão expirou');
             return;
@@ -244,8 +267,13 @@ async function syncData() {
         console.log(`✅ Sincronização concluída: ${pregoes.length} pregões carregados`);
         showToast('Dados sincronizados', 'success');
     } catch (error) {
-        console.error('❌ Erro na sincronização:', error.message);
-        showToast('Erro ao sincronizar', 'error');
+        if (error.name === 'AbortError') {
+            console.error('❌ Timeout na sincronização');
+            showToast('Timeout: Operação demorou muito', 'error');
+        } else {
+            console.error('❌ Erro na sincronização:', error.message);
+            showToast('Erro ao sincronizar', 'error');
+        }
     }
 }
 
@@ -398,6 +426,12 @@ function displayPregoes(pregoesToDisplay) {
 
 // Toggle ganho
 async function toggleGanho(id, ganho) {
+    if (!isOnline) {
+        showToast('Sistema offline. Não foi possível atualizar.', 'error');
+        loadPregoes(); // Recarregar para reverter visualmente
+        return;
+    }
+
     try {
         const pregao = pregoes.find(p => p.id === id);
         if (!pregao) return;
@@ -414,30 +448,49 @@ async function toggleGanho(id, ganho) {
         }
         
         const headers = {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
         };
         
-        if (!DEVELOPMENT_MODE && sessionToken) {
+        if (sessionToken) {
             headers['X-Session-Token'] = sessionToken;
         }
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
         
-        const response = await fetch(`${API_URL}/${id}`, {
+        const response = await fetch(`${API_URL}/pregoes/${id}`, {
             method: 'PUT',
             headers: headers,
             body: JSON.stringify({
+                ...pregao,
                 ganho: pregao.ganho,
                 status: pregao.status
-            })
+            }),
+            mode: 'cors',
+            signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
         
+        if (response.status === 401) {
+            sessionStorage.removeItem('pregoesSession');
+            mostrarTelaAcessoNegado('Sua sessão expirou');
+            return;
+        }
+
         if (!response.ok) throw new Error('Erro ao atualizar');
         
         updateDisplay();
         showToast(ganho ? 'Pregão marcado como ganho' : 'Marcação removida', 'success');
     } catch (error) {
         console.error('Erro:', error);
-        showToast('Erro ao atualizar status', 'error');
-        loadPregoes();
+        if (error.name === 'AbortError') {
+            showToast('Timeout: Operação demorou muito', 'error');
+        } else {
+            showToast('Erro ao atualizar status', 'error');
+        }
+        loadPregoes(); // Recarregar dados em caso de erro
     }
 }
 
@@ -628,32 +681,65 @@ async function salvarPregao() {
         ganho: false
     };
     
+    if (!isOnline) {
+        showToast('Sistema offline', 'error');
+        closeFormModal();
+        return;
+    }
+    
     try {
+        const url = editingId ? `${API_URL}/pregoes/${editingId}` : `${API_URL}/pregoes`;
+        const method = editingId ? 'PUT' : 'POST';
+
         const headers = {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
         };
         
-        if (!DEVELOPMENT_MODE && sessionToken) {
+        if (sessionToken) {
             headers['X-Session-Token'] = sessionToken;
         }
-        
-        const url = editingId ? `${API_URL}/${editingId}` : API_URL;
-        const method = editingId ? 'PUT' : 'POST';
-        
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
         const response = await fetch(url, {
             method: method,
             headers: headers,
-            body: JSON.stringify(pregao)
+            body: JSON.stringify(pregao),
+            mode: 'cors',
+            signal: controller.signal
         });
-        
-        if (!response.ok) throw new Error('Erro ao salvar');
-        
+
+        clearTimeout(timeoutId);
+
+        if (response.status === 401) {
+            sessionStorage.removeItem('pregoesSession');
+            mostrarTelaAcessoNegado('Sua sessão expirou');
+            return;
+        }
+
+        if (!response.ok) {
+            let errorMessage = 'Erro ao salvar';
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.error || errorData.message || errorMessage;
+            } catch (e) {
+                errorMessage = `Erro ${response.status}: ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
+        }
+
         showToast(editingId ? 'Pregão atualizado' : 'Pregão criado', 'success');
         closeFormModal();
         await loadPregoes();
     } catch (error) {
-        console.error('Erro:', error);
-        showToast('Erro ao salvar pregão', 'error');
+        console.error('Erro completo:', error);
+        if (error.name === 'AbortError') {
+            showToast('Timeout: Operação demorou muito', 'error');
+        } else {
+            showToast(`Erro: ${error.message}`, 'error');
+        }
     }
 }
 
@@ -869,28 +955,53 @@ function closeDeleteModal() {
 }
 
 async function confirmarExclusao() {
-    if (!deleteId) return;
-    
+    closeDeleteModal();
+
+    if (!isOnline) {
+        showToast('Sistema offline. Não foi possível excluir.', 'error');
+        return;
+    }
+
     try {
-        const headers = {};
+        const headers = {
+            'Accept': 'application/json'
+        };
         
-        if (!DEVELOPMENT_MODE && sessionToken) {
+        if (sessionToken) {
             headers['X-Session-Token'] = sessionToken;
         }
-        
-        const response = await fetch(`${API_URL}/${deleteId}`, {
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+        const response = await fetch(`${API_URL}/pregoes/${deleteId}`, {
             method: 'DELETE',
-            headers: headers
+            headers: headers,
+            mode: 'cors',
+            signal: controller.signal
         });
-        
-        if (!response.ok) throw new Error('Erro ao excluir');
-        
+
+        clearTimeout(timeoutId);
+
+        if (response.status === 401) {
+            sessionStorage.removeItem('pregoesSession');
+            mostrarTelaAcessoNegado('Sua sessão expirou');
+            return;
+        }
+
+        if (!response.ok) throw new Error('Erro ao deletar');
+
+        pregoes = pregoes.filter(p => p.id !== deleteId);
+        lastDataHash = JSON.stringify(pregoes.map(p => p.id));
+        updateDisplay();
         showToast('Pregão excluído', 'success');
-        closeDeleteModal();
-        await loadPregoes();
     } catch (error) {
-        console.error('Erro:', error);
-        showToast('Erro ao excluir pregão', 'error');
+        console.error('Erro ao deletar:', error);
+        if (error.name === 'AbortError') {
+            showToast('Timeout: Operação demorou muito', 'error');
+        } else {
+            showToast('Erro ao excluir pregão', 'error');
+        }
     }
 }
 
