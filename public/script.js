@@ -371,47 +371,18 @@ function displayPregoes(pregoesToDisplay) {
                     <input type="checkbox" ${checked} onchange="toggleGanho('${pregao.id}', this.checked)" 
                            style="cursor: pointer; width: 18px; height: 18px;">
                 </td>
-                <td>${pregao.responsavel}</td>
+                <td><strong>${pregao.responsavel || '-'}</strong></td>
                 <td>${dataFormatada}</td>
                 <td>${hora}</td>
-                <td>${pregao.numero_pregao}</td>
+                <td><strong>${pregao.numero_pregao}</strong></td>
                 <td>${pregao.uasg || '-'}</td>
                 <td><span class="status-badge ${statusClass}">${pregao.status}</span></td>
                 <td class="actions-cell">
-                    <button class="action-btn btn-view" onclick="viewPregao('${pregao.id}')" title="Visualizar">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
-                    </button>
-                    <button class="action-btn btn-edit" onclick="editPregao('${pregao.id}')" title="Editar">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                        </svg>
-                    </button>
-                    <button class="action-btn btn-items" onclick="openItems('${pregao.id}')" title="Itens" style="background: #8B5CF6;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="8" y1="6" x2="21" y2="6"></line>
-                            <line x1="8" y1="12" x2="21" y2="12"></line>
-                            <line x1="8" y1="18" x2="21" y2="18"></line>
-                            <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                            <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                            <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                        </svg>
-                    </button>
-                    <button class="action-btn btn-docs" onclick="openDocs('${pregao.id}')" title="Documentos" style="background: #06B6D4;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
-                            <polyline points="13 2 13 9 20 9"></polyline>
-                        </svg>
-                    </button>
-                    <button class="action-btn btn-delete" onclick="openDeleteModal('${pregao.id}')" title="Excluir">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        </svg>
-                    </button>
+                    <button class="action-btn btn-view" onclick="viewPregao('${pregao.id}')" title="Visualizar">Ver</button>
+                    <button class="action-btn btn-edit" onclick="editPregao('${pregao.id}')" title="Editar">Editar</button>
+                    <button class="action-btn btn-items" onclick="openItems('${pregao.id}')" title="Itens">Itens</button>
+                    <button class="action-btn btn-docs" onclick="openDocs('${pregao.id}')" title="Documentos">Documentos</button>
+                    <button class="action-btn btn-delete" onclick="openDeleteModal('${pregao.id}')" title="Excluir">Excluir</button>
                 </td>
             </tr>
         `;
@@ -1008,11 +979,871 @@ async function confirmarExclusao() {
     }
 }
 
-// Funções temporárias (a serem implementadas)
+// Abrir tela de itens
 function openItems(id) {
-    showToast('Funcionalidade em desenvolvimento', 'error');
+    currentPregaoId = id;
+    carregarItens(id);
+    mostrarTelaItens();
 }
 
 function openDocs(id) {
     showToast('Funcionalidade em desenvolvimento', 'error');
+}
+
+// ============================================
+// GESTÃO DE ITENS DO PREGÃO
+// ============================================
+
+let currentPregaoId = null;
+let itens = [];
+let editingItemIndex = null;
+let selectedItens = new Set();
+let currentItemsView = 'proposta';
+let marcasItens = new Set();
+
+function mostrarTelaItens() {
+    // Esconder tela principal
+    document.querySelector('.container').style.display = 'none';
+    
+    // Criar ou mostrar tela de itens
+    let telaItens = document.getElementById('telaItens');
+    if (!telaItens) {
+        telaItens = criarTelaItens();
+        document.body.querySelector('.app-content').appendChild(telaItens);
+    }
+    telaItens.style.display = 'block';
+    
+    // Atualizar informações do pregão
+    const pregao = pregoes.find(p => p.id === currentPregaoId);
+    if (pregao) {
+        document.getElementById('pregaoInfoItens').textContent = 
+            `${pregao.numero_pregao}${pregao.uasg ? ' - ' + pregao.uasg : ''}`;
+    }
+}
+
+function voltarPregoes() {
+    document.getElementById('telaItens').style.display = 'none';
+    document.querySelector('.container').style.display = 'block';
+    currentPregaoId = null;
+    itens = [];
+}
+
+function criarTelaItens() {
+    const div = document.createElement('div');
+    div.id = 'telaItens';
+    div.className = 'container';
+    div.innerHTML = `
+        <div class="header">
+            <div class="header-left">
+                <div>
+                    <h1>Itens do Pregão</h1>
+                    <p class="pregao-info" id="pregaoInfoItens">Carregando...</p>
+                </div>
+            </div>
+            <div style="display: flex; gap: 0.75rem;">
+                <button onclick="voltarPregoes()" class="btn-back">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
+                    Voltar
+                </button>
+                <button onclick="syncItens()" class="btn-sync">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="filter-actions-bar">
+            <div class="search-bar-wrapper">
+                <div class="search-bar">
+                    <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <input type="text" id="searchItens" placeholder="Pesquisar itens" oninput="filterItens()">
+                </div>
+            </div>
+            
+            <div class="filter-marca">
+                <label>Marca:</label>
+                <select id="filterMarcaItens" onchange="filterItens()">
+                    <option value="">TODAS</option>
+                </select>
+            </div>
+
+            <div class="actions-buttons">
+                <button onclick="gerarPDFsProposta()" class="btn-pdf">Gerar PDFs</button>
+                <button onclick="adicionarItem()" class="btn-add-item">+ Item</button>
+                <button onclick="adicionarIntervalo()" class="btn-add-interval">+ Intervalo</button>
+                <button onclick="excluirItensSelecionados()" class="btn-delete-selected">Excluir</button>
+            </div>
+        </div>
+
+        <div class="card table-card">
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 40px; text-align: center;">
+                                <input type="checkbox" id="selectAllItens" onchange="toggleSelectAllItens()" 
+                                       style="cursor: pointer; width: 18px; height: 18px;">
+                            </th>
+                            <th style="width: 60px;">Item</th>
+                            <th style="min-width: 300px;">Descrição</th>
+                            <th style="width: 80px;">QTD</th>
+                            <th style="width: 80px;">UN</th>
+                            <th style="width: 120px;">Marca</th>
+                            <th style="width: 120px;">Modelo</th>
+                            <th style="width: 120px;">Est. Unt</th>
+                            <th style="width: 120px;">Est. Total</th>
+                            <th style="width: 120px;">Custo Unt</th>
+                            <th style="width: 120px;">Custo Total</th>
+                            <th style="width: 120px;">Venda Unt</th>
+                            <th style="width: 120px;">Venda Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="itensContainer"></tbody>
+                </table>
+            </div>
+        </div>
+    `;
+    return div;
+}
+
+async function carregarItens(pregaoId) {
+    if (!isOnline) return;
+    
+    try {
+        const headers = { 'Accept': 'application/json' };
+        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+
+        const response = await fetch(`${API_URL}/pregoes/${pregaoId}/itens`, {
+            method: 'GET',
+            headers: headers
+        });
+
+        if (response.status === 401) {
+            sessionStorage.removeItem('pregoesSession');
+            mostrarTelaAcessoNegado('Sua sessão expirou');
+            return;
+        }
+
+        if (response.ok) {
+            itens = await response.json();
+            atualizarMarcasItens();
+            renderItens();
+        }
+    } catch (error) {
+        console.error('Erro ao carregar itens:', error);
+    }
+}
+
+function atualizarMarcasItens() {
+    marcasItens.clear();
+    itens.forEach(item => {
+        if (item.marca) marcasItens.add(item.marca);
+    });
+    
+    const select = document.getElementById('filterMarcaItens');
+    if (select) {
+        select.innerHTML = '<option value="">TODAS</option>' + 
+            Array.from(marcasItens).sort().map(m => `<option value="${m}">${m}</option>`).join('');
+    }
+}
+
+function filterItens() {
+    const search = document.getElementById('searchItens')?.value.toLowerCase() || '';
+    const marca = document.getElementById('filterMarcaItens')?.value || '';
+    
+    const filtered = itens.filter(item => {
+        const matchSearch = !search || 
+            item.descricao.toLowerCase().includes(search) ||
+            (item.marca && item.marca.toLowerCase().includes(search)) ||
+            item.numero.toString().includes(search);
+        const matchMarca = !marca || item.marca === marca;
+        return matchSearch && matchMarca;
+    });
+    
+    renderItens(filtered);
+}
+
+function renderItens(itensToRender = itens) {
+    const container = document.getElementById('itensContainer');
+    if (!container) return;
+    
+    if (itensToRender.length === 0) {
+        container.innerHTML = '<tr><td colspan="13" style="text-align: center; padding: 2rem;">Nenhum item cadastrado</td></tr>';
+        return;
+    }
+    
+    container.innerHTML = itensToRender.map((item, index) => {
+        const checked = selectedItens.has(item.id) ? 'checked' : '';
+        const rowClass = item.ganho ? 'item-ganho' : '';
+        
+        return `
+            <tr class="${rowClass}" ondblclick="editarItem('${item.id}')">
+                <td style="text-align: center;">
+                    <input type="checkbox" ${checked} onchange="toggleItemSelection('${item.id}')" 
+                           style="cursor: pointer; width: 18px; height: 18px;">
+                </td>
+                <td><strong>${item.numero}</strong></td>
+                <td class="descricao-cell">${item.descricao}</td>
+                <td>${item.qtd}</td>
+                <td>${item.unidade}</td>
+                <td>${item.marca || '-'}</td>
+                <td>${item.modelo || '-'}</td>
+                <td>R$ ${(item.estimado_unt || 0).toFixed(2)}</td>
+                <td>R$ ${(item.estimado_total || 0).toFixed(2)}</td>
+                <td>R$ ${(item.custo_unt || 0).toFixed(2)}</td>
+                <td>R$ ${(item.custo_total || 0).toFixed(2)}</td>
+                <td>R$ ${(item.venda_unt || 0).toFixed(2)}</td>
+                <td>R$ ${(item.venda_total || 0).toFixed(2)}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function toggleItemSelection(id) {
+    if (selectedItens.has(id)) {
+        selectedItens.delete(id);
+    } else {
+        selectedItens.add(id);
+    }
+    renderItens();
+}
+
+function toggleSelectAllItens() {
+    const checkbox = document.getElementById('selectAllItens');
+    if (checkbox.checked) {
+        itens.forEach(item => selectedItens.add(item.id));
+    } else {
+        selectedItens.clear();
+    }
+    renderItens();
+}
+
+function adicionarItem() {
+    const numero = itens.length > 0 ? Math.max(...itens.map(i => i.numero)) + 1 : 1;
+    
+    const novoItem = {
+        id: 'temp-' + Date.now(),
+        pregao_id: currentPregaoId,
+        numero: numero,
+        descricao: '',
+        qtd: 1,
+        unidade: 'UN',
+        marca: '',
+        modelo: '',
+        estimado_unt: 0,
+        estimado_total: 0,
+        custo_unt: 0,
+        custo_total: 0,
+        porcentagem: 10,
+        venda_unt: 0,
+        venda_total: 0,
+        ganho: false
+    };
+    
+    itens.push(novoItem);
+    renderItens();
+    editarItem(novoItem.id);
+}
+
+function adicionarIntervalo() {
+    const intervalo = prompt('Digite o intervalo (ex: 1-5, 10, 15-20):');
+    if (!intervalo) return;
+    
+    const numeros = [];
+    const partes = intervalo.split(',').map(p => p.trim());
+    
+    for (const parte of partes) {
+        if (parte.includes('-')) {
+            const [inicio, fim] = parte.split('-').map(n => parseInt(n.trim()));
+            if (isNaN(inicio) || isNaN(fim) || inicio > fim) {
+                showToast('Intervalo inválido', 'error');
+                return;
+            }
+            for (let i = inicio; i <= fim; i++) {
+                numeros.push(i);
+            }
+        } else {
+            const num = parseInt(parte);
+            if (isNaN(num)) {
+                showToast('Número inválido', 'error');
+                return;
+            }
+            numeros.push(num);
+        }
+    }
+    
+    // Verificar duplicatas
+    const numerosExistentes = new Set(itens.map(i => i.numero));
+    const duplicatas = numeros.filter(n => numerosExistentes.has(n));
+    if (duplicatas.length > 0) {
+        if (!confirm(`Os itens ${duplicatas.join(', ')} já existem. Deseja adicionar mesmo assim?`)) {
+            return;
+        }
+    }
+    
+    numeros.forEach(numero => {
+        const novoItem = {
+            id: 'temp-' + Date.now() + '-' + numero,
+            pregao_id: currentPregaoId,
+            numero: numero,
+            descricao: '',
+            qtd: 1,
+            unidade: 'UN',
+            marca: '',
+            modelo: '',
+            estimado_unt: 0,
+            estimado_total: 0,
+            custo_unt: 0,
+            custo_total: 0,
+            porcentagem: 10,
+            venda_unt: 0,
+            venda_total: 0,
+            ganho: false
+        };
+        itens.push(novoItem);
+    });
+    
+    itens.sort((a, b) => a.numero - b.numero);
+    renderItens();
+    showToast(`${numeros.length} itens adicionados`, 'success');
+}
+
+async function excluirItensSelecionados() {
+    if (selectedItens.size === 0) {
+        showToast('Selecione itens para excluir', 'error');
+        return;
+    }
+    
+    if (!confirm(`Deseja excluir ${selectedItens.size} item(ns)?`)) return;
+    
+    try {
+        const headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        };
+        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        
+        const idsParaExcluir = Array.from(selectedItens).filter(id => !id.startsWith('temp-'));
+        
+        if (idsParaExcluir.length > 0) {
+            const response = await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens/delete-multiple`, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({ ids: idsParaExcluir })
+            });
+            
+            if (!response.ok) throw new Error('Erro ao excluir');
+        }
+        
+        itens = itens.filter(item => !selectedItens.has(item.id));
+        selectedItens.clear();
+        renderItens();
+        showToast('Itens excluídos', 'success');
+    } catch (error) {
+        console.error('Erro:', error);
+        showToast('Erro ao excluir itens', 'error');
+    }
+}
+
+function editarItem(id) {
+    const item = itens.find(i => i.id === id);
+    if (!item) return;
+    
+    editingItemIndex = itens.indexOf(item);
+    mostrarModalItem(item);
+}
+
+function mostrarModalItem(item) {
+    let modal = document.getElementById('modalItem');
+    if (!modal) {
+        modal = criarModalItem();
+        document.body.appendChild(modal);
+    }
+    
+    document.getElementById('itemDescricao').value = item.descricao;
+    document.getElementById('itemQtd').value = item.qtd;
+    document.getElementById('itemUnidade').value = item.unidade;
+    document.getElementById('itemMarca').value = item.marca || '';
+    document.getElementById('itemModelo').value = item.modelo || '';
+    document.getElementById('itemEstimadoUnt').value = item.estimado_unt || 0;
+    document.getElementById('itemEstimadoTotal').value = item.estimado_total || 0;
+    document.getElementById('itemCustoUnt').value = item.custo_unt || 0;
+    document.getElementById('itemCustoTotal').value = item.custo_total || 0;
+    document.getElementById('itemPorcentagem').value = item.porcentagem || 10;
+    document.getElementById('itemVendaUnt').value = item.venda_unt || 0;
+    document.getElementById('itemVendaTotal').value = item.venda_total || 0;
+    
+    document.getElementById('modalItemTitle').textContent = `Item ${item.numero}`;
+    
+    // Atualizar botões de navegação
+    document.getElementById('btnPrevItem').style.display = editingItemIndex > 0 ? 'inline-block' : 'none';
+    document.getElementById('btnNextItem').style.display = editingItemIndex < itens.length - 1 ? 'inline-block' : 'none';
+    
+    modal.classList.add('show');
+    
+    // Adicionar event listeners para cálculos automáticos
+    configurarCalculosAutomaticos();
+}
+
+function criarModalItem() {
+    const modal = document.createElement('div');
+    modal.id = 'modalItem';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalItemTitle">Editar Item</h3>
+                <button class="close-modal" onclick="fecharModalItem()">✕</button>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label>Descrição *</label>
+                    <textarea id="itemDescricao" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>QTD *</label>
+                    <input type="number" id="itemQtd" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label>Unidade *</label>
+                    <input type="text" id="itemUnidade" required>
+                </div>
+                <div class="form-group">
+                    <label>Marca</label>
+                    <input type="text" id="itemMarca">
+                </div>
+                <div class="form-group">
+                    <label>Modelo</label>
+                    <input type="text" id="itemModelo">
+                </div>
+                <div class="form-group">
+                    <label>Estimado Unt</label>
+                    <input type="number" id="itemEstimadoUnt" step="0.01" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Estimado Total</label>
+                    <input type="number" id="itemEstimadoTotal" step="0.01" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Custo Unt</label>
+                    <input type="number" id="itemCustoUnt" step="0.01" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Custo Total</label>
+                    <input type="number" id="itemCustoTotal" step="0.01" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Porcentagem</label>
+                    <select id="itemPorcentagem">
+                        ${[0,5,10,15,20,25,30,50,100,150,200].map(p => 
+                            `<option value="${p}">${p}%</option>`
+                        ).join('')}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Venda Unt</label>
+                    <input type="number" id="itemVendaUnt" step="0.01" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Venda Total</label>
+                    <input type="number" id="itemVendaTotal" step="0.01" min="0">
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" onclick="navegarItemAnterior()" class="secondary" id="btnPrevItem">← Anterior</button>
+                <button type="button" onclick="navegarProximoItem()" class="secondary" id="btnNextItem">Próximo →</button>
+                <button type="button" onclick="salvarItemAtual()" class="success">Salvar</button>
+                <button type="button" onclick="fecharModalItem()" class="danger">Cancelar</button>
+            </div>
+        </div>
+    `;
+    return modal;
+}
+
+function configurarCalculosAutomaticos() {
+    const qtd = document.getElementById('itemQtd');
+    const estimadoUnt = document.getElementById('itemEstimadoUnt');
+    const estimadoTotal = document.getElementById('itemEstimadoTotal');
+    const custoUnt = document.getElementById('itemCustoUnt');
+    const custoTotal = document.getElementById('itemCustoTotal');
+    const porcentagem = document.getElementById('itemPorcentagem');
+    const vendaUnt = document.getElementById('itemVendaUnt');
+    const vendaTotal = document.getElementById('itemVendaTotal');
+    
+    // Estimado Total = QTD x Estimado Unt
+    [qtd, estimadoUnt].forEach(el => {
+        el.addEventListener('input', () => {
+            estimadoTotal.value = (parseFloat(qtd.value || 0) * parseFloat(estimadoUnt.value || 0)).toFixed(2);
+        });
+    });
+    
+    // Custo Total = QTD x Custo Unt
+    [qtd, custoUnt].forEach(el => {
+        el.addEventListener('input', () => {
+            custoTotal.value = (parseFloat(qtd.value || 0) * parseFloat(custoUnt.value || 0)).toFixed(2);
+            calcularVendaUnt();
+        });
+    });
+    
+    // Venda Unt = Custo Unt x (1 + Porcentagem/100)
+    [custoUnt, porcentagem].forEach(el => {
+        el.addEventListener('input', calcularVendaUnt);
+    });
+    
+    function calcularVendaUnt() {
+        const custo = parseFloat(custoUnt.value || 0);
+        const perc = parseFloat(porcentagem.value || 0);
+        const venda = custo * (1 + perc / 100);
+        vendaUnt.value = venda.toFixed(2);
+        vendaTotal.value = (venda * parseFloat(qtd.value || 0)).toFixed(2);
+    }
+    
+    // Venda Total = QTD x Venda Unt
+    [qtd, vendaUnt].forEach(el => {
+        el.addEventListener('input', () => {
+            vendaTotal.value = (parseFloat(qtd.value || 0) * parseFloat(vendaUnt.value || 0)).toFixed(2);
+        });
+    });
+}
+
+function navegarItemAnterior() {
+    if (editingItemIndex > 0) {
+        salvarItemAtual(false);
+        editingItemIndex--;
+        mostrarModalItem(itens[editingItemIndex]);
+    }
+}
+
+function navegarProximoItem() {
+    if (editingItemIndex < itens.length - 1) {
+        salvarItemAtual(false);
+        editingItemIndex++;
+        mostrarModalItem(itens[editingItemIndex]);
+    }
+}
+
+async function salvarItemAtual(fechar = true) {
+    const item = itens[editingItemIndex];
+    
+    item.descricao = toUpperCase(document.getElementById('itemDescricao').value);
+    item.qtd = parseInt(document.getElementById('itemQtd').value);
+    item.unidade = toUpperCase(document.getElementById('itemUnidade').value);
+    item.marca = toUpperCase(document.getElementById('itemMarca').value);
+    item.modelo = toUpperCase(document.getElementById('itemModelo').value);
+    item.estimado_unt = parseFloat(document.getElementById('itemEstimadoUnt').value || 0);
+    item.estimado_total = parseFloat(document.getElementById('itemEstimadoTotal').value || 0);
+    item.custo_unt = parseFloat(document.getElementById('itemCustoUnt').value || 0);
+    item.custo_total = parseFloat(document.getElementById('itemCustoTotal').value || 0);
+    item.porcentagem = parseInt(document.getElementById('itemPorcentagem').value || 10);
+    item.venda_unt = parseFloat(document.getElementById('itemVendaUnt').value || 0);
+    item.venda_total = parseFloat(document.getElementById('itemVendaTotal').value || 0);
+    
+    try {
+        const headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        };
+        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        
+        const isNew = item.id.startsWith('temp-');
+        const url = isNew 
+            ? `${API_URL}/pregoes/${currentPregaoId}/itens`
+            : `${API_URL}/pregoes/${currentPregaoId}/itens/${item.id}`;
+        const method = isNew ? 'POST' : 'PUT';
+        
+        const response = await fetch(url, {
+            method: method,
+            headers: headers,
+            body: JSON.stringify(item)
+        });
+        
+        if (response.ok) {
+            const savedItem = await response.json();
+            itens[editingItemIndex] = savedItem;
+            atualizarMarcasItens();
+            renderItens();
+            if (fechar) {
+                showToast('Item salvo', 'success');
+                fecharModalItem();
+            }
+        }
+    } catch (error) {
+        console.error('Erro:', error);
+        showToast('Erro ao salvar item', 'error');
+    }
+}
+
+function fecharModalItem() {
+    document.getElementById('modalItem').classList.remove('show');
+    editingItemIndex = null;
+}
+
+function syncItens() {
+    carregarItens(currentPregaoId);
+    showToast('Itens sincronizados', 'success');
+}
+
+async function gerarPDFsProposta() {
+    if (!currentPregaoId) {
+        showToast('Erro: Pregão não identificado', 'error');
+        return;
+    }
+    
+    const pregao = pregoes.find(p => p.id === currentPregaoId);
+    if (!pregao) {
+        showToast('Erro: Pregão não encontrado', 'error');
+        return;
+    }
+    
+    // Buscar dados bancários do backend (protegidos)
+    let dadosBancarios = null;
+    try {
+        const headers = { 'Accept': 'application/json' };
+        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        
+        const response = await fetch(`${API_URL}/pregoes/${currentPregaoId}/dados-bancarios`, {
+            method: 'GET',
+            headers: headers
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            dadosBancarios = data.dados_bancarios;
+        }
+    } catch (error) {
+        console.error('Erro ao buscar dados bancários:', error);
+    }
+    
+    // Gerar PDF
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const margin = 15;
+        let y = 20;
+        
+        // Logo e Cabeçalho
+        doc.setFontSize(14);
+        doc.setFont(undefined, 'bold');
+        doc.text('I.R. COMÉRCIO E MATERIAIS ELÉTRICOS', margin, y);
+        
+        y += 5;
+        doc.setFontSize(9);
+        doc.setFont(undefined, 'normal');
+        doc.text('CNPJ: 27.853.501/0001-25', margin, y);
+        
+        y += 4;
+        doc.text('Endereço: Rua Santana, nº 216, Colina de Laranjeiras, Serra/ES - CEP: 29.167-317', margin, y);
+        
+        y += 4;
+        doc.text('Telefones: (27) 3328-0382 / (27) 99773-6060 / Email: comercial@ircomercio.com.br', margin, y);
+        
+        // Linha separadora
+        y += 5;
+        doc.setDrawColor(204, 112, 0);
+        doc.setLineWidth(0.5);
+        doc.line(margin, y, pageWidth - margin, y);
+        
+        // Título
+        y += 10;
+        doc.setFontSize(16);
+        doc.setFont(undefined, 'bold');
+        doc.text('PROPOSTA', pageWidth / 2, y, { align: 'center' });
+        
+        y += 7;
+        doc.setFontSize(12);
+        doc.text(`${pregao.numero_pregao}${pregao.uasg ? ' - ' + pregao.uasg : ''}`, pageWidth / 2, y, { align: 'center' });
+        
+        // Dados para Faturamento
+        y += 10;
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'bold');
+        doc.text('DADOS PARA FATURAMENTO:', margin, y);
+        
+        y += 5;
+        doc.setFont(undefined, 'normal');
+        doc.text('Razão Social: I.R. COMÉRCIO E MATERIAIS ELÉTRICOS LTDA', margin, y);
+        
+        y += 4;
+        doc.text('CNPJ: 27.853.501/0001-25', margin, y);
+        
+        y += 4;
+        doc.text('Endereço: Rua Santana, nº 216, Colina de Laranjeiras, Serra/ES - CEP: 29.167-317', margin, y);
+        
+        y += 4;
+        doc.text('Telefones: (27) 3328-0382 / (27) 99773-6060', margin, y);
+        
+        y += 4;
+        doc.text('Email: comercial@ircomercio.com.br', margin, y);
+        
+        // Destinatário
+        y += 10;
+        doc.setFont(undefined, 'bold');
+        doc.text(`AO ${pregao.nome_orgao || 'ÓRGÃO'}`, margin, y);
+        
+        y += 5;
+        doc.text('COMISSÃO PERMANENTE DE LICITAÇÃO', margin, y);
+        
+        y += 5;
+        doc.text(`PREGÃO ELETRÔNICO ${pregao.numero_pregao}${pregao.uasg ? ' - UASG: ' + pregao.uasg : ''}`, margin, y);
+        
+        // Tabela de Itens
+        y += 10;
+        
+        // Preparar dados da tabela (apenas itens selecionados)
+        const itensSelecionados = itens.filter(item => selectedItens.has(item.id));
+        
+        if (itensSelecionados.length === 0) {
+            doc.setFont(undefined, 'italic');
+            doc.setTextColor(150, 150, 150);
+            doc.text('Nenhum item selecionado para a proposta', margin, y);
+            doc.setTextColor(0, 0, 0);
+            y += 10;
+        } else {
+            const tableData = itensSelecionados.map(item => [
+                item.numero,
+                item.qtd,
+                item.unidade,
+                item.descricao,
+                item.marca || '-',
+                item.modelo || '-',
+                `R$ ${item.venda_unt.toFixed(2)}`,
+                `R$ ${item.venda_total.toFixed(2)}`
+            ]);
+            
+            doc.autoTable({
+                startY: y,
+                head: [['Item', 'Qtd', 'Un', 'Descrição', 'Marca', 'Modelo', 'Valor Unt', 'Valor Total']],
+                body: tableData,
+                theme: 'grid',
+                styles: { 
+                    fontSize: 8,
+                    cellPadding: 2,
+                    font: 'helvetica'
+                },
+                headStyles: { 
+                    fillColor: [107, 114, 128],
+                    textColor: [255, 255, 255],
+                    fontStyle: 'bold'
+                },
+                columnStyles: {
+                    0: { cellWidth: 15, halign: 'center' },
+                    1: { cellWidth: 15, halign: 'center' },
+                    2: { cellWidth: 15, halign: 'center' },
+                    3: { cellWidth: 65 },
+                    4: { cellWidth: 25 },
+                    5: { cellWidth: 25 },
+                    6: { cellWidth: 25, halign: 'right' },
+                    7: { cellWidth: 25, halign: 'right' }
+                },
+                margin: { left: margin, right: margin }
+            });
+            
+            y = doc.lastAutoTable.finalY + 10;
+        }
+        
+        // Informações abaixo da tabela
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'bold');
+        doc.text('VALIDADE:', margin, y);
+        doc.setFont(undefined, 'normal');
+        doc.text(pregao.validade_proposta || 'NÃO INFORMADA', margin + 25, y);
+        
+        y += 6;
+        doc.setFont(undefined, 'bold');
+        doc.text('PRAZO DE ENTREGA:', margin, y);
+        doc.setFont(undefined, 'normal');
+        doc.text(pregao.prazo_entrega || 'NÃO INFORMADO', margin + 40, y);
+        
+        y += 6;
+        doc.setFont(undefined, 'bold');
+        doc.text('PAGAMENTO:', margin, y);
+        doc.setFont(undefined, 'normal');
+        doc.text(pregao.prazo_pagamento || 'NÃO INFORMADO', margin + 30, y);
+        
+        // Dados Bancários (do backend - protegidos)
+        if (dadosBancarios) {
+            y += 8;
+            doc.setFont(undefined, 'bold');
+            doc.text('DADOS BANCÁRIOS:', margin, y);
+            y += 5;
+            doc.setFont(undefined, 'normal');
+            doc.text(dadosBancarios, margin, y);
+        }
+        
+        // Declarações
+        y += 12;
+        doc.setFontSize(9);
+        doc.setFont(undefined, 'normal');
+        const declaracao = 'Declaramos que nos preços cotados estão incluídas todas as despesas tais como frete (CIF), impostos, taxas, seguros, tributos e demais encargos de qualquer natureza incidentes sobre o objeto do Pregão. Declaramos que somos Optantes pelo Simples Nacional. Declaramos que o objeto fornecido não é remanufaturado ou recondicionado.';
+        
+        const declaracaoLines = doc.splitTextToSize(declaracao, pageWidth - (margin * 2));
+        declaracaoLines.forEach(line => {
+            if (y > pageHeight - 60) {
+                doc.addPage();
+                y = 20;
+            }
+            doc.text(line, margin, y);
+            y += 4;
+        });
+        
+        // Data ATUAL (não do pregão!)
+        y += 10;
+        if (y > pageHeight - 50) {
+            doc.addPage();
+            y = 20;
+        }
+        
+        const dataAtual = new Date();
+        const dia = dataAtual.getDate();
+        const meses = ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 
+                       'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO'];
+        const mes = meses[dataAtual.getMonth()];
+        const ano = dataAtual.getFullYear();
+        
+        doc.setFont(undefined, 'normal');
+        doc.text(`SERRA/ES, ${dia} DE ${mes} DE ${ano}`, pageWidth / 2, y, { align: 'center' });
+        
+        // Assinatura
+        y += 15;
+        if (y > pageHeight - 35) {
+            doc.addPage();
+            y = 20;
+        }
+        
+        // Linha de assinatura
+        doc.line(pageWidth / 2 - 40, y, pageWidth / 2 + 40, y);
+        
+        y += 5;
+        doc.setFont(undefined, 'bold');
+        doc.text('ROSEMEIRE BICALHO DE LIMA GRAVINO', pageWidth / 2, y, { align: 'center' });
+        
+        y += 5;
+        doc.setFont(undefined, 'normal');
+        doc.text('RG: 10.078.568 / CPF: 045.160.616-78', pageWidth / 2, y, { align: 'center' });
+        
+        y += 5;
+        doc.setFont(undefined, 'bold');
+        doc.text('DIRETORA', pageWidth / 2, y, { align: 'center' });
+        
+        // Salvar PDF
+        const nomeArquivo = `PROPOSTA-${pregao.numero_pregao}${pregao.uasg ? '-' + pregao.uasg : ''}.pdf`;
+        doc.save(nomeArquivo);
+        
+        showToast('PDF gerado com sucesso!', 'success');
+    } catch (error) {
+        console.error('Erro ao gerar PDF:', error);
+        showToast('Erro ao gerar PDF', 'error');
+    }
 }
