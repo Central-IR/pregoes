@@ -91,6 +91,20 @@ async function verificarAutenticacao(req, res, next) {
 }
 
 // ============================================
+// DADOS BANCÁRIOS PROTEGIDOS (BACKEND ONLY)
+// ============================================
+
+function getDadosBancarios(banco) {
+    const dadosBancarios = {
+        'BANCO DO BRASIL': 'BANCO DO BRASIL - AG: 3167-4 / CONTA CORRENTE: 130115-2',
+        'BRADESCO': 'BRADESCO - AG: XXXX-X / CONTA CORRENTE: XXXXXX-X',
+        'SICOOB': 'SICOOB - AG: XXXX-X / CONTA CORRENTE: XXXXXX-X'
+    };
+    
+    return dadosBancarios[banco] || null;
+}
+
+// ============================================
 // ROTAS DA API - ORDEM DE COMPRA
 // ============================================
 
@@ -525,6 +539,33 @@ app.delete('/api/pregoes/:id', async (req, res) => {
         res.status(500).json({ 
             success: false, 
             error: 'Erro ao deletar pregão',
+            message: error.message
+        });
+    }
+});
+
+// Obter dados bancários para PDF (protegido - só retorna quando solicitado para PDF)
+app.get('/api/pregoes/:id/dados-bancarios', async (req, res) => {
+    try {
+        console.log(`🏦 Obtendo dados bancários para PDF do pregão ID: ${req.params.id}`);
+        
+        const { data, error } = await supabase
+            .from('pregoes')
+            .select('banco')
+            .eq('id', req.params.id)
+            .single();
+
+        if (error) {
+            return res.status(404).json({ success: false, error: 'Pregão não encontrado' });
+        }
+
+        const dadosBancarios = getDadosBancarios(data.banco);
+        res.json({ dados_bancarios: dadosBancarios });
+    } catch (error) {
+        console.error('❌ Erro ao buscar dados bancários:', error.message);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Erro ao buscar dados bancários',
             message: error.message
         });
     }
