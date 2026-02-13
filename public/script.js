@@ -1604,6 +1604,32 @@ async function gerarPDFsProposta() {
         return;
     }
     
+    // Verificar se há itens selecionados
+    if (selectedItens.size === 0) {
+        showToast('Selecione ao menos um item para gerar a proposta', 'error');
+        return;
+    }
+    
+    if (typeof window.jspdf === 'undefined') {
+        let attempts = 0;
+        const maxAttempts = 5;
+        const checkInterval = setInterval(() => {
+            attempts++;
+            if (typeof window.jspdf !== 'undefined') {
+                clearInterval(checkInterval);
+                gerarPDFPropostaInterno(pregao);
+            } else if (attempts >= maxAttempts) {
+                clearInterval(checkInterval);
+                showToast('Erro: Biblioteca PDF não carregou. Recarregue a página (F5).', 'error');
+            }
+        }, 500);
+        return;
+    }
+    
+    gerarPDFPropostaInterno(pregao);
+}
+
+async function gerarPDFPropostaInterno(pregao) {
     // Buscar dados bancários do backend (protegidos)
     let dadosBancarios = null;
     try {
@@ -1623,188 +1649,403 @@ async function gerarPDFsProposta() {
         console.error('Erro ao buscar dados bancários:', error);
     }
     
-    // Gerar PDF
-    try {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const pageHeight = doc.internal.pageSize.getHeight();
-        const margin = 15;
-        let y = 20;
-        
-        // Logo e Cabeçalho
-        doc.setFontSize(14);
-        doc.setFont(undefined, 'bold');
-        doc.text('I.R. COMÉRCIO E MATERIAIS ELÉTRICOS', margin, y);
-        
-        y += 5;
-        doc.setFontSize(9);
-        doc.setFont(undefined, 'normal');
-        doc.text('CNPJ: 27.853.501/0001-25', margin, y);
-        
-        y += 4;
-        doc.text('Endereço: Rua Santana, nº 216, Colina de Laranjeiras, Serra/ES - CEP: 29.167-317', margin, y);
-        
-        y += 4;
-        doc.text('Telefones: (27) 3328-0382 / (27) 99773-6060 / Email: comercial@ircomercio.com.br', margin, y);
-        
-        // Linha separadora
-        y += 5;
-        doc.setDrawColor(204, 112, 0);
-        doc.setLineWidth(0.5);
-        doc.line(margin, y, pageWidth - margin, y);
-        
-        // Título
-        y += 10;
-        doc.setFontSize(16);
-        doc.setFont(undefined, 'bold');
-        doc.text('PROPOSTA', pageWidth / 2, y, { align: 'center' });
-        
-        y += 7;
-        doc.setFontSize(12);
-        doc.text(`${pregao.numero_pregao}${pregao.uasg ? ' - ' + pregao.uasg : ''}`, pageWidth / 2, y, { align: 'center' });
-        
-        // Dados para Faturamento
-        y += 10;
-        doc.setFontSize(10);
-        doc.setFont(undefined, 'bold');
-        doc.text('DADOS PARA FATURAMENTO:', margin, y);
-        
-        y += 5;
-        doc.setFont(undefined, 'normal');
-        doc.text('Razão Social: I.R. COMÉRCIO E MATERIAIS ELÉTRICOS LTDA', margin, y);
-        
-        y += 4;
-        doc.text('CNPJ: 27.853.501/0001-25', margin, y);
-        
-        y += 4;
-        doc.text('Endereço: Rua Santana, nº 216, Colina de Laranjeiras, Serra/ES - CEP: 29.167-317', margin, y);
-        
-        y += 4;
-        doc.text('Telefones: (27) 3328-0382 / (27) 99773-6060', margin, y);
-        
-        y += 4;
-        doc.text('Email: comercial@ircomercio.com.br', margin, y);
-        
-        // Destinatário
-        y += 10;
-        doc.setFont(undefined, 'bold');
-        doc.text(`AO ${pregao.nome_orgao || 'ÓRGÃO'}`, margin, y);
-        
-        y += 5;
-        doc.text('COMISSÃO PERMANENTE DE LICITAÇÃO', margin, y);
-        
-        y += 5;
-        doc.text(`PREGÃO ELETRÔNICO ${pregao.numero_pregao}${pregao.uasg ? ' - UASG: ' + pregao.uasg : ''}`, margin, y);
-        
-        // Tabela de Itens
-        y += 10;
-        
-        // Preparar dados da tabela (apenas itens selecionados)
-        const itensSelecionados = itens.filter(item => selectedItens.has(item.id));
-        
-        if (itensSelecionados.length === 0) {
-            doc.setFont(undefined, 'italic');
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    let y = 3;
+    const margin = 15;
+    const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
+    const lineHeight = 5;
+    const maxWidth = pageWidth - (2 * margin);
+    
+    function addTextWithWrap(text, x, yStart, maxW, lineH = 5) {
+        const lines = doc.splitTextToSize(text, maxW);
+        lines.forEach((line, index) => {
+            if (yStart + (index * lineH) > pageHeight - 30) {
+                yStart = addPageWithHeader();
+            }
+            doc.text(line, x, yStart + (index * lineH));
+        });
+        return yStart + (lines.length * lineH);
+    }
+    
+    const logoHeader = new Image();
+    logoHeader.crossOrigin = 'anonymous';
+    logoHeader.src = 'I.R.-COMERCIO-E-MATERIAIS-ELETRICOS-LTDA-PDF.png';
+    
+    logoHeader.onload = function() {
+        try {
+            const logoWidth = 40;
+            const logoHeight = (logoHeader.height / logoHeader.width) * logoWidth;
+            const logoX = 5;
+            const logoY = y;
+            
+            doc.setGState(new doc.GState({ opacity: 0.3 }));
+            doc.addImage(logoHeader, 'PNG', logoX, logoY, logoWidth, logoHeight);
+            doc.setGState(new doc.GState({ opacity: 1.0 }));
+            
+            const fontSize = logoHeight * 0.5;
+            doc.setFontSize(fontSize);
+            doc.setFont(undefined, 'bold');
             doc.setTextColor(150, 150, 150);
-            doc.text('Nenhum item selecionado para a proposta', margin, y);
+            const textX = logoX + logoWidth + 1.2;
+            
+            const lineSpacing = fontSize * 0.5;
+            const textY1 = logoY + fontSize * 0.85;
+            doc.text('I.R COMÉRCIO E', textX, textY1);
+            
+            const textY2 = textY1 + lineSpacing;
+            doc.text('MATERIAIS ELÉTRICOS LTDA', textX, textY2);
+            
             doc.setTextColor(0, 0, 0);
-            y += 10;
-        } else {
-            const tableData = itensSelecionados.map(item => [
-                item.numero,
-                item.qtd,
-                item.unidade,
-                item.descricao,
-                item.marca || '-',
-                item.modelo || '-',
-                `R$ ${item.venda_unt.toFixed(2)}`,
-                `R$ ${item.venda_total.toFixed(2)}`
-            ]);
+            y = logoY + logoHeight + 8;
             
-            doc.autoTable({
-                startY: y,
-                head: [['Item', 'Qtd', 'Un', 'Descrição', 'Marca', 'Modelo', 'Valor Unt', 'Valor Total']],
-                body: tableData,
-                theme: 'grid',
-                styles: { 
-                    fontSize: 8,
-                    cellPadding: 2,
-                    font: 'helvetica'
-                },
-                headStyles: { 
-                    fillColor: [107, 114, 128],
-                    textColor: [255, 255, 255],
-                    fontStyle: 'bold'
-                },
-                columnStyles: {
-                    0: { cellWidth: 15, halign: 'center' },
-                    1: { cellWidth: 15, halign: 'center' },
-                    2: { cellWidth: 15, halign: 'center' },
-                    3: { cellWidth: 65 },
-                    4: { cellWidth: 25 },
-                    5: { cellWidth: 25 },
-                    6: { cellWidth: 25, halign: 'right' },
-                    7: { cellWidth: 25, halign: 'right' }
-                },
-                margin: { left: margin, right: margin }
-            });
+            continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pageWidth, pageHeight, lineHeight, maxWidth, addTextWithWrap);
             
-            y = doc.lastAutoTable.finalY + 10;
+        } catch (e) {
+            console.log('Erro ao adicionar logo:', e);
+            y = 25;
+            continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pageWidth, pageHeight, lineHeight, maxWidth, addTextWithWrap);
+        }
+    };
+    
+    logoHeader.onerror = function() {
+        console.log('Erro ao carregar logo, gerando PDF sem ela');
+        y = 25;
+        continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pageWidth, pageHeight, lineHeight, maxWidth, addTextWithWrap);
+    };
+}
+
+function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pageWidth, pageHeight, lineHeight, maxWidth, addTextWithWrap) {
+    const logoHeaderImg = new Image();
+    logoHeaderImg.crossOrigin = 'anonymous';
+    logoHeaderImg.src = 'I.R.-COMERCIO-E-MATERIAIS-ELETRICOS-LTDA-PDF.png';
+    
+    logoHeaderImg.onload = function() {
+        gerarPDFPropostaComCabecalho();
+    };
+    
+    logoHeaderImg.onerror = function() {
+        console.log('Erro ao carregar logo do cabeçalho');
+        gerarPDFPropostaComCabecalho();
+    };
+    
+    function gerarPDFPropostaComCabecalho() {
+        const logoCarregada = logoHeaderImg.complete && logoHeaderImg.naturalHeight !== 0;
+        
+        function adicionarCabecalho() {
+            if (!logoCarregada) {
+                return 20;
+            }
+            
+            const headerY = 3;
+            const logoWidth = 40;
+            const logoHeight = (logoHeaderImg.height / logoHeaderImg.width) * logoWidth;
+            const logoX = 5;
+            
+            doc.setGState(new doc.GState({ opacity: 0.3 }));
+            doc.addImage(logoHeaderImg, 'PNG', logoX, headerY, logoWidth, logoHeight);
+            doc.setGState(new doc.GState({ opacity: 1.0 }));
+            
+            const fontSize = logoHeight * 0.5;
+            doc.setFontSize(fontSize);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(150, 150, 150);
+            const textX = logoX + logoWidth + 1.2;
+            
+            const lineSpacing = fontSize * 0.5;
+            const textY1 = headerY + fontSize * 0.85;
+            doc.text('I.R COMÉRCIO E', textX, textY1);
+            
+            const textY2 = textY1 + lineSpacing;
+            doc.text('MATERIAIS ELÉTRICOS LTDA', textX, textY2);
+            
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            doc.setDrawColor(0, 0, 0);
+            doc.setLineWidth(0.2);
+            
+            return headerY + logoHeight + 8;
         }
         
-        // Informações abaixo da tabela
+        function addPageWithHeader() {
+            doc.addPage();
+            const newY = adicionarCabecalho();
+            return newY;
+        }
+        
+        addTextWithWrap = function(text, x, yStart, maxW, lineH = 5) {
+            const lines = doc.splitTextToSize(text, maxW);
+            lines.forEach((line, index) => {
+                if (yStart + (index * lineH) > pageHeight - 30) {
+                    yStart = addPageWithHeader();
+                }
+                doc.text(line, x, yStart + (index * lineH));
+            });
+            return yStart + (lines.length * lineH);
+        };
+        
+        // Título
+        doc.setFontSize(18);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(0, 0, 0);
+        doc.text('PROPOSTA', pageWidth / 2, y, { align: 'center' });
+        
+        y += 8;
+        doc.setFontSize(14);
+        doc.text(`${pregao.numero_pregao}${pregao.uasg ? ' - ' + pregao.uasg : ''}`, pageWidth / 2, y, { align: 'center' });
+        
+        y += 12;
+        
+        // Dados para Faturamento
+        doc.setFontSize(11);
+        doc.setTextColor(0, 0, 0);
+        doc.setFont(undefined, 'bold');
+        doc.text('DADOS PARA FATURAMENTO', margin, y);
+        
+        y += lineHeight + 1;
+        doc.setFont(undefined, 'bold');
+        doc.text('I.R. COMÉRCIO E MATERIAIS ELÉTRICOS LTDA', margin, y);
+        
+        y += lineHeight + 1;
+        doc.setFont(undefined, 'normal');
+        doc.text('CNPJ: 33.149.502/0001-38  |  IE: 083.780.74-2', margin, y);
+        
+        y += lineHeight + 1;
+        doc.text('RUA TADORNA Nº 472, SALA 2', margin, y);
+        
+        y += lineHeight + 1;
+        doc.text('NOVO HORIZONTE - SERRA/ES  |  CEP: 29.163-318', margin, y);
+        
+        y += lineHeight + 1;
+        doc.text('TELEFAX: (27) 3209-4291  |  E-MAIL: COMERCIAL.IRCOMERCIO@GMAIL.COM', margin, y);
+        
+        y += 10;
+        
+        // Destinatário
+        doc.setFont(undefined, 'bold');
+        doc.text('DESTINATÁRIO', margin, y);
+        
+        y += lineHeight + 1;
+        doc.setFont(undefined, 'normal');
+        doc.text('AO: ', margin, y);
+        const aoWidth = doc.getTextWidth('AO: ');
+        doc.setFont(undefined, 'bold');
+        doc.text(toUpperCase(pregao.nome_orgao || 'ÓRGÃO'), margin + aoWidth, y);
+        
+        y += lineHeight + 1;
+        doc.setFont(undefined, 'normal');
+        doc.text('COMISSÃO PERMANENTE DE LICITAÇÃO', margin, y);
+        
+        y += lineHeight + 1;
+        doc.text(`PREGÃO ELETRÔNICO ${pregao.numero_pregao}${pregao.uasg ? ' - UASG: ' + pregao.uasg : ''}`, margin, y);
+        
+        y += 10;
+        
+        if (y > pageHeight - 50) {
+            y = addPageWithHeader();
+        }
+        
+        // Tabela de Itens
+        doc.setFontSize(11);
+        doc.setFont(undefined, 'bold');
+        doc.text('ITENS DA PROPOSTA', margin, y);
+        
+        y += 6;
+        
+        const tableWidth = pageWidth - (2 * margin);
+        const colWidths = {
+            item: tableWidth * 0.06,
+            descricao: tableWidth * 0.38,
+            qtd: tableWidth * 0.08,
+            unid: tableWidth * 0.08,
+            marca: tableWidth * 0.14,
+            modelo: tableWidth * 0.14,
+            total: tableWidth * 0.12
+        };
+        
+        const itemRowHeight = 10;
+        
+        // Cabeçalho da tabela
+        doc.setFillColor(108, 117, 125);
+        doc.setDrawColor(180, 180, 180);
+        doc.rect(margin, y, tableWidth, itemRowHeight, 'FD');
+        
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(9);
+        doc.setFont(undefined, 'bold');
+        
+        let xPos = margin;
+        
+        doc.line(xPos, y, xPos, y + itemRowHeight);
+        doc.text('ITEM', xPos + (colWidths.item / 2), y + 6.5, { align: 'center' });
+        xPos += colWidths.item;
+        doc.line(xPos, y, xPos, y + itemRowHeight);
+        
+        doc.text('DESCRIÇÃO', xPos + (colWidths.descricao / 2), y + 6.5, { align: 'center' });
+        xPos += colWidths.descricao;
+        doc.line(xPos, y, xPos, y + itemRowHeight);
+        
+        doc.text('QTD', xPos + (colWidths.qtd / 2), y + 6.5, { align: 'center' });
+        xPos += colWidths.qtd;
+        doc.line(xPos, y, xPos, y + itemRowHeight);
+        
+        doc.text('UN', xPos + (colWidths.unid / 2), y + 6.5, { align: 'center' });
+        xPos += colWidths.unid;
+        doc.line(xPos, y, xPos, y + itemRowHeight);
+        
+        doc.text('MARCA', xPos + (colWidths.marca / 2), y + 6.5, { align: 'center' });
+        xPos += colWidths.marca;
+        doc.line(xPos, y, xPos, y + itemRowHeight);
+        
+        doc.text('MODELO', xPos + (colWidths.modelo / 2), y + 6.5, { align: 'center' });
+        xPos += colWidths.modelo;
+        doc.line(xPos, y, xPos, y + itemRowHeight);
+        
+        doc.text('VALOR TOTAL', xPos + (colWidths.total / 2), y + 6.5, { align: 'center' });
+        xPos += colWidths.total;
+        doc.line(xPos, y, xPos, y + itemRowHeight);
+        
+        y += itemRowHeight;
+        
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(8);
+        doc.setFont(undefined, 'normal');
+        
+        // Itens selecionados
+        const itensSelecionados = itens.filter(item => selectedItens.has(item.id));
+        
+        itensSelecionados.forEach((item, index) => {
+            const descricaoUpper = toUpperCase(item.descricao);
+            const maxWidthDesc = colWidths.descricao - 6;
+            const descLines = doc.splitTextToSize(descricaoUpper, maxWidthDesc);
+            const lineCount = descLines.length;
+            const necessaryHeight = Math.max(itemRowHeight, lineCount * 4 + 4);
+            
+            if (y + necessaryHeight > pageHeight - 30) {
+                y = addPageWithHeader();
+            }
+            
+            doc.setDrawColor(180, 180, 180);
+            doc.rect(margin, y, tableWidth, necessaryHeight);
+            
+            xPos = margin;
+            
+            doc.line(xPos, y, xPos, y + necessaryHeight);
+            doc.text(String(item.numero), xPos + (colWidths.item / 2), y + (necessaryHeight / 2) + 1.5, { align: 'center' });
+            xPos += colWidths.item;
+            doc.line(xPos, y, xPos, y + necessaryHeight);
+            
+            let yText = y + 4;
+            descLines.forEach(line => {
+                doc.text(line, xPos + 3, yText);
+                yText += 4;
+            });
+            xPos += colWidths.descricao;
+            doc.line(xPos, y, xPos, y + necessaryHeight);
+            
+            doc.text(String(item.qtd), xPos + (colWidths.qtd / 2), y + (necessaryHeight / 2) + 1.5, { align: 'center' });
+            xPos += colWidths.qtd;
+            doc.line(xPos, y, xPos, y + necessaryHeight);
+            
+            doc.text(item.unidade, xPos + (colWidths.unid / 2), y + (necessaryHeight / 2) + 1.5, { align: 'center' });
+            xPos += colWidths.unid;
+            doc.line(xPos, y, xPos, y + necessaryHeight);
+            
+            doc.text(item.marca || '-', xPos + (colWidths.marca / 2), y + (necessaryHeight / 2) + 1.5, { align: 'center' });
+            xPos += colWidths.marca;
+            doc.line(xPos, y, xPos, y + necessaryHeight);
+            
+            doc.text(item.modelo || '-', xPos + (colWidths.modelo / 2), y + (necessaryHeight / 2) + 1.5, { align: 'center' });
+            xPos += colWidths.modelo;
+            doc.line(xPos, y, xPos, y + necessaryHeight);
+            
+            doc.text(`R$ ${item.venda_total.toFixed(2)}`, xPos + (colWidths.total / 2), y + (necessaryHeight / 2) + 1.5, { align: 'center' });
+            xPos += colWidths.total;
+            doc.line(xPos, y, xPos, y + necessaryHeight);
+            
+            y += necessaryHeight;
+        });
+        
+        y += 8;
+        
+        if (y > pageHeight - 60) {
+            y = addPageWithHeader();
+        }
+        
+        // Condições
         doc.setFontSize(10);
         doc.setFont(undefined, 'bold');
-        doc.text('VALIDADE:', margin, y);
+        doc.text('VALIDADE DA PROPOSTA: ', margin, y);
+        const validadeWidth = doc.getTextWidth('VALIDADE DA PROPOSTA: ');
         doc.setFont(undefined, 'normal');
-        doc.text(pregao.validade_proposta || 'NÃO INFORMADA', margin + 25, y);
+        doc.text(pregao.validade_proposta || 'NÃO INFORMADA', margin + validadeWidth, y);
         
-        y += 6;
+        y += lineHeight + 1;
         doc.setFont(undefined, 'bold');
-        doc.text('PRAZO DE ENTREGA:', margin, y);
+        doc.text('PRAZO DE ENTREGA: ', margin, y);
+        const entregaWidth = doc.getTextWidth('PRAZO DE ENTREGA: ');
         doc.setFont(undefined, 'normal');
-        doc.text(pregao.prazo_entrega || 'NÃO INFORMADO', margin + 40, y);
+        const entregaText = pregao.prazo_entrega || 'NÃO INFORMADO';
+        const entregaLines = doc.splitTextToSize(entregaText, maxWidth - entregaWidth);
+        doc.text(entregaLines[0], margin + entregaWidth, y);
+        y += lineHeight;
+        if (entregaLines.length > 1) {
+            for (let i = 1; i < entregaLines.length; i++) {
+                doc.text(entregaLines[i], margin, y);
+                y += lineHeight;
+            }
+        }
         
-        y += 6;
+        y += 1;
         doc.setFont(undefined, 'bold');
-        doc.text('PAGAMENTO:', margin, y);
+        doc.text('FORMA DE PAGAMENTO: ', margin, y);
+        const pagamentoWidth = doc.getTextWidth('FORMA DE PAGAMENTO: ');
         doc.setFont(undefined, 'normal');
-        doc.text(pregao.prazo_pagamento || 'NÃO INFORMADO', margin + 30, y);
+        const pagamentoText = pregao.prazo_pagamento || 'NÃO INFORMADO';
+        const pagamentoLines = doc.splitTextToSize(pagamentoText, maxWidth - pagamentoWidth);
+        doc.text(pagamentoLines[0], margin + pagamentoWidth, y);
+        y += lineHeight;
+        if (pagamentoLines.length > 1) {
+            for (let i = 1; i < pagamentoLines.length; i++) {
+                doc.text(pagamentoLines[i], margin, y);
+                y += lineHeight;
+            }
+        }
         
-        // Dados Bancários (do backend - protegidos)
+        // Dados Bancários
         if (dadosBancarios) {
-            y += 8;
+            y += 2;
             doc.setFont(undefined, 'bold');
-            doc.text('DADOS BANCÁRIOS:', margin, y);
-            y += 5;
+            doc.text('DADOS BANCÁRIOS: ', margin, y);
+            const bancoWidth = doc.getTextWidth('DADOS BANCÁRIOS: ');
             doc.setFont(undefined, 'normal');
-            doc.text(dadosBancarios, margin, y);
+            doc.text(dadosBancarios, margin + bancoWidth, y);
+            y += lineHeight;
+        }
+        
+        y += 6;
+        
+        if (y > pageHeight - 60) {
+            y = addPageWithHeader();
         }
         
         // Declarações
-        y += 12;
         doc.setFontSize(9);
         doc.setFont(undefined, 'normal');
         const declaracao = 'Declaramos que nos preços cotados estão incluídas todas as despesas tais como frete (CIF), impostos, taxas, seguros, tributos e demais encargos de qualquer natureza incidentes sobre o objeto do Pregão. Declaramos que somos Optantes pelo Simples Nacional. Declaramos que o objeto fornecido não é remanufaturado ou recondicionado.';
         
-        const declaracaoLines = doc.splitTextToSize(declaracao, pageWidth - (margin * 2));
-        declaracaoLines.forEach(line => {
-            if (y > pageHeight - 60) {
-                doc.addPage();
-                y = 20;
-            }
-            doc.text(line, margin, y);
-            y += 4;
-        });
+        y = addTextWithWrap(declaracao, margin, y, maxWidth, 4);
         
-        // Data ATUAL (não do pregão!)
-        y += 10;
-        if (y > pageHeight - 50) {
-            doc.addPage();
-            y = 20;
+        y += 12;
+        
+        if (y > pageHeight - 40) {
+            y = addPageWithHeader();
         }
         
+        // Data atual
         const dataAtual = new Date();
         const dia = dataAtual.getDate();
         const meses = ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 
@@ -1812,38 +2053,77 @@ async function gerarPDFsProposta() {
         const mes = meses[dataAtual.getMonth()];
         const ano = dataAtual.getFullYear();
         
+        doc.setFontSize(10);
         doc.setFont(undefined, 'normal');
         doc.text(`SERRA/ES, ${dia} DE ${mes} DE ${ano}`, pageWidth / 2, y, { align: 'center' });
         
-        // Assinatura
-        y += 15;
-        if (y > pageHeight - 35) {
-            doc.addPage();
-            y = 20;
+        y += 5;
+        
+        // Carregar e adicionar imagem da assinatura
+        const assinatura = new Image();
+        assinatura.crossOrigin = 'anonymous';
+        assinatura.src = 'assinatura.png';
+        
+        assinatura.onload = function() {
+            try {
+                const imgWidth = 50;
+                const imgHeight = (assinatura.height / assinatura.width) * imgWidth;
+                
+                doc.addImage(assinatura, 'PNG', (pageWidth / 2) - (imgWidth / 2), y + 2, imgWidth, imgHeight);
+                
+                let yFinal = y + imgHeight + 5;
+                
+                yFinal += 5;
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'bold');
+                doc.text('ROSEMEIRE BICALHO DE LIMA GRAVINO', pageWidth / 2, yFinal, { align: 'center' });
+                
+                yFinal += 5;
+                doc.setFontSize(9);
+                doc.setFont(undefined, 'normal');
+                doc.text('MG-10.078.568 / CPF: 045.160.616-78', pageWidth / 2, yFinal, { align: 'center' });
+                
+                yFinal += 5;
+                doc.text('DIRETORA', pageWidth / 2, yFinal, { align: 'center' });
+                
+                // Salvar PDF
+                const nomeArquivo = `PROPOSTA-${pregao.numero_pregao}${pregao.uasg ? '-' + pregao.uasg : ''}.pdf`;
+                doc.save(nomeArquivo);
+                
+                showToast('PDF gerado com sucesso!', 'success');
+                
+            } catch (e) {
+                console.log('Erro ao adicionar assinatura:', e);
+                gerarPDFSemAssinatura();
+            }
+        };
+        
+        assinatura.onerror = function() {
+            console.log('Erro ao carregar assinatura, gerando PDF sem ela');
+            gerarPDFSemAssinatura();
+        };
+        
+        function gerarPDFSemAssinatura() {
+            // Linha de assinatura manual
+            doc.line(pageWidth / 2 - 40, y, pageWidth / 2 + 40, y);
+            
+            y += 5;
+            doc.setFont(undefined, 'bold');
+            doc.text('ROSEMEIRE BICALHO DE LIMA GRAVINO', pageWidth / 2, y, { align: 'center' });
+            
+            y += 5;
+            doc.setFont(undefined, 'normal');
+            doc.text('MG-10.078.568 / CPF: 045.160.616-78', pageWidth / 2, y, { align: 'center' });
+            
+            y += 5;
+            doc.setFont(undefined, 'bold');
+            doc.text('DIRETORA', pageWidth / 2, y, { align: 'center' });
+            
+            // Salvar PDF
+            const nomeArquivo = `PROPOSTA-${pregao.numero_pregao}${pregao.uasg ? '-' + pregao.uasg : ''}.pdf`;
+            doc.save(nomeArquivo);
+            
+            showToast('PDF gerado (sem assinatura)', 'success');
         }
-        
-        // Linha de assinatura
-        doc.line(pageWidth / 2 - 40, y, pageWidth / 2 + 40, y);
-        
-        y += 5;
-        doc.setFont(undefined, 'bold');
-        doc.text('ROSEMEIRE BICALHO DE LIMA GRAVINO', pageWidth / 2, y, { align: 'center' });
-        
-        y += 5;
-        doc.setFont(undefined, 'normal');
-        doc.text('RG: 10.078.568 / CPF: 045.160.616-78', pageWidth / 2, y, { align: 'center' });
-        
-        y += 5;
-        doc.setFont(undefined, 'bold');
-        doc.text('DIRETORA', pageWidth / 2, y, { align: 'center' });
-        
-        // Salvar PDF
-        const nomeArquivo = `PROPOSTA-${pregao.numero_pregao}${pregao.uasg ? '-' + pregao.uasg : ''}.pdf`;
-        doc.save(nomeArquivo);
-        
-        showToast('PDF gerado com sucesso!', 'success');
-    } catch (error) {
-        console.error('Erro ao gerar PDF:', error);
-        showToast('Erro ao gerar PDF', 'error');
     }
 }
