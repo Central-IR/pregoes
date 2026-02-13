@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pregões</title>
     <link rel="icon" type="image/png" href="I.R.-COMERCIO-E-MATERIAIS-ELETRICOS-PRETO.png">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="pregoes-styles.css">
     <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 </head>
 <body>
@@ -186,8 +186,8 @@
                 <div class="tab-content active" id="tab-geral">
                     <div class="form-grid">
                         <div class="form-group">
-                            <label>Responsável <span class="required">*</span></label>
-                            <select id="responsavel" required>
+                            <label>Responsável</label>
+                            <select id="responsavel">
                                 <option value="">SELECIONE</option>
                                 <option value="ROBERTO">ROBERTO</option>
                                 <option value="ISAQUE">ISAQUE</option>
@@ -291,11 +291,11 @@
                         </div>
                         <div class="form-group">
                             <label>Prazo de Entrega</label>
-                            <textarea id="prazoEntrega" rows="3" placeholder="PRAZO DE ENTREGA"></textarea>
+                            <input type="text" id="prazoEntrega" placeholder="PRAZO DE ENTREGA">
                         </div>
                         <div class="form-group">
                             <label>Prazo de Pagamento</label>
-                            <textarea id="prazoPagamento" rows="3" placeholder="PRAZO DE PAGAMENTO"></textarea>
+                            <input type="text" id="prazoPagamento" placeholder="PRAZO DE PAGAMENTO">
                         </div>
                     </div>
                 </div>
@@ -330,7 +330,12 @@
                     </div>
                     <div class="form-group" style="margin-top: 1.5rem;">
                         <label>Banco</label>
-                        <input type="text" id="banco" placeholder="BANCO">
+                        <select id="banco">
+                            <option value="">SELECIONE</option>
+                            <option value="BANCO DO BRASIL">BANCO DO BRASIL</option>
+                            <option value="BRADESCO">BRADESCO</option>
+                            <option value="SICOOB">SICOOB</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -395,6 +400,6 @@
             if (splash) splash.style.display = 'none';
         }, 3000);
     </script>
-    <script src="script.js"></script>
+    <script src="pregoes-script.js"></script>
 </body>
 </html>
