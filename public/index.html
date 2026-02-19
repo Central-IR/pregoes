@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pregões</title>
+    <title>Pedido de Faturamento</title>
     <link rel="icon" type="image/png" href="I.R.-COMERCIO-E-MATERIAIS-ELETRICOS-PRETO.png">
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -17,7 +17,7 @@
         <div class="container">
             <div class="header">
                 <div class="header-left">
-                    <h1>Pregões</h1>
+                    <h1>Pedido de Faturamento</h1>
                     <div id="connectionStatus" class="connection-status offline">
                         <span class="status-dot"></span>
                     </div>
@@ -27,7 +27,7 @@
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
-                    Novo Pregão
+                    Novo Pedido
                 </button>
             </div>
 
@@ -96,6 +96,14 @@
                     
                     <!-- Filters integrated in search bar -->
                     <div class="search-bar-filters">
+                        <div class="filter-dropdown-inline">
+                            <select id="filterVendedor" onchange="filterPedidos()">
+                                <option value="">Responsável</option>
+                            </select>
+                            <svg class="dropdown-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </div>
                         <div class="filter-dropdown-inline">
                             <select id="filterStatus" onchange="filterPedidos()">
                                 <option value="">Todos os Status</option>
@@ -190,7 +198,7 @@
     <div class="modal-overlay" id="formModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title" id="formTitle">Novo Pregão</h3>
+                <h3 class="modal-title" id="formTitle">Novo Pedido de Faturamento</h3>
                 <button class="close-modal" onclick="closeFormModal()">✕</button>
             </div>
             
@@ -383,7 +391,7 @@
         <div class="modal-overlay" id="infoModal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3 class="modal-title">Pregão Nº <span id="modalCodigo"></span></h3>
+                    <h3 class="modal-title">Pedido Nº <span id="modalCodigo"></span></h3>
                     <button class="close-modal" onclick="closeInfoModal()">✕</button>
                 </div>
                 
