@@ -725,7 +725,7 @@ function updateTable() {
 
         const rowClass = pedido.status === 'emitida' ? 'row-fechada' : pedido.status === 'ocorrido' ? 'row-ocorrido' : '';
         return `
-        <tr class="${rowClass}">`
+        <tr class="${rowClass}">
             ${checkboxCell}
             <td><strong>${pedido.codigo}</strong></td>
             <td>${pedido.razao_social}</td>
