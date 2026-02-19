@@ -1041,11 +1041,6 @@ function criarTelaItens() {
     div.id = 'telaItens';
     div.className = 'container';
     div.innerHTML = `
-function criarTelaItens() {
-    const div = document.createElement('div');
-    div.id = 'telaItens';
-    div.className = 'container';
-    div.innerHTML = `
         <div class="header">
             <div class="header-left">
                 <div>
