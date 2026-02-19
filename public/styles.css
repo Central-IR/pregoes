@@ -59,7 +59,6 @@ body {
     overflow-y: scroll;
 }
 
-/* LOADER */
 .loader {
     width: 48px;
     height: 48px;
@@ -70,14 +69,17 @@ body {
 }
 
 @keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
+    to { transform: rotate(360deg); }
 }
 
-/* ============================================
-   SPLASH SCREEN
-   ============================================ */
+@keyframes spinLoader {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes fadeOut {
+    to { opacity: 0; pointer-events: none; }
+}
+
 .splash-screen {
     position: fixed;
     top: 0;
@@ -93,10 +95,7 @@ body {
 }
 
 @keyframes splashFadeOut {
-    to { 
-        opacity: 0; 
-        visibility: hidden; 
-    }
+    to { opacity: 0; visibility: hidden; }
 }
 
 .app-content {
@@ -116,7 +115,7 @@ body {
 
 .card {
     background: var(--bg-card);
-    padding: 0;
+    padding: 2rem;
     border-radius: 12px;
     margin-bottom: 1.5rem;
     border: 1px solid var(--border-color);
@@ -159,7 +158,6 @@ h2 {
     color: var(--text-primary);
 }
 
-/* STATUS DE CONEXÃO */
 .connection-status {
     display: flex;
     align-items: center;
@@ -198,7 +196,6 @@ h2 {
     100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
 
-/* NEW ORDER BUTTON IN HEADER */
 .btn-new-order-header {
     background: var(--btn-register);
     color: white;
@@ -223,9 +220,10 @@ h2 {
     box-shadow: 0 4px 8px rgba(59, 130, 246, 0.4);
 }
 
-/* ============================================
-   SEARCH BAR WITH INTEGRATED FILTERS
-   ============================================ */
+.form-group-small {
+    max-width: 200px;
+}
+
 .search-bar-wrapper {
     margin-bottom: 0.5rem;
 }
@@ -265,7 +263,6 @@ h2 {
     color: var(--text-secondary);
 }
 
-/* FILTERS INTEGRATED IN SEARCH BAR */
 .search-bar-filters {
     display: flex;
     align-items: center;
@@ -322,7 +319,7 @@ h2 {
     border-radius: 6px;
     border: 1px solid var(--border-color);
     height: 38px;
-    min-width: 160px;
+    min-width: 200px;
 }
 
 .month-nav-arrow {
@@ -349,68 +346,8 @@ h2 {
     font-weight: 600;
     color: var(--text-primary);
     white-space: nowrap;
-}
-
-.search-btn {
-    background: transparent;
-    border: none;
-    color: var(--text-secondary);
-    cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-}
-
-.search-btn:hover {
-    background: var(--input-bg);
-    color: var(--text-primary);
-}
-
-/* VIEW ICONS */
-.view-icon {
-    background: transparent;
-    border: none;
-    color: var(--text-secondary);
-    cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-}
-
-.view-icon:hover {
-    background: var(--input-bg);
-    color: var(--text-primary);
-}
-
-.view-icon.active {
-    background: var(--input-bg);
-    color: var(--primary);
-}
-
-/* CALENDAR BUTTON */
-.calendar-btn {
-    background: transparent;
-    border: none;
-    color: var(--text-secondary);
-    cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    margin-left: 0.25rem;
-}
-
-.calendar-btn:hover {
-    background: var(--input-bg);
-    color: var(--primary);
+    flex: 1;
+    text-align: center;
 }
 
 /* CALENDAR MODAL */
@@ -508,6 +445,25 @@ h2 {
     border-color: var(--primary);
 }
 
+.calendar-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    margin-left: 0.25rem;
+}
+
+.calendar-btn:hover {
+    background: var(--input-bg);
+    color: var(--primary);
+}
+
 .dashboard-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -592,52 +548,6 @@ h2 {
     font-weight: 500;
 }
 
-/* ALERTA VISUAL - ORDENS ABERTAS */
-.stat-card.has-alert {
-    position: relative;
-    animation: pulseAlert 2s ease-in-out infinite;
-    border-color: var(--alert-color) !important;
-}
-
-@keyframes pulseAlert {
-    0%, 100% {
-        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
-    }
-    50% {
-        box-shadow: 0 0 20px 5px rgba(239, 68, 68, 0.2);
-    }
-}
-
-.pulse-badge {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    background: var(--alert-color);
-    color: white;
-    border-radius: 50%;
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
-    font-weight: 700;
-    animation: pulse 2s ease-in-out infinite;
-    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
-}
-
-@keyframes pulse {
-    0%, 100% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.1);
-    }
-}
-
-/* ============================================
-   TABLE
-   ============================================ */
 table {
     width: 100%;
     border-collapse: separate;
@@ -688,7 +598,15 @@ tbody tr.row-fechada:hover {
     background: rgba(34, 197, 94, 0.18) !important;
 }
 
-/* Checkbox Customizado */
+tbody tr.row-ocorrido {
+    background: rgba(107, 114, 128, 0.07) !important;
+    border-left: 3px solid #9CA3AF;
+}
+
+tbody tr.row-ocorrido:hover {
+    background: rgba(107, 114, 128, 0.12) !important;
+}
+
 .checkbox-wrapper {
     display: inline-flex;
     align-items: center;
@@ -733,7 +651,6 @@ tbody tr.row-fechada:hover {
     font-weight: 700;
 }
 
-/* Badge de status */
 .badge {
     padding: 4px 12px;
     border-radius: 6px;
@@ -743,16 +660,34 @@ tbody tr.row-fechada:hover {
     white-space: nowrap;
 }
 
-.badge.aberta {
-    background: rgba(239, 68, 68, 0.1);
-    color: #DC2626;
-    border: 1px solid rgba(239, 68, 68, 0.2);
+.badge.aberta, .badge.status-pendente {
+    background: rgba(245, 158, 11, 0.12);
+    color: #D97706;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    animation: pulsePendente 2.5s ease-in-out infinite;
 }
 
-.badge.fechada {
-    background: rgba(34, 197, 94, 0.1);
+@keyframes pulsePendente {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+    50% { box-shadow: 0 0 0 5px rgba(245, 158, 11, 0); }
+}
+
+.badge.fechada, .badge.status-emitida {
+    background: rgba(34, 197, 94, 0.12);
     color: #16A34A;
-    border: 1px solid rgba(34, 197, 94, 0.2);
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    animation: pulseEmitida 2.5s ease-in-out infinite;
+}
+
+@keyframes pulseEmitida {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+    50% { box-shadow: 0 0 0 5px rgba(34, 197, 94, 0); }
+}
+
+.badge.status-ocorrido {
+    background: rgba(107, 114, 128, 0.12);
+    color: #6B7280;
+    border: 1px solid rgba(107, 114, 128, 0.25);
 }
 
 .form-grid {
@@ -764,6 +699,11 @@ tbody tr.row-fechada:hover {
 
 .form-group {
     margin-bottom: 1rem;
+    position: relative;
+}
+
+.form-group-small {
+    max-width: 200px;
 }
 
 label {
@@ -796,6 +736,24 @@ input:focus, select:focus, textarea:focus {
     border-color: var(--primary);
 }
 
+/* Select preenchido = verde */
+select.filled, select:not([value=""]):valid {
+    border-color: #22C55E;
+    color: #16A34A;
+}
+
+select.has-value {
+    border-color: #22C55E !important;
+    color: #16A34A !important;
+    background-color: rgba(34, 197, 94, 0.04) !important;
+}
+
+input[readonly] {
+    background: var(--table-stripe);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
 button {
     background: var(--primary);
     color: white;
@@ -813,23 +771,9 @@ button {
     transition: all 0.3s ease;
 }
 
-/* EXCEÇÃO: Botão X não deve herdar estilos de button */
-button.close-modal {
-    background: transparent !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    border-radius: 0 !important;
-}
-
 button:hover:not(:disabled) {
     opacity: 0.9;
     transform: translateY(-1px);
-}
-
-/* EXCEÇÃO: Botão X não deve ter efeito hover de outros botões */
-button.close-modal:hover {
-    opacity: 1 !important;
-    transform: none !important;
 }
 
 button:disabled {
@@ -858,14 +802,21 @@ button.success, button.save, button[type="submit"], .action-btn.success {
     background: var(--btn-save);
 }
 
+.btn-save-green {
+    background: #22C55E !important;
+    color: white !important;
+}
+
+.btn-save-green:hover {
+    background: #16A34A !important;
+}
+
 button.secondary {
     background: #6B7280;
 }
 
-/* Botões de cancelar permanecem vermelhos, mas não o botão X */
-button[onclick*="closeFormModal"]:not(.close-modal), 
-button[onclick*="closeInfoModal"]:not(.close-modal) {
-    background: var(--btn-delete);
+button.cancel-close {
+    background: #EF4444;
 }
 
 button.small {
@@ -882,12 +833,24 @@ button.small {
 
 .actions-cell {
     white-space: nowrap;
-    min-width: 300px;
+    min-width: 260px;
 }
 
-/* ============================================
-   FLOATING MESSAGES
-   ============================================ */
+.form-group-small {
+    max-width: 200px;
+}
+
+.stock-warning {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid #EF4444;
+    color: #DC2626;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
 .floating-message {
     position: fixed;
     bottom: 24px;
@@ -933,9 +896,6 @@ button.small {
     }
 }
 
-/* ============================================
-   MODAL
-   ============================================ */
 .modal-overlay {
     display: none;
     position: fixed;
@@ -962,19 +922,13 @@ button.small {
     }
 }
 
-@keyframes fadeOut {
-    to {
-        opacity: 0;
-    }
-}
-
 .modal-content {
     background: var(--bg-card);
     border-radius: 16px;
     padding: 2rem;
-    max-width: 900px;
-    width: 95%;
-    max-height: 90vh;
+    max-width: 1600px;
+    width: 98%;
+    max-height: 95vh;
     overflow-y: auto;
     box-shadow: 0 20px 60px var(--shadow);
     border: 1px solid var(--border-color);
@@ -1004,69 +958,22 @@ button.small {
     margin: 0;
 }
 
-/* BOTÃO X SEM COR DE PREENCHIMENTO */
 .close-modal {
-    background: transparent !important;
-    border: none !important;
+    background: none;
+    border: none;
     font-size: 1.5rem;
     color: var(--text-secondary);
     cursor: pointer;
-    padding: 0 !important;
-    margin: 0 !important;
+    padding: 0;
+    margin: 0;
     width: 32px;
     height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: color 0.2s ease;
-    box-shadow: none !important;
 }
 
 .close-modal:hover {
     color: var(--text-primary);
-    background: transparent !important;
-    transform: none !important;
-    box-shadow: none !important;
 }
 
-.close-modal:active {
-    background: transparent !important;
-}
-
-.close-modal:focus {
-    background: transparent !important;
-    outline: none;
-}
-
-/* MODAL DELETE - IDÊNTICO À TABELA DE PREÇOS */
-.modal-delete {
-    position: relative;
-    padding: 2.5rem 2rem 2rem 2rem;
-    max-width: 500px !important;
-}
-
-.modal-delete .close-modal {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-}
-
-.modal-message-delete {
-    margin: 2rem 0 2.5rem 0;
-    color: var(--text-primary);
-    font-size: 1.25rem;
-    line-height: 1.6;
-    text-align: center;
-    font-weight: 500;
-}
-
-.modal-actions-no-border {
-    border-top: none !important;
-    padding-top: 0 !important;
-    justify-content: center !important;
-}
-
-/* SISTEMA DE ABAS */
 .tabs-container {
     margin-bottom: 1.5rem;
 }
@@ -1146,6 +1053,26 @@ button.small {
     margin-bottom: 1.5rem;
 }
 
+.info-block {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.75rem;
+    align-items: baseline;
+    padding: 0.5rem 0;
+    line-height: 1.8;
+}
+
+.info-block .info-label {
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.info-block .info-value {
+    color: var(--text-secondary);
+    margin-right: 0.5rem;
+}
+
 .info-section h4 {
     color: var(--primary);
     margin-bottom: 0.75rem;
@@ -1159,32 +1086,151 @@ button.small {
     line-height: 1.6;
 }
 
-/* TABELA DE ITENS */
+.info-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0.4rem 0;
+}
+
+.info-label {
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.info-value {
+    color: var(--text-primary);
+}
+
 .items-table {
     width: 100%;
     margin: 1rem 0;
+    table-layout: fixed;
+    border-collapse: collapse;
 }
 
 .items-table th, .items-table td {
-    padding: 10px;
+    padding: 12px 8px;
     border: 1px solid var(--border-color);
+    text-align: left;
+    vertical-align: middle;
+    overflow: hidden;
 }
 
-.items-table input, .items-table textarea {
-    padding: 8px;
+.items-table th {
+    background: var(--th-bg);
+    color: var(--th-color);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.items-table th:nth-child(1), .items-table td:nth-child(1) { 
+    width: 60px; 
+    text-align: center;
+}
+
+.items-table th:nth-child(2), .items-table td:nth-child(2) { 
+    width: 130px; 
+}
+
+.items-table th:nth-child(3), .items-table td:nth-child(3) { 
+    width: 280px; 
+    min-width: 280px;
+}
+
+.items-table th:nth-child(4), .items-table td:nth-child(4) { 
+    width: 90px; 
+}
+
+.items-table th:nth-child(5), .items-table td:nth-child(5) { 
+    width: 110px; 
+}
+
+.items-table th:nth-child(6), .items-table td:nth-child(6) { 
+    width: 140px; 
+}
+
+.items-table th:nth-child(7), .items-table td:nth-child(7) { 
+    width: 150px; 
+}
+
+.items-table th:nth-child(8), .items-table td:nth-child(8) { 
+    width: 130px; 
+}
+
+.items-table th:nth-child(9), .items-table td:nth-child(9) { 
+    width: 70px; 
+    text-align: center;
+}
+
+.items-table input, .items-table textarea, .items-table select {
+    padding: 10px;
+    font-size: 0.9rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.items-table input[readonly] {
+    background: var(--table-stripe);
+    cursor: not-allowed;
 }
 
 .items-table textarea {
-    min-height: 60px;
+    min-height: 70px;
+    resize: vertical;
+    word-wrap: break-word;
+}
+
+.items-table-container {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
+    margin: 1rem 0;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-card);
+}
+
+.items-table-container .items-table {
+    margin: 0;
+    min-width: 1300px;
 }
 
 .hidden {
     display: none !important;
 }
 
-/* ============================================
-   RESPONSIVE
-   ============================================ */
+.autocomplete-suggestions {
+    position: absolute;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    width: auto;
+    min-width: 100%;
+    max-width: 600px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    display: none;
+}
+
+.autocomplete-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    white-space: nowrap;
+}
+
+.autocomplete-item:hover {
+    background: var(--table-hover);
+}
+
 @media (max-width: 768px) {
     .container {
         padding: 0 1rem 5rem 1rem;
@@ -1201,7 +1247,7 @@ button.small {
         justify-content: space-between;
     }
     
-    .btn-new-order-header {
+    .btn-new-order-header, .btn-cancel-form {
         width: 100%;
         justify-content: center;
     }
@@ -1230,11 +1276,6 @@ button.small {
         width: 100%;
     }
     
-    .month-navigation-inline {
-        width: 100%;
-        justify-content: space-between;
-    }
-    
     .dashboard-grid {
         grid-template-columns: repeat(2, 1fr);
     }
@@ -1254,6 +1295,10 @@ button.small {
     
     .form-grid {
         grid-template-columns: 1fr;
+    }
+    
+    .form-group-small {
+        max-width: 100%;
     }
     
     .modal-content {
@@ -1283,326 +1328,73 @@ button.small {
     }
 }
 
-/* ============================================
-   ESTILOS ESPECÍFICOS DE PREGÕES
-   ============================================ */
-
-/* Row Won (ganho) - pregão ganho com fundo verde*/
-tr.row-won {
-    background: rgba(34, 197, 94, 0.08) !important;
-}
-
-tr.row-won:hover {
-    background: rgba(34, 197, 94, 0.12) !important;
-}
-
-/* Botão Itens - VERDE */
-.btn-items {
-    background: #22C55E !important;
-    color: white !important;
-}
-
-/* Botão Documentos - BRANCO com borda preta */
-.btn-docs {
-    background: white !important;
-    color: #1A1A1A !important;
-    border: 1px solid #1A1A1A !important;
-}
-
-/* Tela de Itens */
-.pregao-info {
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    margin-top: 0.25rem;
-    font-weight: 500;
-}
-
-.btn-back {
-    background: #6B7280;
-    color: white;
-    border: none;
-    padding: 0.65rem 1.5rem;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    transition: all 0.3s ease;
-}
-
-.btn-back:hover {
-    background: #4B5563;
-    transform: translateY(-1px);
-}
-
-.btn-sync {
-    background: transparent;
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: 0.65rem;
-    border-radius: 8px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-}
-
-.btn-sync:hover {
-    background: var(--input-bg);
-    border-color: var(--primary);
-}
-
-.filter-actions-bar {
-    background: var(--bg-card);
-    padding: 1rem;
-    border-radius: 12px;
-    margin-bottom: 1rem;
-    border: 1px solid var(--border-color);
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.filter-marca {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.filter-marca label {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin: 0;
-    white-space: nowrap;
-}
-
-.filter-marca select {
-    flex: 1;
-    max-width: 300px;
-}
-
-.actions-buttons {
-    display: flex;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-}
-
-.btn-pdf {
-    background: #EF4444;
-    color: white;
-    border: none;
-    padding: 0.65rem 1.25rem;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-
-.btn-pdf:hover {
-    background: #DC2626;
-    transform: translateY(-1px);
-}
-
-.btn-add-item {
-    background: #3B82F6;
-    color: white;
-    border: none;
-    padding: 0.65rem 1.25rem;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-
-.btn-add-item:hover {
-    background: #2563EB;
-    transform: translateY(-1px);
-}
-
-.btn-add-interval {
-    background: #6B7280;
-    color: white;
-    border: none;
-    padding: 0.65rem 1.25rem;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-
-.btn-add-interval:hover {
-    background: #4B5563;
-    transform: translateY(-1px);
-}
-
-.btn-delete-selected {
-    background: #EF4444;
-    color: white;
-    border: none;
-    padding: 0.65rem 1.25rem;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-
-.btn-delete-selected:hover {
-    background: #DC2626;
-    transform: translateY(-1px);
-}
-
-.descricao-cell {
-    max-width: 300px;
-    word-wrap: break-word;
-    white-space: normal;
-}
-
-tr.item-ganho {
-    background: rgba(34, 197, 94, 0.08) !important;
-}
-
-tr.item-ganho:hover {
-    background: rgba(34, 197, 94, 0.12) !important;
-}
-
-/* Botões acima da tabela de itens */
-.table-actions {
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    gap: 0.75rem;
-    background: var(--bg-card);
-}
-
-.btn-register {
-    background: var(--btn-register);
-    color: white;
-    border: none;
-    padding: 0.65rem 1.25rem;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-
-.btn-register:hover {
-    opacity: 0.9;
-    transform: translateY(-1px);
-}
-
-.btn-secondary {
-    background: #6B7280;
-    color: white;
-    border: none;
-    padding: 0.65rem 1.25rem;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-
-.btn-secondary:hover {
-    opacity: 0.9;
-    transform: translateY(-1px);
-}
-
-.btn-danger {
-    background: var(--btn-delete);
-    color: white;
-    border: none;
-    padding: 0.65rem 1.25rem;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-
-.btn-danger:hover {
-    opacity: 0.9;
-    transform: translateY(-1px);
-}
-
-.btn-success {
-    background: var(--btn-save);
-    color: white;
-    border: none;
-    padding: 0.65rem 1.25rem;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-
-.btn-success:hover {
-    opacity: 0.9;
-    transform: translateY(-1px);
-}
-
-/* ESTILOS DA ABA CONTATO - Botão + LARANJA */
-.btn-add {
-    background: var(--primary) !important;
-    color: white !important;
-    border: none !important;
-    padding: 0.5rem 1rem !important;
-    border-radius: 8px !important;
-    cursor: pointer !important;
-    font-size: 1.2rem !important;
-    font-weight: bold !important;
-    min-width: 40px !important;
-}
-
-.btn-add:hover {
-    opacity: 0.9;
-}
-
-.input-with-button {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-}
-
-.telefone-input,
-.email-input {
-    flex: 1;
-}
-
-/* ESTILOS DA ABA DETALHES - Itens clicáveis */
-.detalhes-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1rem;
-}
-
-.detalhe-item {
-    padding: 1rem;
-    border: 2px solid var(--border-color);
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    background: var(--bg-card);
+/* ── Modal de NF / Delete style ────────────────────────────────────────── */
+.modal-delete {
     text-align: center;
-    font-weight: 500;
+    padding: 2rem 2rem 1.5rem;
+    position: relative;
 }
 
-.detalhe-item:hover {
-    border-color: var(--primary);
-    background: rgba(204, 112, 0, 0.05);
+.modal-delete .close-modal {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
 }
 
-.detalhe-item.selected {
-    border-color: var(--primary);
-    background: rgba(204, 112, 0, 0.1);
-    color: var(--primary);
+.modal-message-delete {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.5;
+}
+
+.modal-actions-no-border {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none !important;
+}
+
+
+/* Botões de adicionar contato/telefone/email */
+.btn-add-contact {
+    background: #6B7280 !important;
+    color: white !important;
+    padding: 6px 14px !important;
+    font-size: 0.82rem !important;
+    border-radius: 6px !important;
+    margin: 0 4px 0 0 !important;
+}
+
+.btn-add-contact:hover {
+    background: #4B5563 !important;
+}
+
+/* Botão excluir campo de contato: X vermelho sutil */
+.btn-remove-contact {
+    background: transparent !important;
+    color: #EF4444 !important;
+    border: none !important;
+    padding: 2px 6px !important;
+    font-size: 0.9rem !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    border-radius: 4px !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+    transition: background 0.2s ease !important;
+}
+
+.btn-remove-contact:hover {
+    background: rgba(239, 68, 68, 0.08) !important;
+}
+
+/* Select com valor = verde na aba detalhes */
+#transportadora.has-value,
+#vendedor.has-value {
+    border-color: #22C55E !important;
+    color: #16A34A !important;
+    background-color: rgba(34, 197, 94, 0.04) !important;
 }
