@@ -97,12 +97,14 @@ async function verificarAutenticacao(req, res, next) {
 function getDadosBancarios(banco) {
     const dadosBancarios = {
         'BANCO DO BRASIL': 'BANCO DO BRASIL - AG: 3167-4 / CONTA CORRENTE: 130115-2',
-        'BRADESCO': 'BRADESCO - AG: XXXX-X / CONTA CORRENTE: XXXXXX-X',
-        'SICOOB': 'SICOOB - AG: XXXX-X / CONTA CORRENTE: XXXXXX-X'
+        'BRADESCO': 'BRADESCO - AG: 0000-0 / CONTA CORRENTE: 000000-0',
+        'SICOOB': 'SICOOB - AG: 0000 / CONTA CORRENTE: 00000-0'
     };
     
     return dadosBancarios[banco] || null;
 }
+
+// NOTA: Complete os dados do BRADESCO e SICOOB acima antes de usar em produção
 
 // ============================================
 // ROTAS DA API - ORDEM DE COMPRA
@@ -566,6 +568,190 @@ app.get('/api/pregoes/:id/dados-bancarios', async (req, res) => {
         res.status(500).json({ 
             success: false, 
             error: 'Erro ao buscar dados bancários',
+            message: error.message
+        });
+    }
+});
+
+// ============================================
+// ROTAS DA API - ITENS DOS PREGÕES
+// ============================================
+
+// Listar itens de um pregão
+app.get('/api/pregoes/:pregao_id/itens', async (req, res) => {
+    try {
+        console.log(`📋 Listando itens do pregão ID: ${req.params.pregao_id}`);
+        const { data, error } = await supabase
+            .from('pregoes_itens')
+            .select('*')
+            .eq('pregao_id', req.params.pregao_id)
+            .order('numero', { ascending: true });
+
+        if (error) throw error;
+        
+        console.log(`✅ ${data?.length || 0} itens encontrados`);
+        res.json(data || []);
+    } catch (error) {
+        console.error('❌ Erro ao listar itens:', error.message);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Erro ao listar itens',
+            message: error.message
+        });
+    }
+});
+
+// Criar item
+app.post('/api/pregoes/:pregao_id/itens', async (req, res) => {
+    try {
+        console.log(`➕ Criando item para pregão ID: ${req.params.pregao_id}`);
+        
+        const { 
+            numero, descricao, qtd, unidade, marca, modelo,
+            estimado_unt, estimado_total, custo_unt, custo_total,
+            porcentagem, venda_unt, venda_total, ganho
+        } = req.body;
+
+        const novoItem = {
+            pregao_id: req.params.pregao_id,
+            numero,
+            descricao,
+            qtd,
+            unidade,
+            marca: marca || null,
+            modelo: modelo || null,
+            estimado_unt: estimado_unt || 0,
+            estimado_total: estimado_total || 0,
+            custo_unt: custo_unt || 0,
+            custo_total: custo_total || 0,
+            porcentagem: porcentagem || 10,
+            venda_unt: venda_unt || 0,
+            venda_total: venda_total || 0,
+            ganho: ganho || false
+        };
+
+        const { data, error } = await supabase
+            .from('pregoes_itens')
+            .insert([novoItem])
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        console.log('✅ Item criado com sucesso! ID:', data.id);
+        res.status(201).json(data);
+    } catch (error) {
+        console.error('❌ Erro ao criar item:', error.message);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Erro ao criar item',
+            message: error.message
+        });
+    }
+});
+
+// Atualizar item
+app.put('/api/pregoes/:pregao_id/itens/:id', async (req, res) => {
+    try {
+        console.log(`✏️ Atualizando item ID: ${req.params.id}`);
+        
+        const { 
+            numero, descricao, qtd, unidade, marca, modelo,
+            estimado_unt, estimado_total, custo_unt, custo_total,
+            porcentagem, venda_unt, venda_total, ganho
+        } = req.body;
+
+        const itemAtualizado = {
+            numero,
+            descricao,
+            qtd,
+            unidade,
+            marca: marca || null,
+            modelo: modelo || null,
+            estimado_unt: estimado_unt || 0,
+            estimado_total: estimado_total || 0,
+            custo_unt: custo_unt || 0,
+            custo_total: custo_total || 0,
+            porcentagem: porcentagem || 10,
+            venda_unt: venda_unt || 0,
+            venda_total: venda_total || 0,
+            ganho: ganho !== undefined ? ganho : false,
+            updated_at: new Date().toISOString()
+        };
+
+        const { data, error } = await supabase
+            .from('pregoes_itens')
+            .update(itemAtualizado)
+            .eq('id', req.params.id)
+            .select()
+            .single();
+
+        if (error) {
+            if (error.code === 'PGRST116') {
+                return res.status(404).json({ success: false, error: 'Item não encontrado' });
+            }
+            throw error;
+        }
+
+        console.log('✅ Item atualizado com sucesso!');
+        res.json(data);
+    } catch (error) {
+        console.error('❌ Erro ao atualizar item:', error.message);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Erro ao atualizar item',
+            message: error.message
+        });
+    }
+});
+
+// Deletar item
+app.delete('/api/pregoes/:pregao_id/itens/:id', async (req, res) => {
+    try {
+        console.log(`🗑️ Deletando item ID: ${req.params.id}`);
+        const { error } = await supabase
+            .from('pregoes_itens')
+            .delete()
+            .eq('id', req.params.id);
+
+        if (error) throw error;
+
+        console.log('✅ Item deletado com sucesso!');
+        res.json({ success: true, message: 'Item removido com sucesso' });
+    } catch (error) {
+        console.error('❌ Erro ao deletar item:', error.message);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Erro ao deletar item',
+            message: error.message
+        });
+    }
+});
+
+// Deletar múltiplos itens
+app.post('/api/pregoes/:pregao_id/itens/delete-multiple', async (req, res) => {
+    try {
+        console.log(`🗑️ Deletando múltiplos itens do pregão ID: ${req.params.pregao_id}`);
+        const { ids } = req.body;
+
+        if (!ids || !Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ success: false, error: 'IDs inválidos' });
+        }
+
+        const { error } = await supabase
+            .from('pregoes_itens')
+            .delete()
+            .in('id', ids);
+
+        if (error) throw error;
+
+        console.log(`✅ ${ids.length} itens deletados com sucesso!`);
+        res.json({ success: true, message: `${ids.length} itens removidos com sucesso` });
+    } catch (error) {
+        console.error('❌ Erro ao deletar itens:', error.message);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Erro ao deletar itens',
             message: error.message
         });
     }
