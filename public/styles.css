@@ -483,6 +483,8 @@ h2 {
     transition: all 0.2s ease;
 }
 
+.stat-card-warning .stat-value { color: #EF4444; }
+
 .stat-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
@@ -509,8 +511,8 @@ h2 {
 }
 
 .stat-icon-warning {
-    background: rgba(245, 158, 11, 0.1);
-    color: #F59E0B;
+    background: rgba(239, 68, 68, 0.1);
+    color: #EF4444;
 }
 
 .stat-icon-info {
@@ -535,7 +537,7 @@ h2 {
 }
 
 .stat-value-warning {
-    color: #F59E0B;
+    color: #EF4444;
 }
 
 .stat-value-info {
