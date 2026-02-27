@@ -390,7 +390,6 @@ function displayPregoes(pregoesToDisplay) {
                     <button class="action-btn view" onclick="viewPregao('${pregao.id}')" title="Visualizar">Ver</button>
                     <button class="action-btn edit" onclick="editPregao('${pregao.id}')" title="Editar">Editar</button>
                     <button class="action-btn btn-items" onclick="openItems('${pregao.id}')" title="Itens">Itens</button>
-                    <button class="action-btn btn-docs" onclick="openDocs('${pregao.id}')" title="Documentos">Documentos</button>
                     <button class="action-btn delete" onclick="openDeleteModal('${pregao.id}')" title="Excluir">Excluir</button>
                 </td>
             </tr>
@@ -497,6 +496,8 @@ function resetForm() {
     document.getElementById('prazoEntrega').value = '';
     document.getElementById('prazoPagamento').value = '';
     document.getElementById('banco').value = '';
+    const dpEl = document.getElementById('disputaPor');
+    if (dpEl) dpEl.value = 'ITEM';
     
     // Reset telefones
     document.getElementById('telefonesContainer').innerHTML = `
@@ -659,6 +660,7 @@ async function salvarPregao() {
         prazo_pagamento: toUpperCase(document.getElementById('prazoPagamento').value) || null,
         detalhes: detalhes,
         banco: document.getElementById('banco').value || null,
+        disputa_por: (document.getElementById('disputaPor')?.value || 'ITEM'),
         status: 'ABERTO',
         ganho: false
     };
@@ -745,6 +747,8 @@ async function editPregao(id) {
     document.getElementById('prazoEntrega').value = pregao.prazo_entrega || '';
     document.getElementById('prazoPagamento').value = pregao.prazo_pagamento || '';
     document.getElementById('banco').value = pregao.banco || '';
+    const dpEl2 = document.getElementById('disputaPor');
+    if (dpEl2) dpEl2.value = pregao.disputa_por || 'ITEM';
     
     // Carregar telefones
     const telefonesContainer = document.getElementById('telefonesContainer');
@@ -819,6 +823,7 @@ function viewPregao(id) {
             <p><strong>Responsável:</strong> ${pregao.responsavel}</p>
             <p><strong>Data:</strong> ${pregao.data ? new Date(pregao.data + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</p>
             <p><strong>Hora:</strong> ${pregao.hora || '-'}</p>
+            <p><strong>Disputa por:</strong> ${pregao.disputa_por || 'ITEM'}</p>
             <p><strong>Status:</strong> <span class="status-badge ${pregao.status === 'GANHO' ? 'success' : pregao.status === 'ABERTO' ? 'warning' : pregao.status === 'OCORRIDO' ? 'danger' : 'default'}">${pregao.status}</span></p>
         </div>
     `;
@@ -844,11 +849,11 @@ function viewPregao(id) {
     
     document.getElementById('info-tab-contato').innerHTML = `
         <div class="info-section">
-            <h4>Telefones</h4>
+            <h4 style="color: #111; font-weight: 700;">Telefones</h4>
             ${telefonesHtml}
         </div>
         <div class="info-section">
-            <h4>E-mails</h4>
+            <h4 style="color: #111; font-weight: 700;">E-mails</h4>
             ${emailsHtml}
         </div>
     `;
@@ -869,7 +874,7 @@ function viewPregao(id) {
     
     document.getElementById('info-tab-detalhes').innerHTML = `
         <div class="info-section">
-            <h4>Detalhes Selecionados</h4>
+            <h4 style="color: #111; font-weight: 700;">Detalhes Selecionados</h4>
             ${detalhesHtml}
         </div>
         <div class="info-section">
@@ -957,6 +962,17 @@ async function confirmarExclusao() {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
+        // Primeiro excluir os itens do pregão
+        try {
+            await fetch(`${API_URL}/pregoes/${deleteId}/itens/delete-all`, {
+                method: 'DELETE',
+                headers: headers,
+                mode: 'cors'
+            });
+        } catch(e) {
+            // Se não houver rota delete-all, continua mesmo assim (ON DELETE CASCADE no DB)
+        }
+
         const response = await fetch(`${API_URL}/pregoes/${deleteId}`, {
             method: 'DELETE',
             headers: headers,
@@ -991,8 +1007,14 @@ async function confirmarExclusao() {
 // Abrir tela de itens
 function openItems(id) {
     currentPregaoId = id;
+    const pregao = pregoes.find(p => p.id === id);
+    const disputa = pregao?.disputa_por || 'ITEM';
     carregarItens(id);
-    mostrarTelaItens();
+    if (disputa === 'GRUPO') {
+        mostrarTelaGrupos();
+    } else {
+        mostrarTelaItens();
+    }
 }
 
 function openDocs(id) {
@@ -1038,6 +1060,511 @@ function voltarPregoes() {
     document.querySelector('.container').style.display = 'block';
     currentPregaoId = null;
     itens = [];
+}
+
+// ============================================
+// GESTÃO DE GRUPOS DO PREGÃO (Disputa por Grupo)
+// ============================================
+
+// ============================================================
+// ESTADO DOS GRUPOS
+// ============================================================
+let grupos = [];  // [{tipo, numero, itens:[]}]
+let editandoGrupoIdx = null;
+let editandoGrupoItemIdx = null;
+
+// ============================================================
+// TELA DE GRUPOS
+// ============================================================
+function mostrarTelaGrupos() {
+    document.querySelector('.container').style.display = 'none';
+    let telaGrupos = document.getElementById('telaGrupos');
+    if (!telaGrupos) {
+        telaGrupos = criarTelaGrupos();
+        document.body.querySelector('.app-content').appendChild(telaGrupos);
+    }
+    telaGrupos.style.display = 'block';
+    const pregao = pregoes.find(p => p.id === currentPregaoId);
+    if (pregao) {
+        const el = document.getElementById('tituloGrupos');
+        if (el) el.textContent = `Pregão ${pregao.numero_pregao}${pregao.uasg ? ' — UASG ' + pregao.uasg : ''}`;
+    }
+    carregarGrupos();
+}
+
+function voltarPregoesDeGrupos() {
+    const tela = document.getElementById('telaGrupos');
+    if (tela) tela.style.display = 'none';
+    document.querySelector('.container').style.display = 'block';
+    currentPregaoId = null;
+    itens = [];
+    grupos = [];
+}
+
+function criarTelaGrupos() {
+    const div = document.createElement('div');
+    div.id = 'telaGrupos';
+    div.className = 'container';
+    div.innerHTML = `
+        <div class="header">
+            <div class="header-left">
+                <div>
+                    <h1>Grupos do Pregão</h1>
+                    <p id="tituloGrupos" style="color:var(--text-secondary);font-size:0.8rem;font-weight:400;margin-top:2px;"></p>
+                </div>
+            </div>
+            <div style="display:flex;gap:0.75rem;">
+                <button onclick="abrirModalNovoGrupo()" style="background:#22C55E;color:white;border:none;padding:0.65rem 1.25rem;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:600;">+ Grupo</button>
+                <button onclick="abrirModalExcluirGrupo()" style="background:#EF4444;color:white;border:none;padding:0.65rem 1.25rem;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:600;">Excluir</button>
+            </div>
+        </div>
+
+        <div class="search-bar-wrapper">
+            <div class="search-bar">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input type="text" id="searchGrupos" placeholder="Pesquisar grupos" oninput="renderGrupos()">
+                <div class="search-bar-filters">
+                    <div class="filter-dropdown-inline">
+                        <select id="filterGrupoGrupos" onchange="onChangeFilterGrupo()">
+                            <option value="">Grupo</option>
+                        </select>
+                        <svg class="dropdown-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </div>
+                    <div class="filter-dropdown-inline">
+                        <select id="filterMarcaGrupos" onchange="renderGrupos()">
+                            <option value="">Marca</option>
+                        </select>
+                        <svg class="dropdown-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </div>
+                </div>
+                <button onclick="perguntarAssinaturaPDFGrupos()" style="background:transparent;border:none;color:var(--text-secondary);cursor:pointer;padding:0.5rem;display:flex;align-items:center;" title="Gerar Proposta PDF">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                </button>
+                <button onclick="voltarPregoesDeGrupos()" style="background:transparent;border:none;color:var(--text-secondary);cursor:pointer;padding:0.5rem;display:flex;align-items:center;" title="Voltar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="card table-card">
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead><tr>
+                        <th style="width:40px;text-align:center;"><span style="font-size:1.1rem;">✓</span></th>
+                        <th style="width:90px;">GRUPO/LOTE</th>
+                        <th style="width:60px;">ITEM</th>
+                        <th style="min-width:250px;">DESCRIÇÃO</th>
+                        <th style="width:60px;">QTD</th>
+                        <th style="width:55px;">UN</th>
+                        <th style="width:100px;">MARCA</th>
+                        <th style="width:100px;">MODELO</th>
+                        <th style="width:110px;">VENDA UNT</th>
+                        <th style="width:110px;">VENDA TOTAL</th>
+                    </tr></thead>
+                    <tbody id="gruposContainer">
+                        <tr><td colspan="10" style="text-align:center;padding:3rem;color:var(--text-secondary);">Nenhum grupo cadastrado</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Modal Novo Grupo -->
+        <div class="modal-overlay" id="modalNovoGrupo">
+            <div class="modal-content" style="max-width:500px;">
+                <div class="modal-header">
+                    <h3 class="modal-title">Novo Grupo / Lote</h3>
+                    <button class="close-modal" onclick="fecharModalNovoGrupo()">✕</button>
+                </div>
+                <div style="padding:0.5rem 0 0.25rem;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-size:0.85rem;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:0.4rem;">Tipo</label>
+                            <select id="novoGrupoTipo" style="width:100%;padding:0.65rem;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:0.9rem;">
+                                <option value="GRUPO">Grupo</option>
+                                <option value="LOTE">Lote</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-size:0.85rem;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:0.4rem;">Número</label>
+                            <input type="number" id="novoGrupoNumero" min="1" style="width:100%;padding:0.65rem;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:0.9rem;box-sizing:border-box;">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0.5rem;">
+                        <label style="font-size:0.85rem;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:0.4rem;">Itens do grupo (ex: 1-5, 10)</label>
+                        <input type="text" id="novoGrupoItens" placeholder="Ex: 1-5, 10, 15-20" style="width:100%;padding:0.65rem;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:0.9rem;box-sizing:border-box;">
+                        <p style="color:var(--text-secondary);font-size:0.8rem;margin-top:0.35rem;">Os itens serão criados na ordem indicada e poderão ser preenchidos no modal de edição.</p>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="danger" onclick="fecharModalNovoGrupo()">Cancelar</button>
+                    <button class="success" onclick="confirmarNovoGrupo()">Criar Grupo</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Excluir Grupo -->
+        <div class="modal-overlay" id="modalExcluirGrupo">
+            <div class="modal-content modal-delete" style="min-width:380px;">
+                <button class="close-modal" onclick="fecharModalExcluirGrupo()">✕</button>
+                <div class="modal-message-delete" style="font-size:1rem;padding:1rem 0 0.75rem;">EXCLUIR GRUPO / LOTE</div>
+                <div class="form-group" style="margin-bottom:1rem;text-align:left;">
+                    <label style="font-size:0.85rem;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:0.4rem;">Selecione o grupo a excluir</label>
+                    <select id="excluirGrupoSelect" style="width:100%;padding:0.65rem;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:0.9rem;">
+                        <option value="">Selecione...</option>
+                    </select>
+                </div>
+                <div class="modal-actions modal-actions-no-border">
+                    <button class="secondary" onclick="fecharModalExcluirGrupo()">Cancelar</button>
+                    <button class="danger" onclick="confirmarExcluirGrupo()">Excluir</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Assinatura PDF Grupos -->
+        <div class="modal-overlay" id="modalAssinaturaGrupos">
+            <div class="modal-content modal-delete">
+                <button class="close-modal" onclick="document.getElementById('modalAssinaturaGrupos').classList.remove('show')">✕</button>
+                <div class="modal-message-delete">Deseja gerar a proposta com assinatura padrão?</div>
+                <div class="modal-actions modal-actions-no-border">
+                    <button class="danger" onclick="gerarPDFGruposComAssinatura(false)">Não</button>
+                    <button class="success" onclick="gerarPDFGruposComAssinatura(true)">Sim</button>
+                </div>
+            </div>
+        </div>
+    `;
+    return div;
+}
+
+// ============================================================
+// CRUD GRUPOS
+// ============================================================
+async function carregarGrupos() {
+    await carregarItens(currentPregaoId);
+    reconstruirGruposDeItens();
+    atualizarSelectsGrupos();
+    renderGrupos();
+}
+
+function reconstruirGruposDeItens() {
+    const mapa = new Map();
+    itens.forEach(item => {
+        if (!item.grupo_tipo || item.grupo_numero == null) return;
+        const key = item.grupo_tipo + '-' + item.grupo_numero;
+        if (!mapa.has(key)) mapa.set(key, { tipo: item.grupo_tipo, numero: parseInt(item.grupo_numero), itens: [] });
+        mapa.get(key).itens.push(item);
+    });
+    grupos = Array.from(mapa.values()).sort((a, b) => a.numero - b.numero);
+    grupos.forEach(g => g.itens.sort((a, b) => (a.numero || 0) - (b.numero || 0)));
+}
+
+function atualizarSelectsGrupos() {
+    const gSel = document.getElementById('filterGrupoGrupos');
+    if (!gSel) return;
+    const cur = gSel.value;
+    gSel.innerHTML = '<option value="">Grupo</option>' +
+        grupos.map(g => `<option value="${g.tipo}-${g.numero}">${g.tipo} ${g.numero}</option>`).join('');
+    gSel.value = cur;
+    onChangeFilterGrupo();
+}
+
+function onChangeFilterGrupo() {
+    const gKey = document.getElementById('filterGrupoGrupos')?.value || '';
+    const mSel = document.getElementById('filterMarcaGrupos');
+    if (!mSel) return;
+    const marcas = new Set();
+    if (gKey) {
+        const g = grupoByKey(gKey);
+        (g?.itens || []).forEach(i => { if (i.marca) marcas.add(i.marca); });
+    }
+    mSel.innerHTML = '<option value="">Marca</option>' +
+        Array.from(marcas).sort().map(m => `<option value="${m}">${m}</option>`).join('');
+    renderGrupos();
+}
+
+function grupoByKey(key) {
+    const [tipo, num] = key.split('-');
+    return grupos.find(g => g.tipo === tipo && String(g.numero) === num);
+}
+
+function renderGrupos() {
+    const container = document.getElementById('gruposContainer');
+    if (!container) return;
+    const search = (document.getElementById('searchGrupos')?.value || '').toLowerCase();
+    const gKey = document.getElementById('filterGrupoGrupos')?.value || '';
+    const marcaFiltro = gKey ? (document.getElementById('filterMarcaGrupos')?.value || '') : '';
+    const fmtUnt = v => 'R$ ' + (v || 0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:6});
+    const fmtTot = v => 'R$ ' + (v || 0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+    let gruposRender = gKey ? [grupoByKey(gKey)].filter(Boolean) : grupos;
+    if (gruposRender.length === 0) {
+        container.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:3rem;color:var(--text-secondary);">Nenhum grupo cadastrado</td></tr>';
+        return;
+    }
+    let rows = '';
+    gruposRender.forEach(grupo => {
+        let its = grupo.itens;
+        if (marcaFiltro) its = its.filter(i => i.marca === marcaFiltro);
+        if (search) its = its.filter(i =>
+            (i.descricao || '').toLowerCase().includes(search) ||
+            (i.marca || '').toLowerCase().includes(search) ||
+            String(i.numero).includes(search)
+        );
+        const lbl = grupo.tipo + ' ' + grupo.numero;
+        rows += `<tr style="background:var(--bg-secondary);">
+            <td colspan="10" style="font-weight:700;font-size:0.88rem;padding:6px 12px;border-bottom:2px solid var(--border-color);">
+                ${lbl} <span style="margin-left:0.6rem;font-weight:400;font-size:0.8rem;color:var(--text-secondary);">${grupo.itens.length} item(s)</span>
+            </td></tr>`;
+        its.forEach(item => {
+            const vm = (item.venda_unt || 0) > (item.estimado_unt || 0) && (item.estimado_unt || 0) > 0;
+            const rs = vm ? 'background:rgba(239,68,68,0.08);' : '';
+            const cbId = 'grp-' + item.id;
+            const ck = item.ganho ? 'checked' : '';
+            rows += `<tr style="${rs}" ondblclick="editarItemGrupoById('${item.id}')" oncontextmenu="showItemContextMenu(event,'${item.id}')">
+                <td style="text-align:center;padding:8px;">
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" id="${cbId}" ${ck} onchange="toggleItemGanho('${item.id}',this.checked)"
+                               class="styled-checkbox${vm?' cb-venda-alta':''}" onclick="event.stopPropagation()">
+                        <label for="${cbId}" class="checkbox-label-styled${vm?' cb-label-venda-alta':''}"></label>
+                    </div>
+                </td>
+                <td style="text-align:center;font-size:0.8rem;color:var(--text-secondary);">${lbl}</td>
+                <td><strong>${item.numero}</strong></td>
+                <td class="descricao-cell">${item.descricao || '-'}</td>
+                <td>${item.qtd || 1}</td>
+                <td>${item.unidade || 'UN'}</td>
+                <td>${item.marca || '-'}</td>
+                <td>${item.modelo || '-'}</td>
+                <td>${fmtUnt(item.venda_unt)}</td>
+                <td>${fmtTot(item.venda_total)}</td>
+            </tr>`;
+        });
+    });
+    container.innerHTML = rows;
+}
+
+// ============================================================
+// MODAL NOVO GRUPO
+// ============================================================
+function abrirModalNovoGrupo() {
+    const maxN = grupos.reduce((m, g) => Math.max(m, g.numero), 0);
+    document.getElementById('novoGrupoNumero').value = maxN + 1;
+    document.getElementById('novoGrupoItens').value = '';
+    document.getElementById('novoGrupoTipo').value = 'GRUPO';
+    document.getElementById('modalNovoGrupo').classList.add('show');
+}
+
+function fecharModalNovoGrupo() {
+    document.getElementById('modalNovoGrupo').classList.remove('show');
+}
+
+async function confirmarNovoGrupo() {
+    const tipo = document.getElementById('novoGrupoTipo').value;
+    const numero = parseInt(document.getElementById('novoGrupoNumero').value);
+    const itensStr = document.getElementById('novoGrupoItens').value.trim();
+    if (!numero || !itensStr) { showToast('Preencha número e itens do grupo', 'error'); return; }
+    const numeros = parsearIntervalo(itensStr);
+    if (!numeros || numeros.length === 0) return;
+    fecharModalNovoGrupo();
+    const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+    if (sessionToken) headers['X-Session-Token'] = sessionToken;
+    for (const numItem of numeros) {
+        const jaExiste = itens.find(i => i.grupo_tipo === tipo && i.grupo_numero === numero && i.numero === numItem);
+        if (jaExiste) continue;
+        const novo = {
+            pregao_id: currentPregaoId,
+            numero: numItem, descricao: '', qtd: 1, unidade: 'UN',
+            marca: '', modelo: '',
+            estimado_unt: 0, estimado_total: 0, custo_unt: 0, custo_total: 0,
+            porcentagem: 149, venda_unt: 0, venda_total: 0, ganho: false,
+            grupo_tipo: tipo, grupo_numero: numero
+        };
+        try {
+            const r = await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens`, { method:'POST', headers, body:JSON.stringify(novo) });
+            if (r.ok) itens.push(await r.json());
+        } catch(e) { console.error(e); }
+    }
+    // Abrir modal de edição do primeiro item do grupo criado
+    reconstruirGruposDeItens();
+    atualizarSelectsGrupos();
+    renderGrupos();
+    const grupoNovo = grupos.find(g => g.tipo === tipo && g.numero === numero);
+    if (grupoNovo && grupoNovo.itens.length > 0) {
+        showToast(`${tipo} ${numero} criado. Preencha os itens.`, 'success');
+        abrirEdicaoGrupoItem(grupoNovo, 0);
+    }
+}
+
+// Abre o modal de item no contexto do grupo, com navegação Grupo/Lote N - Item N
+function abrirEdicaoGrupoItem(grupo, idxItem) {
+    editandoGrupoIdx = grupos.indexOf(grupo);
+    editandoGrupoItemIdx = idxItem;
+    const item = grupo.itens[idxItem];
+    // Encontrar índice global no array itens
+    editingItemIndex = itens.indexOf(item);
+    mostrarModalItemGrupo(item, grupo, idxItem);
+}
+
+function editarItemGrupoById(itemId) {
+    const item = itens.find(i => i.id === itemId);
+    if (!item) return;
+    const grupo = grupos.find(g => g.itens.includes(item));
+    if (!grupo) { editingItemIndex = itens.indexOf(item); mostrarModalItem(item); return; }
+    const idxItem = grupo.itens.indexOf(item);
+    abrirEdicaoGrupoItem(grupo, idxItem);
+}
+
+function mostrarModalItemGrupo(item, grupo, idxItem) {
+    // Reutiliza o mesmo modal de item mas com título e navegação especial
+    let modal = document.getElementById('modalItem');
+    if (!modal) { modal = criarModalItem(); document.getElementById('telaGrupos').appendChild(modal); }
+    // Preencher campos (mesmo que mostrarModalItem)
+    document.getElementById('itemNumero').value = item.numero || '';
+    document.getElementById('itemDescricao').value = item.descricao || '';
+    document.getElementById('itemQtd').value = item.qtd || 1;
+    document.getElementById('itemUnidade').value = item.unidade || 'UN';
+    document.getElementById('itemMarca').value = item.marca || '';
+    document.getElementById('itemModelo').value = item.modelo || '';
+    document.getElementById('itemEstimadoUnt').value = item.estimado_unt || '';
+    document.getElementById('itemEstimadoTotal').value = item.estimado_total || '';
+    document.getElementById('itemCustoUnt').value = item.custo_unt || '';
+    document.getElementById('itemCustoTotal').value = item.custo_total || '';
+    document.getElementById('itemPorcentagem').value = item.porcentagem ?? 149;
+    document.getElementById('itemVendaUnt').value = item.venda_unt || '';
+    document.getElementById('itemVendaTotal').value = item.venda_total || '';
+    // Título especial para grupo
+    const tituloEl = document.getElementById('modalItemTitle');
+    if (tituloEl) tituloEl.textContent = `${grupo.tipo} ${grupo.numero} – Item ${item.numero}`;
+    // Setas: percorrem itens do grupo primeiro, depois próximo grupo
+    const btnPrev = document.getElementById('btnPrevPagItem');
+    const btnNext = document.getElementById('btnNextPagItem');
+    const temAnterior = idxItem > 0 || editandoGrupoIdx > 0;
+    const temProximo = idxItem < grupo.itens.length - 1 || editandoGrupoIdx < grupos.length - 1;
+    if (btnPrev) btnPrev.style.visibility = temAnterior ? 'visible' : 'hidden';
+    if (btnNext) btnNext.style.visibility = temProximo ? 'visible' : 'hidden';
+    // Substituir handlers de navegação
+    if (btnPrev) btnPrev.onclick = navegarGrupoAnterior;
+    if (btnNext) btnNext.onclick = navegarGrupoProximo;
+    modal.classList.add('show');
+    configurarCalculosAutomaticos();
+    setTimeout(calcularValoresItem, 50);
+}
+
+async function navegarGrupoAnterior() {
+    await salvarItemAtual(false);
+    let gi = editandoGrupoIdx;
+    let ii = editandoGrupoItemIdx - 1;
+    if (ii < 0) { gi--; if (gi < 0) return; ii = grupos[gi].itens.length - 1; }
+    editandoGrupoIdx = gi; editandoGrupoItemIdx = ii;
+    const grupo = grupos[gi];
+    editingItemIndex = itens.indexOf(grupo.itens[ii]);
+    mostrarModalItemGrupo(grupo.itens[ii], grupo, ii);
+}
+
+async function navegarGrupoProximo() {
+    await salvarItemAtual(false);
+    let gi = editandoGrupoIdx;
+    let ii = editandoGrupoItemIdx + 1;
+    if (ii >= grupos[gi].itens.length) { gi++; if (gi >= grupos.length) return; ii = 0; }
+    editandoGrupoIdx = gi; editandoGrupoItemIdx = ii;
+    const grupo = grupos[gi];
+    editingItemIndex = itens.indexOf(grupo.itens[ii]);
+    mostrarModalItemGrupo(grupo.itens[ii], grupo, ii);
+}
+
+// ============================================================
+// MODAL EXCLUIR GRUPO
+// ============================================================
+function abrirModalExcluirGrupo() {
+    const sel = document.getElementById('excluirGrupoSelect');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Selecione...</option>' +
+        grupos.map(g => `<option value="${g.tipo}-${g.numero}">${g.tipo} ${g.numero} (${g.itens.length} item(s))</option>`).join('');
+    document.getElementById('modalExcluirGrupo').classList.add('show');
+}
+
+function fecharModalExcluirGrupo() {
+    document.getElementById('modalExcluirGrupo').classList.remove('show');
+}
+
+async function confirmarExcluirGrupo() {
+    const val = document.getElementById('excluirGrupoSelect').value;
+    if (!val) { showToast('Selecione um grupo', 'error'); return; }
+    const grupo = grupoByKey(val);
+    if (!grupo) return;
+    fecharModalExcluirGrupo();
+    const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+    if (sessionToken) headers['X-Session-Token'] = sessionToken;
+    const ids = grupo.itens.map(i => i.id).filter(id => !String(id).startsWith('temp-'));
+    for (const id of ids) {
+        try {
+            await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens/${id}`, { method:'DELETE', headers });
+        } catch(e) {}
+    }
+    itens = itens.filter(i => !(i.grupo_tipo === grupo.tipo && i.grupo_numero === grupo.numero));
+    reconstruirGruposDeItens();
+    atualizarSelectsGrupos();
+    renderGrupos();
+    showToast(`${grupo.tipo} ${grupo.numero} excluído`, 'success');
+}
+
+// ============================================================
+// PDF POR GRUPOS
+// ============================================================
+function perguntarAssinaturaPDFGrupos() {
+    const temGanho = itens.some(i => i.ganho && i.grupo_tipo);
+    if (!temGanho) { showToast('Marque ao menos um item (ganho) para gerar a proposta', 'error'); return; }
+    document.getElementById('modalAssinaturaGrupos').classList.add('show');
+}
+
+async function gerarPDFGruposComAssinatura(comAssinatura) {
+    document.getElementById('modalAssinaturaGrupos').classList.remove('show');
+    const pregao = pregoes.find(p => p.id === currentPregaoId);
+    if (!pregao) return;
+    let dadosBancarios = null;
+    try {
+        const h = { 'Accept': 'application/json' };
+        if (sessionToken) h['X-Session-Token'] = sessionToken;
+        const r = await fetch(`${API_URL}/pregoes/${pregao.id}/dados-bancarios`, { headers: h });
+        if (r.ok) { const d = await r.json(); dadosBancarios = d.dados_bancarios || null; }
+    } catch(e) {}
+    // Monta estrutura: [{grupo, itens:[]}]
+    const estrutura = grupos.map(g => ({ grupo: g, itens: g.itens.filter(i => i.ganho) })).filter(e => e.itens.length > 0);
+    if (estrutura.length === 0) { showToast('Nenhum item ganho encontrado', 'error'); return; }
+    if (typeof window.jspdf === 'undefined') { showToast('Biblioteca PDF não carregou. Recarregue (F5).', 'error'); return; }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const margin = 20, pageWidth = doc.internal.pageSize.width, pageHeight = doc.internal.pageSize.height;
+    const lineHeight = 5, maxWidth = pageWidth - 2 * margin;
+    let addTextWithWrap;
+    // Passa estrutura de grupos para o gerador
+    const logo = new Image();
+    logo.crossOrigin = 'anonymous';
+    logo.src = 'I.R.-COMERCIO-E-MATERIAIS-ELETRICOS-LTDA-PDF.png';
+    logo.onload = () => iniciarPDFGrupos(true);
+    logo.onerror = () => iniciarPDFGrupos(false);
+    function iniciarPDFGrupos(logoOk) {
+        let y = 3;
+        try {
+            if (logoOk) {
+                const lw = 40, lh = (logo.height / logo.width) * lw;
+                doc.setGState(new doc.GState({ opacity: 0.3 }));
+                doc.addImage(logo, 'PNG', 5, 3, lw, lh);
+                doc.setGState(new doc.GState({ opacity: 1.0 }));
+                const fs = lh * 0.5;
+                doc.setFontSize(fs); doc.setFont(undefined, 'bold'); doc.setTextColor(150,150,150);
+                doc.text('I.R COMÉRCIO E', 5 + lw + 1.2, 3 + fs * 0.85);
+                doc.text('MATERIAIS ELÉTRICOS LTDA', 5 + lw + 1.2, 3 + fs * 0.85 + fs * 0.5);
+                doc.setTextColor(0, 0, 0);
+                y = 3 + lh + 8;
+            } else { y = 25; }
+        } catch(e) { y = 25; }
+        continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pageWidth, pageHeight, lineHeight, maxWidth, addTextWithWrap, comAssinatura, estrutura);
+    }
 }
 
 function criarTelaItens() {
@@ -1552,9 +2079,21 @@ function renderItens(itensToRender = itens) {
     }
     
     container.innerHTML = itensToRender.map((item, index) => {
+        const vendaUnt = item.venda_unt || 0;
+        const compraUnt = item.estimado_unt || 0;
+        const vendaMaior = compraUnt > 0 && vendaUnt > compraUnt;
+        
         const checked = item.ganho ? 'checked' : '';
-        const rowClass = item.ganho ? 'item-ganho row-won' : '';
+        let rowClass = item.ganho ? 'item-ganho row-won' : '';
+        if (vendaMaior) rowClass += ' row-venda-alta';
         const cbId = `item-ganho-${item.id}`;
+        
+        const fmtUnt = (v) => {
+            const n = v || 0;
+            const s = n.toFixed(6).replace(/(\.(\d*?)?)0+$/, '$1').replace(/\.$/, '');
+            return 'R$ ' + (parseFloat(s || 0)).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 6});
+        };
+        const fmtTotal = (v) => 'R$ ' + (v || 0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
         
         return `
             <tr class="${rowClass}" 
@@ -1564,22 +2103,22 @@ function renderItens(itensToRender = itens) {
                     <div class="checkbox-wrapper">
                         <input type="checkbox" id="${cbId}" ${checked}
                                onchange="toggleItemGanho('${item.id}', this.checked)"
-                               class="styled-checkbox" onclick="event.stopPropagation()">
-                        <label for="${cbId}" class="checkbox-label-styled"></label>
+                               class="styled-checkbox ${vendaMaior ? 'cb-venda-alta' : ''}" onclick="event.stopPropagation()">
+                        <label for="${cbId}" class="checkbox-label-styled ${vendaMaior ? 'cb-label-venda-alta' : ''}"></label>
                     </div>
                 </td>
                 <td><strong>${item.numero}</strong></td>
-                <td class="descricao-cell">${item.descricao}</td>
-                <td>${item.qtd}</td>
-                <td>${item.unidade}</td>
+                <td class="descricao-cell">${item.descricao || '-'}</td>
+                <td>${item.qtd || 1}</td>
+                <td>${item.unidade || 'UN'}</td>
                 <td>${item.marca || '-'}</td>
                 <td>${item.modelo || '-'}</td>
-                <td>R$ ${(item.estimado_unt || 0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
-                <td>R$ ${(item.estimado_total || 0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
-                <td>R$ ${(item.custo_unt || 0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
-                <td>R$ ${(item.custo_total || 0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
-                <td>R$ ${(item.venda_unt || 0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
-                <td>R$ ${(item.venda_total || 0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                <td>${fmtUnt(compraUnt)}</td>
+                <td>${fmtTotal(item.estimado_total)}</td>
+                <td>${fmtUnt(item.custo_unt)}</td>
+                <td>${fmtTotal(item.custo_total)}</td>
+                <td>${fmtUnt(vendaUnt)}</td>
+                <td>${fmtTotal(item.venda_total)}</td>
             </tr>
         `;
     }).join('');
@@ -1637,8 +2176,6 @@ function showItemContextMenu(event, itemId) {
 }
 
 async function excluirItemContexto(itemId) {
-    if (!confirm('Deseja realmente excluir este item?')) return;
-    
     try {
         const headers = {
             'Content-Type': 'application/json',
@@ -1981,6 +2518,8 @@ function mostrarModalItem(item) {
     
     modal.classList.add('show');
     configurarCalculosAutomaticos();
+    // Calcular valores imediatamente ao abrir
+    setTimeout(calcularValoresItem, 50);
 }
 
 function atualizarTituloModalItem(item) {
@@ -2041,7 +2580,7 @@ function criarModalItem() {
     modal.id = 'modalItem';
     modal.className = 'modal-overlay';
     modal.innerHTML = `
-        <div class="modal-content large">
+        <div class="modal-content large" style="max-width: 680px; width: 90vw;">
             <div class="modal-header" style="align-items: center;">
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
                     <button id="btnPrevPagItem" onclick="navegarItemAnterior()" 
@@ -2101,34 +2640,52 @@ function criarModalItem() {
                 
                 <!-- Aba Valores -->
                 <div class="tab-content" id="item-tab-valores">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Compra UNT (Estimado)</label>
-                            <input type="number" id="itemEstimadoUnt" step="0.01" min="0">
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 0.75rem; padding: 0.25rem 0;">
+                        <!-- Linha 1: Porcentagem sozinha -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
+                            <div class="form-group" style="margin:0;">
+                                <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">Porcentagem (%)</label>
+                                <input type="number" id="itemPorcentagem" min="0" step="any" value="149" 
+                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box;">
+                            </div>
+                            <div></div>
+                            <div></div>
                         </div>
-                        <div class="form-group">
-                            <label>Compra Total (Estimado)</label>
-                            <input type="number" id="itemEstimadoTotal" step="0.01" min="0" readonly style="background: var(--bg-secondary); opacity: 0.7;">
+                        <!-- Linha 2: Compra UNT | Custo UNT | Venda UNT -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
+                            <div class="form-group" style="margin:0;">
+                                <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">Compra UNT</label>
+                                <input type="number" id="itemEstimadoUnt" step="any" min="0"
+                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box;">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">Custo UNT</label>
+                                <input type="number" id="itemCustoUnt" step="any" min="0"
+                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box;">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">Venda UNT</label>
+                                <input type="number" id="itemVendaUnt" step="any" min="0" readonly
+                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box; opacity:0.75;">
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>Custo UNT</label>
-                            <input type="number" id="itemCustoUnt" step="0.01" min="0">
-                        </div>
-                        <div class="form-group">
-                            <label>Custo Total</label>
-                            <input type="number" id="itemCustoTotal" step="0.01" min="0" readonly style="background: var(--bg-secondary); opacity: 0.7;">
-                        </div>
-                        <div class="form-group">
-                            <label>Porcentagem (%)</label>
-                            <input type="number" id="itemPorcentagem" min="0" step="1" value="149">
-                        </div>
-                        <div class="form-group">
-                            <label>Venda UNT</label>
-                            <input type="number" id="itemVendaUnt" step="0.01" min="0" readonly style="background: var(--bg-secondary); opacity: 0.7;">
-                        </div>
-                        <div class="form-group">
-                            <label>Venda Total</label>
-                            <input type="number" id="itemVendaTotal" step="0.01" min="0" readonly style="background: var(--bg-secondary); opacity: 0.7;">
+                        <!-- Linha 3: Compra Total | Custo Total | Venda Total -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
+                            <div class="form-group" style="margin:0;">
+                                <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">Compra Total</label>
+                                <input type="number" id="itemEstimadoTotal" step="any" min="0" readonly
+                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box; opacity:0.75;">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">Custo Total</label>
+                                <input type="number" id="itemCustoTotal" step="any" min="0" readonly
+                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box; opacity:0.75;">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">Venda Total</label>
+                                <input type="number" id="itemVendaTotal" step="any" min="0" readonly
+                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box; opacity:0.75;">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2145,50 +2702,46 @@ function criarModalItem() {
     return modal;
 }
 
+function calcularValoresItem() {
+    const q = parseFloat(document.getElementById('itemQtd')?.value || 0);
+    const eu = parseFloat(document.getElementById('itemEstimadoUnt')?.value || 0);
+    const cu = parseFloat(document.getElementById('itemCustoUnt')?.value || 0);
+    const perc = parseFloat(document.getElementById('itemPorcentagem')?.value || 0);
+    
+    const etEl = document.getElementById('itemEstimadoTotal');
+    const ctEl = document.getElementById('itemCustoTotal');
+    const vuEl = document.getElementById('itemVendaUnt');
+    const vtEl = document.getElementById('itemVendaTotal');
+    
+    if (etEl) etEl.value = (q * eu).toFixed(2);
+    if (ctEl) ctEl.value = (q * cu).toFixed(2);
+    const vu = cu * (1 + perc / 100);
+    // UNT: mostrar até 6 casas decimais sem zeros trailing
+    if (vuEl) {
+        const vuStr = vu.toFixed(6).replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+        vuEl.value = vuStr || '0';
+    }
+    if (vtEl) vtEl.value = (vu * q).toFixed(2);
+}
+
 function configurarCalculosAutomaticos() {
-    const qtd = document.getElementById('itemQtd');
-    const estimadoUnt = document.getElementById('itemEstimadoUnt');
-    const estimadoTotal = document.getElementById('itemEstimadoTotal');
-    const custoUnt = document.getElementById('itemCustoUnt');
-    const custoTotal = document.getElementById('itemCustoTotal');
-    const porcentagem = document.getElementById('itemPorcentagem');
-    const vendaUnt = document.getElementById('itemVendaUnt');
-    const vendaTotal = document.getElementById('itemVendaTotal');
+    // Usar delegação de eventos no modal — sem clonar elementos
+    const modal = document.getElementById('modalItem');
+    if (!modal) return;
     
-    if (!qtd || !estimadoUnt) return;
-    
-    function calcular() {
-        const q = parseFloat(qtd.value || 0);
-        const eu = parseFloat(estimadoUnt.value || 0);
-        const cu = parseFloat(custoUnt.value || 0);
-        const perc = parseFloat(porcentagem.value || 0);
-        
-        // Estimado Total = QTD x Estimado UNT
-        estimadoTotal.value = (q * eu).toFixed(2);
-        // Custo Total = QTD x Custo UNT
-        custoTotal.value = (q * cu).toFixed(2);
-        // Venda UNT = Custo UNT x (1 + Porcentagem/100)
-        const vu = cu * (1 + perc / 100);
-        vendaUnt.value = vu.toFixed(2);
-        // Venda Total = Venda UNT x QTD
-        vendaTotal.value = (vu * q).toFixed(2);
+    // Remove listener anterior se existir
+    if (modal._calcListener) {
+        modal.removeEventListener('input', modal._calcListener);
     }
     
-    // Remover listeners antigos clonando elementos
-    [qtd, estimadoUnt, custoUnt, porcentagem].forEach(el => {
-        const clone = el.cloneNode(true);
-        el.parentNode.replaceChild(clone, el);
-    });
+    modal._calcListener = function(e) {
+        const ids = ['itemQtd', 'itemEstimadoUnt', 'itemCustoUnt', 'itemPorcentagem'];
+        if (ids.includes(e.target.id)) {
+            calcularValoresItem();
+        }
+    };
     
-    // Re-buscar após clonagem
-    const qtd2 = document.getElementById('itemQtd');
-    const eu2 = document.getElementById('itemEstimadoUnt');
-    const cu2 = document.getElementById('itemCustoUnt');
-    const perc2 = document.getElementById('itemPorcentagem');
-    
-    [qtd2, eu2, cu2, perc2].forEach(el => {
-        if (el) el.addEventListener('input', calcular);
-    });
+    modal.addEventListener('input', modal._calcListener);
 }
     
 function navegarItemAnterior() {
@@ -2553,7 +3106,7 @@ async function gerarPDFPropostaInterno(pregao, comAssinatura = true) {
     };
 }
 
-function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pageWidth, pageHeight, lineHeight, maxWidth, addTextWithWrap, comAssinatura = true) {
+function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pageWidth, pageHeight, lineHeight, maxWidth, addTextWithWrap, comAssinatura = true, gruposEstrutura = null) {
     const logoHeaderImg = new Image();
     logoHeaderImg.crossOrigin = 'anonymous';
     logoHeaderImg.src = 'I.R.-COMERCIO-E-MATERIAIS-ELETRICOS-LTDA-PDF.png';
@@ -2612,6 +3165,10 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
             return newY;
         }
         
+        function paginaCheia(yAtual, espaco = 40) {
+            return yAtual > pageHeight - footerMargin - espaco;
+        }
+        
         addTextWithWrap = function(text, x, yStart, maxW, lineH = 5) {
             const lines = doc.splitTextToSize(text, maxW);
             lines.forEach((line, index) => {
@@ -2622,6 +3179,25 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
             });
             return yStart + (lines.length * lineH);
         };
+        
+        // Rodapé em todas as páginas (empresa)
+        const footerH = 8;
+        const footerText = 'I.R. COMÉRCIO E MATERIAIS ELÉTRICOS LTDA  |  CNPJ: 33.149.502/0001-38  |  RUA TADORNA Nº 472, SALA 2, NOVO HORIZONTE – SERRA/ES  |  (27) 3209-4291';
+        function addFooter(docRef) {
+            const totalPags = docRef.internal.getNumberOfPages();
+            for (let pg = 1; pg <= totalPags; pg++) {
+                docRef.setPage(pg);
+                docRef.setFontSize(7.5);
+                docRef.setFont(undefined, 'normal');
+                docRef.setTextColor(150, 150, 150);
+                const fy = pageHeight - 4;
+                docRef.text(footerText, pageWidth / 2, fy, { align: 'center' });
+                docRef.setTextColor(0, 0, 0);
+            }
+        }
+        
+        // Redefinir pageHeight com margem de rodapé
+        const footerMargin = 14; // espaço reservado para rodapé
         
         // Título
         doc.setFontSize(18);
@@ -2667,147 +3243,150 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
         doc.text(`PREGÃO ELETRÔNICO: ${pregao.numero_pregao}${pregao.uasg ? '  UASG: ' + pregao.uasg : ''}`, margin, y);
         y += 10;
         
-        if (y > pageHeight - 50) {
+        if (y > pageHeight - footerMargin - 50) {
             y = addPageWithHeader();
         }
         
-        // Tabela de Itens
-        doc.setFontSize(11);
-        doc.setFont(undefined, 'bold');
-        doc.text('ITENS DA PROPOSTA', margin, y);
-        
-        y += 6;
-        
+        // Utilitários de formatação
+        const fmtValorPdf = (v, decimals = 2) => {
+            return 'R$ ' + (v || 0).toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+        };
+        const fmtUntPdf = (v) => {
+            const n = v || 0;
+            const s = n.toFixed(4).replace(/(\.(\d*?)?)0+$/, '$1').replace(/\.$/, '');
+            return 'R$ ' + parseFloat(s || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+        };
+
         const tableWidth = pageWidth - (2 * margin);
         const colWidths = {
-            item: tableWidth * 0.06,
-            descricao: tableWidth * 0.38,
-            qtd: tableWidth * 0.08,
-            unid: tableWidth * 0.08,
-            marca: tableWidth * 0.14,
-            modelo: tableWidth * 0.14,
-            total: tableWidth * 0.12
+            item:     tableWidth * 0.05,
+            descricao:tableWidth * 0.30,
+            qtd:      tableWidth * 0.06,
+            unid:     tableWidth * 0.05,
+            marca:    tableWidth * 0.12,
+            modelo:   tableWidth * 0.12,
+            vunt:     tableWidth * 0.14,
+            total:    tableWidth * 0.16
         };
-        
         const itemRowHeight = 10;
-        
-        // Cabeçalho da tabela
-        doc.setFillColor(108, 117, 125);
-        doc.setDrawColor(180, 180, 180);
-        doc.rect(margin, y, tableWidth, itemRowHeight, 'FD');
-        
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(9);
-        doc.setFont(undefined, 'bold');
-        
-        let xPos = margin;
-        
-        doc.line(xPos, y, xPos, y + itemRowHeight);
-        doc.text('ITEM', xPos + (colWidths.item / 2), y + 6.5, { align: 'center' });
-        xPos += colWidths.item;
-        doc.line(xPos, y, xPos, y + itemRowHeight);
-        
-        doc.text('DESCRIÇÃO', xPos + (colWidths.descricao / 2), y + 6.5, { align: 'center' });
-        xPos += colWidths.descricao;
-        doc.line(xPos, y, xPos, y + itemRowHeight);
-        
-        doc.text('QTD', xPos + (colWidths.qtd / 2), y + 6.5, { align: 'center' });
-        xPos += colWidths.qtd;
-        doc.line(xPos, y, xPos, y + itemRowHeight);
-        
-        doc.text('UN', xPos + (colWidths.unid / 2), y + 6.5, { align: 'center' });
-        xPos += colWidths.unid;
-        doc.line(xPos, y, xPos, y + itemRowHeight);
-        
-        doc.text('MARCA', xPos + (colWidths.marca / 2), y + 6.5, { align: 'center' });
-        xPos += colWidths.marca;
-        doc.line(xPos, y, xPos, y + itemRowHeight);
-        
-        doc.text('MODELO', xPos + (colWidths.modelo / 2), y + 6.5, { align: 'center' });
-        xPos += colWidths.modelo;
-        doc.line(xPos, y, xPos, y + itemRowHeight);
-        
-        doc.text('VALOR TOTAL', xPos + (colWidths.total / 2), y + 6.5, { align: 'center' });
-        xPos += colWidths.total;
-        doc.line(xPos, y, xPos, y + itemRowHeight);
-        
-        y += itemRowHeight;
-        
-        doc.setTextColor(0, 0, 0);
-        doc.setFontSize(8);
-        doc.setFont(undefined, 'normal');
-        
-        // Itens marcados como ganho
-        const itensSelecionados = itens.filter(item => item.ganho);
-        
-        itensSelecionados.forEach((item, index) => {
-            const descricaoUpper = toUpperCase(item.descricao);
-            const maxWidthDesc = colWidths.descricao - 6;
-            const descLines = doc.splitTextToSize(descricaoUpper, maxWidthDesc);
-            const marcaWrap = doc.splitTextToSize(item.marca || '-', colWidths.marca - 3);
-            const modeloWrap = doc.splitTextToSize(item.modelo || '-', colWidths.modelo - 3);
-            const lineCount = Math.max(descLines.length, marcaWrap.length, modeloWrap.length);
-            const necessaryHeight = Math.max(itemRowHeight, lineCount * 4 + 4);
-            
-            if (y + necessaryHeight > pageHeight - 30) {
-                y = addPageWithHeader();
-            }
-            
+
+        // Função para desenhar cabeçalho da tabela
+        function desenharCabecalhoTabela() {
+            doc.setFillColor(108, 117, 125);
             doc.setDrawColor(180, 180, 180);
-            doc.rect(margin, y, tableWidth, necessaryHeight);
-            
-            xPos = margin;
-            
-            doc.line(xPos, y, xPos, y + necessaryHeight);
-            doc.text(String(item.numero), xPos + (colWidths.item / 2), y + (necessaryHeight / 2) + 1.5, { align: 'center' });
-            xPos += colWidths.item;
-            doc.line(xPos, y, xPos, y + necessaryHeight);
-            
-            let yText = y + 4;
-            descLines.forEach(line => {
-                doc.text(line, xPos + 3, yText);
-                yText += 4;
+            doc.rect(margin, y, tableWidth, itemRowHeight, 'FD');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(7.5);
+            doc.setFont(undefined, 'bold');
+            let xp = margin;
+            [['ITEM', colWidths.item], ['DESCRIÇÃO', colWidths.descricao], ['QTD', colWidths.qtd],
+             ['UN', colWidths.unid], ['MARCA', colWidths.marca], ['MODELO', colWidths.modelo],
+             ['VD. UNT', colWidths.vunt], ['VD. TOTAL', colWidths.total]].forEach(([lbl, w]) => {
+                doc.line(xp, y, xp, y + itemRowHeight);
+                doc.text(lbl, xp + w / 2, y + 6.5, { align: 'center' });
+                xp += w;
             });
-            xPos += colWidths.descricao;
-            doc.line(xPos, y, xPos, y + necessaryHeight);
-            
-            doc.text(String(item.qtd), xPos + (colWidths.qtd / 2), y + (necessaryHeight / 2) + 1.5, { align: 'center' });
-            xPos += colWidths.qtd;
-            doc.line(xPos, y, xPos, y + necessaryHeight);
-            
-            doc.text(item.unidade, xPos + (colWidths.unid / 2), y + (necessaryHeight / 2) + 1.5, { align: 'center' });
-            xPos += colWidths.unid;
-            doc.line(xPos, y, xPos, y + necessaryHeight);
-            
-            const marcaLines = doc.splitTextToSize(item.marca || '-', colWidths.marca - 3);
-            marcaLines.forEach((ml, mi) => {
-                doc.text(ml, xPos + (colWidths.marca / 2), y + 4 + (mi * 3.5), { align: 'center' });
+            doc.line(xp, y, xp, y + itemRowHeight);
+            y += itemRowHeight;
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(7.5);
+            doc.setFont(undefined, 'normal');
+        }
+
+        // Função para desenhar uma linha de item
+        function desenharLinhaItem(item, rowIndex) {
+            const descricaoUpper = toUpperCase(item.descricao);
+            const descLines = doc.splitTextToSize(descricaoUpper, colWidths.descricao - 4);
+            const marcaWrap = doc.splitTextToSize(item.marca || '-', colWidths.marca - 2);
+            const modeloWrap = doc.splitTextToSize(item.modelo || '-', colWidths.modelo - 2);
+            const lineCount = Math.max(descLines.length, marcaWrap.length, modeloWrap.length);
+            const rowH = Math.max(itemRowHeight, lineCount * 3.5 + 4);
+            if (paginaCheia(y, rowH + 10)) {
+                y = addPageWithHeader();
+                desenharCabecalhoTabela();
+            }
+            const rowBg = (rowIndex % 2 === 0) ? [255,255,255] : [247,248,250];
+            doc.setFillColor(...rowBg);
+            doc.setDrawColor(180, 180, 180);
+            doc.rect(margin, y, tableWidth, rowH, 'FD');
+            let xp = margin;
+            const cy = y + (rowH / 2) + 1.5;
+            doc.line(xp, y, xp, y + rowH);
+            doc.text(String(item.numero), xp + colWidths.item/2, cy, { align: 'center' });
+            xp += colWidths.item; doc.line(xp, y, xp, y + rowH);
+            let yt = y + 4; descLines.forEach(l => { doc.text(l, xp + 2, yt); yt += 3.5; });
+            xp += colWidths.descricao; doc.line(xp, y, xp, y + rowH);
+            doc.text(String(item.qtd || 1), xp + colWidths.qtd/2, cy, { align: 'center' });
+            xp += colWidths.qtd; doc.line(xp, y, xp, y + rowH);
+            doc.text(item.unidade || 'UN', xp + colWidths.unid/2, cy, { align: 'center' });
+            xp += colWidths.unid; doc.line(xp, y, xp, y + rowH);
+            let ym = y + 4; marcaWrap.forEach(ml => { doc.text(ml, xp + colWidths.marca/2, ym, { align:'center' }); ym += 3.5; });
+            xp += colWidths.marca; doc.line(xp, y, xp, y + rowH);
+            let ymo = y + 4; modeloWrap.forEach(ml => { doc.text(ml, xp + colWidths.modelo/2, ymo, { align:'center' }); ymo += 3.5; });
+            xp += colWidths.modelo; doc.line(xp, y, xp, y + rowH);
+            const vlns = doc.splitTextToSize(fmtUntPdf(item.venda_unt), colWidths.vunt - 2);
+            let yvu = y + 4; vlns.forEach(vl => { doc.text(vl, xp + colWidths.vunt/2, yvu, { align:'center' }); yvu += 3.5; });
+            xp += colWidths.vunt; doc.line(xp, y, xp, y + rowH);
+            const vtlns = doc.splitTextToSize(fmtValorPdf(item.venda_total), colWidths.total - 2);
+            let yvt = y + 4; vtlns.forEach(vl => { doc.text(vl, xp + colWidths.total/2, yvt, { align:'center' }); yvt += 3.5; });
+            xp += colWidths.total; doc.line(xp, y, xp, y + rowH);
+            y += rowH;
+        }
+
+        function desenharRodapeTabela(totalValor) {
+            doc.setFillColor(240, 240, 240);
+            doc.setFont(undefined, 'bold');
+            doc.rect(margin, y, tableWidth, 8, 'FD');
+            doc.text('TOTAL GERAL:', margin + tableWidth - colWidths.total - colWidths.vunt - 4, y + 5.5, { align: 'right' });
+            doc.text(fmtValorPdf(totalValor), margin + tableWidth - 2, y + 5.5, { align: 'right' });
+            doc.setFont(undefined, 'normal');
+            y += 8;
+        }
+
+        // MODO GRUPOS: uma tabela por grupo
+        if (gruposEstrutura) {
+            doc.setFontSize(11); doc.setFont(undefined, 'bold');
+            doc.text('ITENS DA PROPOSTA', margin, y);
+            y += 8;
+            let totalGeralGlobal = 0;
+            gruposEstrutura.forEach(({ grupo, itens: iGrupo }) => {
+                if (paginaCheia(y, 30)) y = addPageWithHeader();
+                // Título do grupo
+                doc.setFontSize(10); doc.setFont(undefined, 'bold');
+                doc.text(`${grupo.tipo} ${grupo.numero}`, margin, y);
+                y += 6;
+                desenharCabecalhoTabela();
+                iGrupo.forEach((item, idx) => desenharLinhaItem(item, idx));
+                const totalGrupo = iGrupo.reduce((acc, i) => acc + (i.venda_total || 0), 0);
+                totalGeralGlobal += totalGrupo;
+                desenharRodapeTabela(totalGrupo);
+                y += 6;
             });
-            xPos += colWidths.marca;
-            doc.line(xPos, y, xPos, y + necessaryHeight);
-            
-            const modeloLines = doc.splitTextToSize(item.modelo || '-', colWidths.modelo - 3);
-            modeloLines.forEach((ml, mi) => {
-                doc.text(ml, xPos + (colWidths.modelo / 2), y + 4 + (mi * 3.5), { align: 'center' });
-            });
-            xPos += colWidths.modelo;
-            doc.line(xPos, y, xPos, y + necessaryHeight);
-            
-            const valorFmt = (item.venda_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            const valorStr = `R$ ${valorFmt}`;
-            const valorLines = doc.splitTextToSize(valorStr, colWidths.total - 3);
-            valorLines.forEach((vl, vi) => {
-                doc.text(vl, xPos + (colWidths.total / 2), y + 4 + (vi * 3.5), { align: 'center' });
-            });
-            xPos += colWidths.total;
-            doc.line(xPos, y, xPos, y + necessaryHeight);
-            
-            y += necessaryHeight;
-        });
-        
+            // Total global final
+            if (gruposEstrutura.length > 1) {
+                doc.setFillColor(80, 80, 80); doc.setFont(undefined, 'bold');
+                doc.setTextColor(255,255,255);
+                doc.rect(margin, y, tableWidth, 8, 'FD');
+                doc.text('TOTAL GLOBAL:', margin + tableWidth - colWidths.total - colWidths.vunt - 4, y + 5.5, { align: 'right' });
+                doc.text(fmtValorPdf(totalGeralGlobal), margin + tableWidth - 2, y + 5.5, { align: 'right' });
+                doc.setTextColor(0,0,0); doc.setFont(undefined, 'normal');
+                y += 8;
+            }
+        } else {
+            // MODO ITEM: tabela única
+            doc.setFontSize(11); doc.setFont(undefined, 'bold');
+            doc.text('ITENS DA PROPOSTA', margin, y);
+            y += 6;
+            desenharCabecalhoTabela();
+            const itensSelecionados = itens.filter(item => item.ganho);
+            itensSelecionados.forEach((item, index) => desenharLinhaItem(item, index));
+            const totalGeral = itensSelecionados.reduce((acc, item) => acc + (item.venda_total || 0), 0);
+            desenharRodapeTabela(totalGeral);
+        }
+
         y += 8;
         
-        if (y > pageHeight - 60) {
+        if (y > pageHeight - footerMargin - 60) {
             y = addPageWithHeader();
         }
         
@@ -2839,32 +3418,32 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
         
         y += 6;
         
-        if (y > pageHeight - 60) {
+        if (y > pageHeight - footerMargin - 60) {
             y = addPageWithHeader();
         }
         
-        // Declarações — cada uma em linha separada, mesma fonte e tamanho dos dados
+        // Declarações — uppercase, centralizadas, cada uma em linha separada
         doc.setFontSize(10);
         doc.setFont(undefined, 'normal');
         const declaracoes = [
-            'Declaramos que nos preços cotados estão incluídas todas as despesas tais como frete (CIF), impostos, taxas, seguros, tributos e demais encargos de qualquer natureza incidentes sobre o objeto do Pregão.',
-            'Declaramos que somos Optantes pelo Simples Nacional.',
-            'Declaramos que o objeto fornecido não é remanufaturado ou recondicionado.'
+            'DECLARAMOS QUE NOS PREÇOS COTADOS ESTÃO INCLUÍDAS TODAS AS DESPESAS TAIS COMO FRETE (CIF), IMPOSTOS, TAXAS, SEGUROS, TRIBUTOS E DEMAIS ENCARGOS DE QUALQUER NATUREZA INCIDENTES SOBRE O OBJETO DO PREGÃO.',
+            'DECLARAMOS QUE SOMOS OPTANTES PELO SIMPLES NACIONAL.',
+            'DECLARAMOS QUE O OBJETO FORNECIDO NÃO É REMANUFATURADO OU RECONDICIONADO.'
         ];
         declaracoes.forEach(decl => {
-            if (y > pageHeight - 40) y = addPageWithHeader();
+            if (paginaCheia(y, 20)) y = addPageWithHeader();
             const linhas = doc.splitTextToSize(decl, maxWidth);
             linhas.forEach(linha => {
-                if (y > pageHeight - 30) y = addPageWithHeader();
-                doc.text(linha, margin, y);
+                if (paginaCheia(y, 10)) y = addPageWithHeader();
+                doc.text(linha, pageWidth / 2, y, { align: 'center' });
                 y += lineHeight;
             });
-            y += 2;
+            y += 3;
         });
         
         y += 12;
         
-        if (y > pageHeight - 40) {
+        if (y > pageHeight - footerMargin - 40) {
             y = addPageWithHeader();
         }
         
@@ -2911,6 +3490,7 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
                     doc.text('DIRETORA', pageWidth / 2, yFinal, { align: 'center' });
                     
                     const nomeArquivo = `PROPOSTA-${pregao.numero_pregao}${pregao.uasg ? '-' + pregao.uasg : ''}.pdf`;
+                    addFooter(doc);
                     doc.save(nomeArquivo);
                     showToast('PDF gerado com sucesso!', 'success');
                     
@@ -2947,6 +3527,7 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
             doc.text('DIRETORA', pageWidth / 2, y, { align: 'center' });
             
             const nomeArquivo = `PROPOSTA-${pregao.numero_pregao}${pregao.uasg ? '-' + pregao.uasg : ''}.pdf`;
+            addFooter(doc);
             doc.save(nomeArquivo);
             showToast('PDF gerado (sem assinatura)', 'success');
         }
