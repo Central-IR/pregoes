@@ -1027,12 +1027,9 @@ function mostrarTelaItens() {
     if (pregao) {
         const tituloEl = document.getElementById('tituloItens');
         if (tituloEl) {
-            const uasgPart = pregao.uasg ? ` - UASG ${pregao.uasg}` : '';
-            tituloEl.textContent = `Itens do Pregão ${pregao.numero_pregao}${uasgPart}`;
+            const uasgPart = pregao.uasg ? ` — UASG ${pregao.uasg}` : '';
+            tituloEl.textContent = `Pregão ${pregao.numero_pregao}${uasgPart}`;
         }
-        // Manter compatibilidade
-        const infoEl = document.getElementById('pregaoInfoItens');
-        if (infoEl) infoEl.textContent = `${pregao.numero_pregao}${pregao.uasg ? ' - ' + pregao.uasg : ''}`;
     }
 }
 
@@ -1051,10 +1048,8 @@ function criarTelaItens() {
         <div class="header">
             <div class="header-left">
                 <div>
-                    <h1 id="tituloItens">Itens do Pregão</h1>
-                </div>
-                <div id="connectionStatus" class="connection-status offline">
-                    <span class="status-dot"></span>
+                    <h1>Itens do Pregão</h1>
+                    <p id="tituloItens" style="color: var(--text-secondary); font-size: 0.8rem; font-weight: 400; margin-top: 2px; letter-spacing: 0.01em;"></p>
                 </div>
             </div>
             <div style="display: flex; gap: 0.75rem;">
@@ -1579,12 +1574,12 @@ function renderItens(itensToRender = itens) {
                 <td>${item.unidade}</td>
                 <td>${item.marca || '-'}</td>
                 <td>${item.modelo || '-'}</td>
-                <td>R$ ${(item.estimado_unt || 0).toFixed(2)}</td>
-                <td>R$ ${(item.estimado_total || 0).toFixed(2)}</td>
-                <td>R$ ${(item.custo_unt || 0).toFixed(2)}</td>
-                <td>R$ ${(item.custo_total || 0).toFixed(2)}</td>
-                <td>R$ ${(item.venda_unt || 0).toFixed(2)}</td>
-                <td>R$ ${(item.venda_total || 0).toFixed(2)}</td>
+                <td>R$ ${(item.estimado_unt || 0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                <td>R$ ${(item.estimado_total || 0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                <td>R$ ${(item.custo_unt || 0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                <td>R$ ${(item.custo_total || 0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                <td>R$ ${(item.venda_unt || 0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                <td>R$ ${(item.venda_total || 0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
             </tr>
         `;
     }).join('');
@@ -2067,11 +2062,8 @@ function criarModalItem() {
                 
                 <!-- Aba Item -->
                 <div class="tab-content active" id="item-tab-item">
+                    <input type="hidden" id="itemNumero">
                     <div class="form-grid">
-                        <div class="form-group">
-                            <label>Nº do Item</label>
-                            <input type="number" id="itemNumero" min="1">
-                        </div>
                         <div class="form-group">
                             <label>Quantidade *</label>
                             <input type="number" id="itemQtd" min="1" required>
@@ -2643,49 +2635,36 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
         
         y += 12;
         
-        // Dados para Faturamento
-        doc.setFontSize(11);
+        const fs = 10;
+        doc.setFontSize(fs);
         doc.setTextColor(0, 0, 0);
-        doc.setFont(undefined, 'bold');
-        doc.text('DADOS PARA FATURAMENTO', margin, y);
         
-        y += lineHeight + 1;
+        // Dados da empresa (fixos — sempre presentes)
         doc.setFont(undefined, 'bold');
         doc.text('I.R. COMÉRCIO E MATERIAIS ELÉTRICOS LTDA', margin, y);
-        
         y += lineHeight + 1;
         doc.setFont(undefined, 'normal');
         doc.text('CNPJ: 33.149.502/0001-38  |  IE: 083.780.74-2', margin, y);
-        
         y += lineHeight + 1;
         doc.text('RUA TADORNA Nº 472, SALA 2', margin, y);
-        
         y += lineHeight + 1;
         doc.text('NOVO HORIZONTE - SERRA/ES  |  CEP: 29.163-318', margin, y);
-        
         y += lineHeight + 1;
         doc.text('TELEFAX: (27) 3209-4291  |  E-MAIL: COMERCIAL.IRCOMERCIO@GMAIL.COM', margin, y);
-        
         y += 10;
         
-        // Destinatário
-        doc.setFont(undefined, 'bold');
-        doc.text('DESTINATÁRIO', margin, y);
-        
+        // Destinatário — só mostra campos preenchidos
+        doc.text('AO', margin, y);
         y += lineHeight + 1;
-        doc.setFont(undefined, 'normal');
-        doc.text('AO: ', margin, y);
-        const aoWidth = doc.getTextWidth('AO: ');
-        doc.setFont(undefined, 'bold');
-        doc.text(toUpperCase(pregao.nome_orgao || 'ÓRGÃO'), margin + aoWidth, y);
-        
-        y += lineHeight + 1;
-        doc.setFont(undefined, 'normal');
+        if (pregao.nome_orgao) {
+            doc.setFont(undefined, 'bold');
+            doc.text(toUpperCase(pregao.nome_orgao), margin, y);
+            doc.setFont(undefined, 'normal');
+            y += lineHeight + 1;
+        }
         doc.text('COMISSÃO PERMANENTE DE LICITAÇÃO', margin, y);
-        
         y += lineHeight + 1;
-        doc.text(`PREGÃO ELETRÔNICO ${pregao.numero_pregao}${pregao.uasg ? ' - UASG: ' + pregao.uasg : ''}`, margin, y);
-        
+        doc.text(`PREGÃO ELETRÔNICO: ${pregao.numero_pregao}${pregao.uasg ? '  UASG: ' + pregao.uasg : ''}`, margin, y);
         y += 10;
         
         if (y > pageHeight - 50) {
@@ -2765,7 +2744,9 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
             const descricaoUpper = toUpperCase(item.descricao);
             const maxWidthDesc = colWidths.descricao - 6;
             const descLines = doc.splitTextToSize(descricaoUpper, maxWidthDesc);
-            const lineCount = descLines.length;
+            const marcaWrap = doc.splitTextToSize(item.marca || '-', colWidths.marca - 3);
+            const modeloWrap = doc.splitTextToSize(item.modelo || '-', colWidths.modelo - 3);
+            const lineCount = Math.max(descLines.length, marcaWrap.length, modeloWrap.length);
             const necessaryHeight = Math.max(itemRowHeight, lineCount * 4 + 4);
             
             if (y + necessaryHeight > pageHeight - 30) {
@@ -2798,15 +2779,26 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
             xPos += colWidths.unid;
             doc.line(xPos, y, xPos, y + necessaryHeight);
             
-            doc.text(item.marca || '-', xPos + (colWidths.marca / 2), y + (necessaryHeight / 2) + 1.5, { align: 'center' });
+            const marcaLines = doc.splitTextToSize(item.marca || '-', colWidths.marca - 3);
+            marcaLines.forEach((ml, mi) => {
+                doc.text(ml, xPos + (colWidths.marca / 2), y + 4 + (mi * 3.5), { align: 'center' });
+            });
             xPos += colWidths.marca;
             doc.line(xPos, y, xPos, y + necessaryHeight);
             
-            doc.text(item.modelo || '-', xPos + (colWidths.modelo / 2), y + (necessaryHeight / 2) + 1.5, { align: 'center' });
+            const modeloLines = doc.splitTextToSize(item.modelo || '-', colWidths.modelo - 3);
+            modeloLines.forEach((ml, mi) => {
+                doc.text(ml, xPos + (colWidths.modelo / 2), y + 4 + (mi * 3.5), { align: 'center' });
+            });
             xPos += colWidths.modelo;
             doc.line(xPos, y, xPos, y + necessaryHeight);
             
-            doc.text(`R$ ${item.venda_total.toFixed(2)}`, xPos + (colWidths.total / 2), y + (necessaryHeight / 2) + 1.5, { align: 'center' });
+            const valorFmt = (item.venda_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const valorStr = `R$ ${valorFmt}`;
+            const valorLines = doc.splitTextToSize(valorStr, colWidths.total - 3);
+            valorLines.forEach((vl, vi) => {
+                doc.text(vl, xPos + (colWidths.total / 2), y + 4 + (vi * 3.5), { align: 'center' });
+            });
             xPos += colWidths.total;
             doc.line(xPos, y, xPos, y + necessaryHeight);
             
@@ -2819,55 +2811,30 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
             y = addPageWithHeader();
         }
         
-        // Condições
+        // Condições — somente campos preenchidos
         doc.setFontSize(10);
-        doc.setFont(undefined, 'bold');
-        doc.text('VALIDADE DA PROPOSTA: ', margin, y);
-        const validadeWidth = doc.getTextWidth('VALIDADE DA PROPOSTA: ');
-        doc.setFont(undefined, 'normal');
-        doc.text(pregao.validade_proposta || 'NÃO INFORMADA', margin + validadeWidth, y);
         
-        y += lineHeight + 1;
-        doc.setFont(undefined, 'bold');
-        doc.text('PRAZO DE ENTREGA: ', margin, y);
-        const entregaWidth = doc.getTextWidth('PRAZO DE ENTREGA: ');
-        doc.setFont(undefined, 'normal');
-        const entregaText = pregao.prazo_entrega || 'NÃO INFORMADO';
-        const entregaLines = doc.splitTextToSize(entregaText, maxWidth - entregaWidth);
-        doc.text(entregaLines[0], margin + entregaWidth, y);
-        y += lineHeight;
-        if (entregaLines.length > 1) {
-            for (let i = 1; i < entregaLines.length; i++) {
-                doc.text(entregaLines[i], margin, y);
-                y += lineHeight;
-            }
-        }
-        
-        y += 1;
-        doc.setFont(undefined, 'bold');
-        doc.text('FORMA DE PAGAMENTO: ', margin, y);
-        const pagamentoWidth = doc.getTextWidth('FORMA DE PAGAMENTO: ');
-        doc.setFont(undefined, 'normal');
-        const pagamentoText = pregao.prazo_pagamento || 'NÃO INFORMADO';
-        const pagamentoLines = doc.splitTextToSize(pagamentoText, maxWidth - pagamentoWidth);
-        doc.text(pagamentoLines[0], margin + pagamentoWidth, y);
-        y += lineHeight;
-        if (pagamentoLines.length > 1) {
-            for (let i = 1; i < pagamentoLines.length; i++) {
-                doc.text(pagamentoLines[i], margin, y);
-                y += lineHeight;
-            }
-        }
-        
-        // Dados Bancários
-        if (dadosBancarios) {
-            y += 2;
+        function addCampoCondicao(label, valor) {
+            if (!valor || valor.toString().trim() === '') return;
             doc.setFont(undefined, 'bold');
-            doc.text('DADOS BANCÁRIOS: ', margin, y);
-            const bancoWidth = doc.getTextWidth('DADOS BANCÁRIOS: ');
+            const lw = doc.getTextWidth(label + ': ');
+            doc.text(label + ': ', margin, y);
             doc.setFont(undefined, 'normal');
-            doc.text(dadosBancarios, margin + bancoWidth, y);
+            const linhas = doc.splitTextToSize(valor.toString(), maxWidth - lw);
+            doc.text(linhas[0], margin + lw, y);
             y += lineHeight;
+            for (let i = 1; i < linhas.length; i++) {
+                doc.text(linhas[i], margin, y);
+                y += lineHeight;
+            }
+        }
+        
+        addCampoCondicao('VALIDADE DA PROPOSTA', pregao.validade_proposta);
+        addCampoCondicao('PRAZO DE ENTREGA', pregao.prazo_entrega);
+        addCampoCondicao('FORMA DE PAGAMENTO', pregao.prazo_pagamento);
+        
+        if (dadosBancarios) {
+            addCampoCondicao('DADOS BANCÁRIOS', dadosBancarios);
         }
         
         y += 6;
@@ -2876,12 +2843,24 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
             y = addPageWithHeader();
         }
         
-        // Declarações
-        doc.setFontSize(9);
+        // Declarações — cada uma em linha separada, mesma fonte e tamanho dos dados
+        doc.setFontSize(10);
         doc.setFont(undefined, 'normal');
-        const declaracao = 'Declaramos que nos preços cotados estão incluídas todas as despesas tais como frete (CIF), impostos, taxas, seguros, tributos e demais encargos de qualquer natureza incidentes sobre o objeto do Pregão. Declaramos que somos Optantes pelo Simples Nacional. Declaramos que o objeto fornecido não é remanufaturado ou recondicionado.';
-        
-        y = addTextWithWrap(declaracao, margin, y, maxWidth, 4);
+        const declaracoes = [
+            'Declaramos que nos preços cotados estão incluídas todas as despesas tais como frete (CIF), impostos, taxas, seguros, tributos e demais encargos de qualquer natureza incidentes sobre o objeto do Pregão.',
+            'Declaramos que somos Optantes pelo Simples Nacional.',
+            'Declaramos que o objeto fornecido não é remanufaturado ou recondicionado.'
+        ];
+        declaracoes.forEach(decl => {
+            if (y > pageHeight - 40) y = addPageWithHeader();
+            const linhas = doc.splitTextToSize(decl, maxWidth);
+            linhas.forEach(linha => {
+                if (y > pageHeight - 30) y = addPageWithHeader();
+                doc.text(linha, margin, y);
+                y += lineHeight;
+            });
+            y += 2;
+        });
         
         y += 12;
         
