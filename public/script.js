@@ -1807,6 +1807,14 @@ function adicionarIntervalo(intervalo) {
             custo_unt: 0,
             custo_total: 0,
             porcentagem: 149,
+            venda_unt: 0,
+            venda_total: 0,
+            ganho: false
+        };
+        itens.push(novoItem);
+    });
+    
+    itens.sort((a, b) => a.numero - b.numero);
     renderItens();
     showToast(`${numeros.length} itens adicionados`, 'success');
 }
