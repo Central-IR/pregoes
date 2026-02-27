@@ -755,6 +755,47 @@ tbody tr.row-fechada:hover {
     border: 1px solid rgba(34, 197, 94, 0.2);
 }
 
+/* Status badges para Pregões - cores idênticas ao dashboard */
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    white-space: nowrap;
+    display: inline-block;
+}
+
+.status-badge-warning {
+    background: rgba(245, 158, 11, 0.15);
+    color: #B45309;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.status-badge-success {
+    background: rgba(34, 197, 94, 0.15);
+    color: #15803D;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.status-badge-danger {
+    background: rgba(239, 68, 68, 0.15);
+    color: #B91C1C;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.status-badge-suspended {
+    background: rgba(107, 114, 128, 0.15);
+    color: #374151;
+    border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+.status-badge-default {
+    background: rgba(107, 114, 128, 0.1);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
 .form-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
