@@ -1025,8 +1025,14 @@ function mostrarTelaItens() {
     // Atualizar informações do pregão
     const pregao = pregoes.find(p => p.id === currentPregaoId);
     if (pregao) {
-        document.getElementById('pregaoInfoItens').textContent = 
-            `${pregao.numero_pregao}${pregao.uasg ? ' - ' + pregao.uasg : ''}`;
+        const tituloEl = document.getElementById('tituloItens');
+        if (tituloEl) {
+            const uasgPart = pregao.uasg ? ` - UASG ${pregao.uasg}` : '';
+            tituloEl.textContent = `Itens do Pregão ${pregao.numero_pregao}${uasgPart}`;
+        }
+        // Manter compatibilidade
+        const infoEl = document.getElementById('pregaoInfoItens');
+        if (infoEl) infoEl.textContent = `${pregao.numero_pregao}${pregao.uasg ? ' - ' + pregao.uasg : ''}`;
     }
 }
 
@@ -1045,8 +1051,7 @@ function criarTelaItens() {
         <div class="header">
             <div class="header-left">
                 <div>
-                    <h1>Itens do Pregão</h1>
-                    <p class="pregao-info" id="pregaoInfoItens">Carregando...</p>
+                    <h1 id="tituloItens">Itens do Pregão</h1>
                 </div>
                 <div id="connectionStatus" class="connection-status offline">
                     <span class="status-dot"></span>
@@ -1092,7 +1097,7 @@ function criarTelaItens() {
                     </svg>
                 </button>
 
-                <button onclick="funcaoEmDesenvolvimento()" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; display: flex; align-items: center;" title="Em desenvolvimento">
+                <button onclick="abrirModalDeclaracoes()" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; display: flex; align-items: center;" title="Declarações">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/>
                         <path d="M14 2v5a1 1 0 0 0 1 1h5"/>
@@ -1125,8 +1130,7 @@ function criarTelaItens() {
                     <thead>
                         <tr>
                             <th style="width: 40px; text-align: center;">
-                                <input type="checkbox" id="selectAllItens" onchange="toggleSelectAllItens()" 
-                                       style="cursor: pointer; width: 18px; height: 18px;">
+                                <span style="font-size: 1.1rem;">✓</span>
                             </th>
                             <th style="width: 60px;">ITEM</th>
                             <th style="min-width: 300px;">DESCRIÇÃO</th>
@@ -1171,8 +1175,8 @@ function criarTelaItens() {
                 <div class="modal-message-delete" style="font-size: 1rem; padding: 1rem 0 0.5rem 0;">
                     EXCLUIR ITENS
                 </div>
-                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.75rem; text-align: center;">Digite o intervalo de itens a excluir (ex: 1-5, 10)<br>ou deixe em branco para excluir os selecionados.</p>
-                <input type="text" id="inputExcluirIntervalo" placeholder="Ex: 1-5, 10 (ou deixe vazio para selecionados)" 
+                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.75rem; text-align: center;">Digite o intervalo de itens a excluir (ex: 1-5, 10)</p>
+                <input type="text" id="inputExcluirIntervalo" placeholder="Ex: 1-5, 10" 
                        style="width: 100%; padding: 0.65rem 0.875rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.9rem; background: var(--bg-secondary); color: var(--text-primary); box-sizing: border-box;">
                 <div class="modal-actions modal-actions-no-border">
                     <button class="secondary" onclick="fecharModalExcluirItens()">Cancelar</button>
@@ -1197,46 +1201,44 @@ function criarTelaItens() {
 
         <!-- Modal Cotação -->
         <div class="modal-overlay" id="modalCotacao">
-            <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-content" style="max-width: 680px; width: 90vw;">
                 <div class="modal-header">
                     <h3 class="modal-title">Enviar Cotação</h3>
                     <button class="close-modal" onclick="fecharModalCotacao()">✕</button>
                 </div>
                 <div style="padding: 0.5rem 0;">
-                    <div class="form-group" style="margin-bottom: 1rem;">
-                        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-secondary);">Fornecedor</label>
-                        <select id="cotacaoFornecedor" onchange="selecionarFornecedorCotacao()" style="width: 100%; padding: 0.65rem 0.875rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); font-size: 0.9rem;">
-                            <option value="">Selecione o fornecedor...</option>
-                        </select>
-                    </div>
-                    <div class="form-group" style="margin-bottom: 1rem;">
-                        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-secondary);">Contato</label>
-                        <input type="text" id="cotacaoContato" readonly placeholder="Será preenchido ao selecionar fornecedor"
-                               style="width: 100%; padding: 0.65rem 0.875rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-input-readonly, #f3f4f6); color: var(--text-secondary); font-size: 0.9rem; box-sizing: border-box;">
-                    </div>
-                    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
-                        <div class="form-group" style="flex: 1;">
-                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-secondary);">Tipo de Envio</label>
-                            <div style="display: flex; gap: 0.5rem;">
-                                <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; font-size: 0.9rem;">
-                                    <input type="radio" name="tipoCotacao" value="descricao" checked onchange="atualizarPreviewCotacao()"> Descrição
-                                </label>
-                                <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; font-size: 0.9rem;">
-                                    <input type="radio" name="tipoCotacao" value="modelo" onchange="atualizarPreviewCotacao()"> Modelo
-                                </label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                        <div class="form-group" style="margin: 0;">
+                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-secondary);">Fornecedor</label>
+                            <div class="filter-dropdown-inline" style="width: 100%; padding: 0;">
+                                <select id="cotacaoFornecedor" onchange="selecionarFornecedorCotacao()" style="width: 100%; padding: 0.65rem 0.875rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); font-size: 0.9rem; appearance: none;">
+                                    <option value="">Selecione...</option>
+                                </select>
                             </div>
                         </div>
-                        <div class="form-group" style="flex: 1;">
+                        <div class="form-group" style="margin: 0;">
+                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-secondary);">Tipo de Envio</label>
+                            <div class="filter-dropdown-inline" style="width: 100%; padding: 0;">
+                                <select id="cotacaoTipo" style="width: 100%; padding: 0.65rem 0.875rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); font-size: 0.9rem; appearance: none;">
+                                    <option value="descricao">Descrição</option>
+                                    <option value="modelo">Modelo</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                        <div class="form-group" style="margin: 0;">
+                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-secondary);">Contato</label>
+                            <input type="text" id="cotacaoContato" readonly placeholder="Preenchido ao selecionar fornecedor"
+                                   style="width: 100%; padding: 0.65rem 0.875rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-secondary); font-size: 0.9rem; box-sizing: border-box; opacity: 0.8;">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
                             <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-secondary);">Intervalo de Itens</label>
-                            <input type="text" id="cotacaoIntervalo" placeholder="Ex: 1-5, 10" oninput="atualizarPreviewCotacao()"
+                            <input type="text" id="cotacaoIntervalo" placeholder="Ex: 1-5, 10"
                                    style="width: 100%; padding: 0.65rem 0.875rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); font-size: 0.9rem; box-sizing: border-box;">
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-secondary);">Pré-visualização da Mensagem</label>
-                        <textarea id="cotacaoPreview" rows="8" readonly
-                                  style="width: 100%; padding: 0.65rem 0.875rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-input-readonly, #f3f4f6); color: var(--text-primary); font-size: 0.85rem; font-family: monospace; resize: vertical; box-sizing: border-box;"></textarea>
-                    </div>
+                    <div id="cotacaoAviso" style="display:none; color: var(--text-secondary); font-size: 0.85rem; padding: 0.5rem; background: var(--bg-secondary); border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 0.5rem;"></div>
                 </div>
                 <div class="modal-actions">
                     <button class="secondary" onclick="fecharModalCotacao()">Cancelar</button>
@@ -1248,8 +1250,242 @@ function criarTelaItens() {
     return div;
 }
 
-function funcaoEmDesenvolvimento() {
-    showToast('Funcionalidade em desenvolvimento', 'error');
+function obterSaudacao() {
+    const hora = new Date().getHours();
+    if (hora >= 5 && hora < 12) return 'Bom dia';
+    if (hora >= 12 && hora < 18) return 'Boa tarde';
+    return 'Boa noite';
+}
+
+// ============ DECLARAÇÕES ============
+function abrirModalDeclaracoes() {
+    let modal = document.getElementById('modalDeclaracoes');
+    if (!modal) {
+        modal = criarModalDeclaracoes();
+        document.body.appendChild(modal);
+    }
+    document.getElementById('declaracaoTitulo').value = '';
+    document.getElementById('declaracaoTexto').value = '';
+    modal.classList.add('show');
+}
+
+function fecharModalDeclaracoes() {
+    const modal = document.getElementById('modalDeclaracoes');
+    if (modal) modal.classList.remove('show');
+}
+
+function criarModalDeclaracoes() {
+    const modal = document.createElement('div');
+    modal.id = 'modalDeclaracoes';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 640px; width: 90vw;">
+            <div class="modal-header">
+                <h3 class="modal-title">Declarações</h3>
+                <button class="close-modal" onclick="fecharModalDeclaracoes()">✕</button>
+            </div>
+            <div style="padding: 0.25rem 0 0.5rem 0;">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-secondary);">Título</label>
+                    <input type="text" id="declaracaoTitulo" placeholder="Título do documento e nome do arquivo"
+                           style="width: 100%; padding: 0.65rem 0.875rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); font-size: 0.9rem; box-sizing: border-box;">
+                </div>
+                <div class="form-group">
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-secondary);">Texto da Declaração</label>
+                    <textarea id="declaracaoTexto" rows="10" placeholder="Digite o texto da declaração..."
+                              style="width: 100%; padding: 0.75rem 0.875rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); font-size: 0.9rem; box-sizing: border-box; resize: vertical; line-height: 1.6;"></textarea>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="secondary" onclick="fecharModalDeclaracoes()">Cancelar</button>
+                <button class="success" onclick="perguntarAssinaturaDeclaracao()">Gerar Declaração</button>
+            </div>
+        </div>
+    `;
+    return modal;
+}
+
+function perguntarAssinaturaDeclaracao() {
+    const titulo = document.getElementById('declaracaoTitulo').value.trim();
+    const texto = document.getElementById('declaracaoTexto').value.trim();
+    
+    if (!titulo) { showToast('Informe o título da declaração', 'error'); return; }
+    if (!texto) { showToast('Digite o texto da declaração', 'error'); return; }
+    
+    fecharModalDeclaracoes();
+    
+    // Modal de assinatura para declaração
+    let modal = document.getElementById('modalAssinaturaDeclaracao');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'modalAssinaturaDeclaracao';
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content modal-delete">
+                <button class="close-modal" onclick="fecharModalAssinaturaDeclaracao()">✕</button>
+                <div class="modal-message-delete">Deseja gerar a declaração com assinatura padrão?</div>
+                <div class="modal-actions modal-actions-no-border">
+                    <button class="danger" onclick="gerarPDFDeclaracao(false)">Não</button>
+                    <button class="success" onclick="gerarPDFDeclaracao(true)">Sim</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    
+    // Armazenar dados temporariamente
+    modal._titulo = titulo;
+    modal._texto = texto;
+    modal.classList.add('show');
+}
+
+function fecharModalAssinaturaDeclaracao() {
+    const modal = document.getElementById('modalAssinaturaDeclaracao');
+    if (modal) modal.classList.remove('show');
+}
+
+async function gerarPDFDeclaracao(comAssinatura) {
+    fecharModalAssinaturaDeclaracao();
+    
+    const modal = document.getElementById('modalAssinaturaDeclaracao');
+    const titulo = modal?._titulo || '';
+    const texto = modal?._texto || '';
+    
+    if (!titulo || !texto) { showToast('Dados da declaração não encontrados', 'error'); return; }
+    
+    const pregao = pregoes.find(p => p.id === currentPregaoId);
+    
+    if (typeof window.jspdf === 'undefined') {
+        showToast('Erro: Biblioteca PDF não carregou. Recarregue a página (F5).', 'error');
+        return;
+    }
+    
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    const margin = 20;
+    const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
+    const maxWidth = pageWidth - (2 * margin);
+    let y = 3;
+    
+    // Carregar logo e cabeçalho
+    const logoImg = new Image();
+    logoImg.crossOrigin = 'anonymous';
+    logoImg.src = 'I.R.-COMERCIO-E-MATERIAIS-ELETRICOS-LTDA-PDF.png';
+    
+    const desenharDeclaracao = (logoCarregada) => {
+        // Cabeçalho
+        if (logoCarregada) {
+            const logoW = 40;
+            const logoH = (logoImg.height / logoImg.width) * logoW;
+            const logoX = 5;
+            doc.setGState(new doc.GState({ opacity: 0.3 }));
+            doc.addImage(logoImg, 'PNG', logoX, y, logoW, logoH);
+            doc.setGState(new doc.GState({ opacity: 1.0 }));
+            
+            const fs = logoH * 0.5;
+            doc.setFontSize(fs);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(150, 150, 150);
+            const tx = logoX + logoW + 1.2;
+            doc.text('I.R COMÉRCIO E', tx, y + fs * 0.85);
+            doc.text('MATERIAIS ELÉTRICOS LTDA', tx, y + fs * 0.85 + fs * 0.5);
+            doc.setTextColor(0, 0, 0);
+            y += logoH + 10;
+        } else {
+            y = 25;
+        }
+        
+        // Título centralizado
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
+        doc.text(titulo.toUpperCase(), pageWidth / 2, y, { align: 'center' });
+        y += 14;
+        
+        // Corpo do texto — fonte Arial 12, centralizado
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        
+        const paragrafos = texto.split('\n');
+        paragrafos.forEach(para => {
+            if (para.trim() === '') {
+                y += 6;
+                return;
+            }
+            const linhas = doc.splitTextToSize(para.trim(), maxWidth);
+            linhas.forEach(linha => {
+                if (y > pageHeight - 50) {
+                    doc.addPage();
+                    y = 20;
+                }
+                doc.text(linha, pageWidth / 2, y, { align: 'center' });
+                y += 7;
+            });
+        });
+        
+        y += 12;
+        
+        if (y > pageHeight - 45) { doc.addPage(); y = 20; }
+        
+        // Data
+        const dataAtual = new Date();
+        const dia = dataAtual.getDate();
+        const meses = ['JANEIRO','FEVEREIRO','MARÇO','ABRIL','MAIO','JUNHO',
+                       'JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'];
+        const mes = meses[dataAtual.getMonth()];
+        const ano = dataAtual.getFullYear();
+        
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`SERRA/ES, ${dia} DE ${mes} DE ${ano}`, pageWidth / 2, y, { align: 'center' });
+        y += 6;
+        
+        // Nome do arquivo
+        const uasgPart = pregao?.uasg ? `-${pregao.uasg}` : '';
+        const numPart = pregao?.numero_pregao ? `-${pregao.numero_pregao}` : '';
+        const nomeArquivo = `${titulo.toUpperCase().replace(/\s+/g, '-')}${numPart}${uasgPart}.pdf`;
+        
+        if (comAssinatura) {
+            const assin = new Image();
+            assin.crossOrigin = 'anonymous';
+            assin.src = 'assinatura.png';
+            assin.onload = () => {
+                try {
+                    const aw = 50, ah = (assin.height / assin.width) * aw;
+                    doc.addImage(assin, 'PNG', (pageWidth / 2) - (aw / 2), y + 2, aw, ah);
+                    let yf = y + ah + 8;
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('ROSEMEIRE BICALHO DE LIMA GRAVINO', pageWidth / 2, yf, { align: 'center' });
+                    yf += 5; doc.setFont('helvetica', 'normal');
+                    doc.text('MG-10.078.568 / CPF: 045.160.616-78', pageWidth / 2, yf, { align: 'center' });
+                    yf += 5; doc.text('DIRETORA', pageWidth / 2, yf, { align: 'center' });
+                    doc.save(nomeArquivo);
+                    showToast('Declaração gerada com sucesso!', 'success');
+                } catch(e) { semAssinatura(); }
+            };
+            assin.onerror = semAssinatura;
+        } else {
+            semAssinatura();
+        }
+        
+        function semAssinatura() {
+            y += 20;
+            doc.setDrawColor(0,0,0);
+            doc.line(pageWidth/2 - 40, y, pageWidth/2 + 40, y);
+            y += 5; doc.setFont('helvetica', 'bold');
+            doc.text('ROSEMEIRE BICALHO DE LIMA GRAVINO', pageWidth/2, y, { align: 'center' });
+            y += 5; doc.setFont('helvetica', 'normal');
+            doc.text('MG-10.078.568 / CPF: 045.160.616-78', pageWidth/2, y, { align: 'center' });
+            y += 5; doc.text('DIRETORA', pageWidth/2, y, { align: 'center' });
+            doc.save(nomeArquivo);
+            showToast('Declaração gerada!', 'success');
+        }
+    };
+    
+    logoImg.onload = () => desenharDeclaracao(true);
+    logoImg.onerror = () => desenharDeclaracao(false);
 }
 
 // switchItemsView removido (botões Proposta/Exequibilidade removidos)
@@ -1322,15 +1558,20 @@ function renderItens(itensToRender = itens) {
     
     container.innerHTML = itensToRender.map((item, index) => {
         const checked = item.ganho ? 'checked' : '';
-        const rowClass = item.ganho ? 'item-ganho' : '';
+        const rowClass = item.ganho ? 'item-ganho row-won' : '';
+        const cbId = `item-ganho-${item.id}`;
         
         return `
             <tr class="${rowClass}" 
                 ondblclick="editarItem('${item.id}')" 
                 oncontextmenu="showItemContextMenu(event, '${item.id}')">
-                <td style="text-align: center;">
-                    <input type="checkbox" ${checked} onchange="toggleItemGanho('${item.id}', this.checked)" 
-                           style="cursor: pointer; width: 18px; height: 18px;" onclick="event.stopPropagation()">
+                <td style="text-align: center; padding: 8px;">
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" id="${cbId}" ${checked}
+                               onchange="toggleItemGanho('${item.id}', this.checked)"
+                               class="styled-checkbox" onclick="event.stopPropagation()">
+                        <label for="${cbId}" class="checkbox-label-styled"></label>
+                    </div>
                 </td>
                 <td><strong>${item.numero}</strong></td>
                 <td class="descricao-cell">${item.descricao}</td>
@@ -1487,7 +1728,7 @@ function adicionarItem() {
         estimado_total: 0,
         custo_unt: 0,
         custo_total: 0,
-        porcentagem: 10,
+        porcentagem: 149,
         venda_unt: 0,
         venda_total: 0,
         ganho: false
@@ -1495,7 +1736,7 @@ function adicionarItem() {
     
     itens.push(novoItem);
     renderItens();
-    editarItem(novoItem.id);
+    // Não abre modal — apenas insere o item na tabela
 }
 
 function abrirModalIntervalo() {
@@ -1565,15 +1806,7 @@ function adicionarIntervalo(intervalo) {
             estimado_total: 0,
             custo_unt: 0,
             custo_total: 0,
-            porcentagem: 10,
-            venda_unt: 0,
-            venda_total: 0,
-            ganho: false
-        };
-        itens.push(novoItem);
-    });
-    
-    itens.sort((a, b) => a.numero - b.numero);
+            porcentagem: 149,
     renderItens();
     showToast(`${numeros.length} itens adicionados`, 'success');
 }
@@ -1595,29 +1828,24 @@ async function confirmarExcluirItens() {
     const intervalo = document.getElementById('inputExcluirIntervalo').value.trim();
     fecharModalExcluirItens();
     
-    if (intervalo) {
-        // Excluir por intervalo de números
-        const numeros = parsearIntervalo(intervalo);
-        if (!numeros) return;
-        
-        const idsParaExcluir = itens
-            .filter(item => numeros.includes(item.numero))
-            .map(item => item.id);
-        
-        if (idsParaExcluir.length === 0) {
-            showToast('Nenhum item encontrado no intervalo informado', 'error');
-            return;
-        }
-        
-        await excluirItensPorIds(idsParaExcluir);
-    } else {
-        // Excluir selecionados
-        if (selectedItens.size === 0) {
-            showToast('Selecione itens para excluir', 'error');
-            return;
-        }
-        await excluirItensPorIds(Array.from(selectedItens));
+    if (!intervalo) {
+        showToast('Digite um intervalo para excluir', 'error');
+        return;
     }
+    
+    const numeros = parsearIntervalo(intervalo);
+    if (!numeros) return;
+    
+    const idsParaExcluir = itens
+        .filter(item => numeros.includes(item.numero))
+        .map(item => item.id);
+    
+    if (idsParaExcluir.length === 0) {
+        showToast('Nenhum item encontrado no intervalo informado', 'error');
+        return;
+    }
+    
+    await excluirItensPorIds(idsParaExcluir);
 }
 
 function parsearIntervalo(intervalo) {
@@ -1719,6 +1947,9 @@ function editarItem(id) {
     mostrarModalItem(item);
 }
 
+let currentItemTab = 0;
+const itemTabs = ['item-tab-item', 'item-tab-fornecedor', 'item-tab-valores'];
+
 function mostrarModalItem(item) {
     let modal = document.getElementById('modalItem');
     if (!modal) {
@@ -1726,29 +1957,80 @@ function mostrarModalItem(item) {
         document.body.appendChild(modal);
     }
     
+    document.getElementById('itemNumero').value = item.numero;
     document.getElementById('itemDescricao').value = item.descricao;
     document.getElementById('itemQtd').value = item.qtd;
-    document.getElementById('itemUnidade').value = item.unidade;
+    document.getElementById('itemUnidade').value = item.unidade || 'UN';
     document.getElementById('itemMarca').value = item.marca || '';
     document.getElementById('itemModelo').value = item.modelo || '';
     document.getElementById('itemEstimadoUnt').value = item.estimado_unt || 0;
     document.getElementById('itemEstimadoTotal').value = item.estimado_total || 0;
     document.getElementById('itemCustoUnt').value = item.custo_unt || 0;
     document.getElementById('itemCustoTotal').value = item.custo_total || 0;
-    document.getElementById('itemPorcentagem').value = item.porcentagem || 10;
+    document.getElementById('itemPorcentagem').value = item.porcentagem !== undefined ? item.porcentagem : 149;
     document.getElementById('itemVendaUnt').value = item.venda_unt || 0;
     document.getElementById('itemVendaTotal').value = item.venda_total || 0;
     
-    document.getElementById('modalItemTitle').textContent = `Item ${item.numero}`;
+    atualizarTituloModalItem(item);
     
-    // Atualizar botões de navegação
-    document.getElementById('btnPrevItem').style.display = editingItemIndex > 0 ? 'inline-block' : 'none';
-    document.getElementById('btnNextItem').style.display = editingItemIndex < itens.length - 1 ? 'inline-block' : 'none';
+    currentItemTab = 0;
+    switchItemTab(itemTabs[0]);
     
     modal.classList.add('show');
-    
-    // Adicionar event listeners para cálculos automáticos
     configurarCalculosAutomaticos();
+}
+
+function atualizarTituloModalItem(item) {
+    const totalItens = itens.length;
+    const posicao = editingItemIndex + 1;
+    
+    const titleEl = document.getElementById('modalItemTitle');
+    const prevPag = document.getElementById('btnPrevPagItem');
+    const nextPag = document.getElementById('btnNextPagItem');
+    
+    if (titleEl) titleEl.textContent = `Item ${item.numero}`;
+    if (prevPag) prevPag.style.visibility = editingItemIndex > 0 ? 'visible' : 'hidden';
+    if (nextPag) nextPag.style.visibility = editingItemIndex < itens.length - 1 ? 'visible' : 'hidden';
+}
+
+function switchItemTab(tabId) {
+    itemTabs.forEach((tab, idx) => {
+        const el = document.getElementById(tab);
+        const btn = document.querySelectorAll('#modalItem .tab-btn')[idx];
+        if (el) el.classList.remove('active');
+        if (btn) btn.classList.remove('active');
+    });
+    
+    const activeEl = document.getElementById(tabId);
+    const activeIdx = itemTabs.indexOf(tabId);
+    const activeBtn = document.querySelectorAll('#modalItem .tab-btn')[activeIdx];
+    
+    if (activeEl) activeEl.classList.add('active');
+    if (activeBtn) activeBtn.classList.add('active');
+    
+    currentItemTab = activeIdx;
+    atualizarNavegacaoAbasItem();
+}
+
+function atualizarNavegacaoAbasItem() {
+    const btnPrev = document.getElementById('btnItemTabPrev');
+    const btnNext = document.getElementById('btnItemTabNext');
+    if (btnPrev) btnPrev.style.display = currentItemTab === 0 ? 'none' : 'inline-block';
+    if (btnNext) btnNext.style.display = currentItemTab === itemTabs.length - 1 ? 'none' : 'inline-block';
+}
+
+function nextItemTab() {
+    if (currentItemTab < itemTabs.length - 1) {
+        currentItemTab++;
+        switchItemTab(itemTabs[currentItemTab]);
+    }
+}
+
+function prevItemTab() {
+    if (currentItemTab > 0) {
+        currentItemTab--;
+        switchItemTab(itemTabs[currentItemTab]);
+    }
 }
 
 function criarModalItem() {
@@ -1757,69 +2039,104 @@ function criarModalItem() {
     modal.className = 'modal-overlay';
     modal.innerHTML = `
         <div class="modal-content large">
-            <div class="modal-header">
-                <h3 class="modal-title" id="modalItemTitle">Editar Item</h3>
+            <div class="modal-header" style="align-items: center;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <button id="btnPrevPagItem" onclick="navegarItemAnterior()" 
+                            style="background: none; border: none; cursor: pointer; color: var(--text-secondary); font-size: 1.1rem; padding: 0 0.25rem; visibility: hidden;">‹</button>
+                    <h3 class="modal-title" id="modalItemTitle">Item</h3>
+                    <button id="btnNextPagItem" onclick="navegarProximoItem()"
+                            style="background: none; border: none; cursor: pointer; color: var(--text-secondary); font-size: 1.1rem; padding: 0 0.25rem; visibility: hidden;">›</button>
+                </div>
                 <button class="close-modal" onclick="fecharModalItem()">✕</button>
             </div>
             
-            <div class="form-grid">
-                <div class="form-group" style="grid-column: 1 / -1;">
-                    <label>Descrição *</label>
-                    <textarea id="itemDescricao" rows="3" required></textarea>
+            <div class="tabs-container">
+                <div class="tabs-nav">
+                    <button class="tab-btn active" onclick="switchItemTab('item-tab-item')">Item</button>
+                    <button class="tab-btn" onclick="switchItemTab('item-tab-fornecedor')">Fornecedor</button>
+                    <button class="tab-btn" onclick="switchItemTab('item-tab-valores')">Valores</button>
                 </div>
-                <div class="form-group">
-                    <label>QTD *</label>
-                    <input type="number" id="itemQtd" min="1" required>
+                
+                <!-- Aba Item -->
+                <div class="tab-content active" id="item-tab-item">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Nº do Item</label>
+                            <input type="number" id="itemNumero" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label>Quantidade *</label>
+                            <input type="number" id="itemQtd" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Unidade *</label>
+                            <select id="itemUnidade">
+                                <option value="UN">UN</option>
+                                <option value="MT">MT</option>
+                                <option value="PÇ">PÇ</option>
+                                <option value="CX">CX</option>
+                                <option value="PT">PT</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label>Descrição *</label>
+                            <textarea id="itemDescricao" rows="4" required></textarea>
+                        </div>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Unidade *</label>
-                    <input type="text" id="itemUnidade" required>
+                
+                <!-- Aba Fornecedor -->
+                <div class="tab-content" id="item-tab-fornecedor">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Marca</label>
+                            <input type="text" id="itemMarca">
+                        </div>
+                        <div class="form-group">
+                            <label>Modelo</label>
+                            <input type="text" id="itemModelo">
+                        </div>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Marca</label>
-                    <input type="text" id="itemMarca">
-                </div>
-                <div class="form-group">
-                    <label>Modelo</label>
-                    <input type="text" id="itemModelo">
-                </div>
-                <div class="form-group">
-                    <label>Estimado Unt</label>
-                    <input type="number" id="itemEstimadoUnt" step="0.01" min="0">
-                </div>
-                <div class="form-group">
-                    <label>Estimado Total</label>
-                    <input type="number" id="itemEstimadoTotal" step="0.01" min="0">
-                </div>
-                <div class="form-group">
-                    <label>Custo Unt</label>
-                    <input type="number" id="itemCustoUnt" step="0.01" min="0">
-                </div>
-                <div class="form-group">
-                    <label>Custo Total</label>
-                    <input type="number" id="itemCustoTotal" step="0.01" min="0">
-                </div>
-                <div class="form-group">
-                    <label>Porcentagem</label>
-                    <select id="itemPorcentagem">
-                        ${[0,5,10,15,20,25,30,50,100,150,200].map(p => 
-                            `<option value="${p}">${p}%</option>`
-                        ).join('')}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Venda Unt</label>
-                    <input type="number" id="itemVendaUnt" step="0.01" min="0">
-                </div>
-                <div class="form-group">
-                    <label>Venda Total</label>
-                    <input type="number" id="itemVendaTotal" step="0.01" min="0">
+                
+                <!-- Aba Valores -->
+                <div class="tab-content" id="item-tab-valores">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Compra UNT (Estimado)</label>
+                            <input type="number" id="itemEstimadoUnt" step="0.01" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Compra Total (Estimado)</label>
+                            <input type="number" id="itemEstimadoTotal" step="0.01" min="0" readonly style="background: var(--bg-secondary); opacity: 0.7;">
+                        </div>
+                        <div class="form-group">
+                            <label>Custo UNT</label>
+                            <input type="number" id="itemCustoUnt" step="0.01" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Custo Total</label>
+                            <input type="number" id="itemCustoTotal" step="0.01" min="0" readonly style="background: var(--bg-secondary); opacity: 0.7;">
+                        </div>
+                        <div class="form-group">
+                            <label>Porcentagem (%)</label>
+                            <input type="number" id="itemPorcentagem" min="0" step="1" value="149">
+                        </div>
+                        <div class="form-group">
+                            <label>Venda UNT</label>
+                            <input type="number" id="itemVendaUnt" step="0.01" min="0" readonly style="background: var(--bg-secondary); opacity: 0.7;">
+                        </div>
+                        <div class="form-group">
+                            <label>Venda Total</label>
+                            <input type="number" id="itemVendaTotal" step="0.01" min="0" readonly style="background: var(--bg-secondary); opacity: 0.7;">
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div class="modal-actions">
-                <button type="button" onclick="navegarItemAnterior()" class="secondary" id="btnPrevItem">← Anterior</button>
-                <button type="button" onclick="navegarProximoItem()" class="secondary" id="btnNextItem">Próximo →</button>
+                <button type="button" id="btnItemTabPrev" onclick="prevItemTab()" class="secondary" style="display: none;">Anterior</button>
+                <button type="button" id="btnItemTabNext" onclick="nextItemTab()" class="secondary">Próximo</button>
                 <button type="button" onclick="salvarItemAtual()" class="success">Salvar</button>
                 <button type="button" onclick="fecharModalItem()" class="danger">Cancelar</button>
             </div>
@@ -1838,42 +2155,42 @@ function configurarCalculosAutomaticos() {
     const vendaUnt = document.getElementById('itemVendaUnt');
     const vendaTotal = document.getElementById('itemVendaTotal');
     
-    // Estimado Total = QTD x Estimado Unt
-    [qtd, estimadoUnt].forEach(el => {
-        el.addEventListener('input', () => {
-            estimadoTotal.value = (parseFloat(qtd.value || 0) * parseFloat(estimadoUnt.value || 0)).toFixed(2);
-        });
-    });
+    if (!qtd || !estimadoUnt) return;
     
-    // Custo Total = QTD x Custo Unt
-    [qtd, custoUnt].forEach(el => {
-        el.addEventListener('input', () => {
-            custoTotal.value = (parseFloat(qtd.value || 0) * parseFloat(custoUnt.value || 0)).toFixed(2);
-            calcularVendaUnt();
-        });
-    });
-    
-    // Venda Unt = Custo Unt x (1 + Porcentagem/100)
-    [custoUnt, porcentagem].forEach(el => {
-        el.addEventListener('input', calcularVendaUnt);
-    });
-    
-    function calcularVendaUnt() {
-        const custo = parseFloat(custoUnt.value || 0);
+    function calcular() {
+        const q = parseFloat(qtd.value || 0);
+        const eu = parseFloat(estimadoUnt.value || 0);
+        const cu = parseFloat(custoUnt.value || 0);
         const perc = parseFloat(porcentagem.value || 0);
-        const venda = custo * (1 + perc / 100);
-        vendaUnt.value = venda.toFixed(2);
-        vendaTotal.value = (venda * parseFloat(qtd.value || 0)).toFixed(2);
+        
+        // Estimado Total = QTD x Estimado UNT
+        estimadoTotal.value = (q * eu).toFixed(2);
+        // Custo Total = QTD x Custo UNT
+        custoTotal.value = (q * cu).toFixed(2);
+        // Venda UNT = Custo UNT x (1 + Porcentagem/100)
+        const vu = cu * (1 + perc / 100);
+        vendaUnt.value = vu.toFixed(2);
+        // Venda Total = Venda UNT x QTD
+        vendaTotal.value = (vu * q).toFixed(2);
     }
     
-    // Venda Total = QTD x Venda Unt
-    [qtd, vendaUnt].forEach(el => {
-        el.addEventListener('input', () => {
-            vendaTotal.value = (parseFloat(qtd.value || 0) * parseFloat(vendaUnt.value || 0)).toFixed(2);
-        });
+    // Remover listeners antigos clonando elementos
+    [qtd, estimadoUnt, custoUnt, porcentagem].forEach(el => {
+        const clone = el.cloneNode(true);
+        el.parentNode.replaceChild(clone, el);
+    });
+    
+    // Re-buscar após clonagem
+    const qtd2 = document.getElementById('itemQtd');
+    const eu2 = document.getElementById('itemEstimadoUnt');
+    const cu2 = document.getElementById('itemCustoUnt');
+    const perc2 = document.getElementById('itemPorcentagem');
+    
+    [qtd2, eu2, cu2, perc2].forEach(el => {
+        if (el) el.addEventListener('input', calcular);
     });
 }
-
+    
 function navegarItemAnterior() {
     if (editingItemIndex > 0) {
         salvarItemAtual(false);
@@ -1893,16 +2210,17 @@ function navegarProximoItem() {
 async function salvarItemAtual(fechar = true) {
     const item = itens[editingItemIndex];
     
+    item.numero = parseInt(document.getElementById('itemNumero').value) || item.numero;
     item.descricao = toUpperCase(document.getElementById('itemDescricao').value);
     item.qtd = parseInt(document.getElementById('itemQtd').value);
-    item.unidade = toUpperCase(document.getElementById('itemUnidade').value);
+    item.unidade = document.getElementById('itemUnidade').value;
     item.marca = toUpperCase(document.getElementById('itemMarca').value);
     item.modelo = toUpperCase(document.getElementById('itemModelo').value);
     item.estimado_unt = parseFloat(document.getElementById('itemEstimadoUnt').value || 0);
     item.estimado_total = parseFloat(document.getElementById('itemEstimadoTotal').value || 0);
     item.custo_unt = parseFloat(document.getElementById('itemCustoUnt').value || 0);
     item.custo_total = parseFloat(document.getElementById('itemCustoTotal').value || 0);
-    item.porcentagem = parseInt(document.getElementById('itemPorcentagem').value || 10);
+    item.porcentagem = parseFloat(document.getElementById('itemPorcentagem').value || 149);
     item.venda_unt = parseFloat(document.getElementById('itemVendaUnt').value || 0);
     item.venda_total = parseFloat(document.getElementById('itemVendaTotal').value || 0);
     
@@ -1974,30 +2292,21 @@ function fecharModalAssinatura() {
 let fornecedoresDisponiveis = [];
 
 async function abrirModalCotacao() {
-    // Carregar fornecedores do módulo de fornecedores
-    try {
-        const headers = { 'Accept': 'application/json' };
-        if (sessionToken) headers['X-Session-Token'] = sessionToken;
-        const response = await fetch(`${API_URL}/fornecedores`, { headers });
-        if (response.ok) {
-            fornecedoresDisponiveis = await response.json();
-        } else {
-            fornecedoresDisponiveis = [];
-        }
-    } catch (e) {
-        fornecedoresDisponiveis = [];
-    }
+    // Fornecedores disponíveis = marcas preenchidas nos itens do pregão atual
+    const marcasNosItens = [...new Set(itens.filter(i => i.marca).map(i => i.marca))].sort();
     
     const select = document.getElementById('cotacaoFornecedor');
     if (select) {
-        select.innerHTML = '<option value="">Selecione o fornecedor...</option>' +
-            fornecedoresDisponiveis.map(f => `<option value="${f.id}">${f.nome || f.razao_social || f.name}</option>`).join('');
+        select.innerHTML = '<option value="">Selecione...</option>' +
+            marcasNosItens.map(m => `<option value="${m}">${m}</option>`).join('');
     }
     
     document.getElementById('cotacaoContato').value = '';
     document.getElementById('cotacaoIntervalo').value = '';
-    document.getElementById('cotacaoPreview').value = '';
-    document.querySelector('input[name="tipoCotacao"][value="descricao"]').checked = true;
+    document.getElementById('cotacaoTipo').value = 'descricao';
+    
+    const aviso = document.getElementById('cotacaoAviso');
+    if (aviso) aviso.style.display = 'none';
     
     const modal = document.getElementById('modalCotacao');
     if (modal) modal.classList.add('show');
@@ -2008,49 +2317,80 @@ function fecharModalCotacao() {
     if (modal) modal.classList.remove('show');
 }
 
-function selecionarFornecedorCotacao() {
-    const select = document.getElementById('cotacaoFornecedor');
-    const fornecedorId = select.value;
-    const fornecedor = fornecedoresDisponiveis.find(f => String(f.id) === fornecedorId);
+async function selecionarFornecedorCotacao() {
+    const marca = document.getElementById('cotacaoFornecedor').value;
+    const contatoEl = document.getElementById('cotacaoContato');
+    const aviso = document.getElementById('cotacaoAviso');
     
-    if (fornecedor) {
-        const meio = fornecedor.meio_envio || fornecedor.envio || '';
-        const contato = fornecedor.email || fornecedor.whatsapp || fornecedor.telefone || '';
-        document.getElementById('cotacaoContato').value = `${meio ? meio + ': ' : ''}${contato}`;
-    } else {
-        document.getElementById('cotacaoContato').value = '';
+    if (!marca) {
+        contatoEl.value = '';
+        if (aviso) aviso.style.display = 'none';
+        return;
     }
     
-    atualizarPreviewCotacao();
-}
-
-function obterSaudacao() {
-    const hora = new Date().getHours();
-    if (hora >= 5 && hora < 12) return 'Bom dia';
-    if (hora >= 12 && hora < 18) return 'Boa tarde';
-    return 'Boa noite';
-}
-
-function parsearIntervaloNumerosLista(intervaloStr) {
-    if (!intervaloStr.trim()) return null;
-    return parsearIntervalo(intervaloStr);
-}
-
-function atualizarPreviewCotacao() {
-    const intervaloStr = document.getElementById('cotacaoIntervalo').value.trim();
-    const tipo = document.querySelector('input[name="tipoCotacao"]:checked')?.value || 'descricao';
-    
-    let itensCotacao = itens;
-    
-    if (intervaloStr) {
-        const numeros = parsearIntervaloNumerosLista(intervaloStr);
-        if (numeros) {
-            itensCotacao = itens.filter(item => numeros.includes(item.numero));
+    // Buscar fornecedor pelo nome/marca no banco de dados
+    try {
+        const headers = { 'Accept': 'application/json' };
+        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        const response = await fetch(`${API_URL}/fornecedores`, { headers });
+        
+        if (response.ok) {
+            const lista = await response.json();
+            const fornecedor = lista.find(f => 
+                (f.nome || f.razao_social || f.name || '').toUpperCase() === marca.toUpperCase()
+            );
+            
+            if (fornecedor) {
+                const meio = fornecedor.meio_envio || fornecedor.envio || '';
+                const contato = fornecedor.email || fornecedor.whatsapp || fornecedor.telefone || '';
+                contatoEl.value = `${meio ? meio + ': ' : ''}${contato}`;
+                fornecedoresDisponiveis = lista;
+                if (aviso) aviso.style.display = 'none';
+            } else {
+                contatoEl.value = '';
+                if (aviso) {
+                    aviso.textContent = 'Fornecedor não encontrado';
+                    aviso.style.display = 'block';
+                }
+            }
+        } else {
+            contatoEl.value = '';
+            if (aviso) {
+                aviso.textContent = 'Fornecedor não encontrado';
+                aviso.style.display = 'block';
+            }
         }
+    } catch (e) {
+        contatoEl.value = '';
+        if (aviso) {
+            aviso.textContent = 'Fornecedor não encontrado';
+            aviso.style.display = 'block';
+        }
+    }
+}
+
+// atualizarPreviewCotacao e parsearIntervaloNumerosLista removidos (sem preview no modal de cotação)
+
+function enviarCotacao() {
+    const marca = document.getElementById('cotacaoFornecedor').value;
+    const tipo = document.getElementById('cotacaoTipo').value;
+    const intervaloStr = document.getElementById('cotacaoIntervalo').value.trim();
+    const contato = document.getElementById('cotacaoContato').value;
+    
+    if (!marca) {
+        showToast('Selecione um fornecedor', 'error');
+        return;
+    }
+    
+    // Definir itens para cotação
+    let itensCotacao = itens;
+    if (intervaloStr) {
+        const numeros = parsearIntervalo(intervaloStr);
+        if (numeros) itensCotacao = itens.filter(item => numeros.includes(item.numero));
     }
     
     if (itensCotacao.length === 0) {
-        document.getElementById('cotacaoPreview').value = '';
+        showToast('Nenhum item no intervalo informado', 'error');
         return;
     }
     
@@ -2066,35 +2406,21 @@ function atualizarPreviewCotacao() {
         }
     });
     
-    document.getElementById('cotacaoPreview').value = mensagem.trim();
-}
-
-function enviarCotacao() {
-    const select = document.getElementById('cotacaoFornecedor');
-    const fornecedorId = select.value;
-    const fornecedor = fornecedoresDisponiveis.find(f => String(f.id) === fornecedorId);
-    const mensagem = document.getElementById('cotacaoPreview').value;
-    
-    if (!fornecedorId) {
-        showToast('Selecione um fornecedor', 'error');
-        return;
-    }
-    
-    if (!mensagem) {
-        showToast('Nenhuma mensagem gerada', 'error');
-        return;
-    }
-    
-    const meio = (fornecedor?.meio_envio || fornecedor?.envio || '').toLowerCase();
-    const contato = fornecedor?.email || fornecedor?.whatsapp || fornecedor?.telefone || '';
+    mensagem = mensagem.trim();
     const msgEncoded = encodeURIComponent(mensagem);
     
+    // Determinar meio pelo fornecedor encontrado
+    const fornecedor = fornecedoresDisponiveis.find(f =>
+        (f.nome || f.razao_social || f.name || '').toUpperCase() === marca.toUpperCase()
+    );
+    const meio = (fornecedor?.meio_envio || fornecedor?.envio || contato || '').toLowerCase();
+    const contatoLimpo = fornecedor?.email || fornecedor?.whatsapp || fornecedor?.telefone || '';
+    
     if (meio.includes('whatsapp') || meio.includes('whats')) {
-        const numero = contato.replace(/\D/g, '');
+        const numero = contatoLimpo.replace(/\D/g, '');
         window.open(`https://wa.me/${numero}?text=${msgEncoded}`, '_blank');
     } else {
-        // Email
-        window.open(`mailto:${contato}?body=${msgEncoded}`, '_blank');
+        window.open(`mailto:${contatoLimpo}?body=${msgEncoded}`, '_blank');
     }
     
     fecharModalCotacao();
