@@ -357,7 +357,8 @@ function displayPregoes(pregoesToDisplay) {
     container.innerHTML = pregoesToDisplay.map(pregao => {
         const statusClass = pregao.status === 'GANHO' ? 'success' : 
                            pregao.status === 'ABERTO' ? 'warning' :
-                           pregao.status === 'OCORRIDO' ? 'danger' : 'default';
+                           pregao.status === 'OCORRIDO' ? 'danger' :
+                           pregao.status === 'SUSPENSO' ? 'suspended' : 'default';
         
         const rowClass = pregao.ganho ? 'row-won' : '';
         const checked = pregao.ganho ? 'checked' : '';
@@ -384,7 +385,7 @@ function displayPregoes(pregoesToDisplay) {
                 <td>${hora}</td>
                 <td><strong>${pregao.numero_pregao}</strong></td>
                 <td>${pregao.uasg || '-'}</td>
-                <td><span class="status-badge ${statusClass}">${pregao.status}</span></td>
+                <td><span class="status-badge status-badge-${statusClass}">${pregao.status}</span></td>
                 <td class="actions-cell">
                     <button class="action-btn view" onclick="viewPregao('${pregao.id}')" title="Visualizar">Ver</button>
                     <button class="action-btn edit" onclick="editPregao('${pregao.id}')" title="Editar">Editar</button>
@@ -1053,8 +1054,8 @@ function criarTelaItens() {
             </div>
             <div style="display: flex; gap: 0.75rem;">
                 <button onclick="adicionarItem()" style="background: #22C55E; color: white; border: none; padding: 0.65rem 1.25rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600;">+ Item</button>
-                <button onclick="adicionarIntervalo()" style="background: #6B7280; color: white; border: none; padding: 0.65rem 1.25rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600;">+ Intervalo</button>
-                <button onclick="excluirItensSelecionados()" style="background: #EF4444; color: white; border: none; padding: 0.65rem 1.25rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600;">Excluir</button>
+                <button onclick="abrirModalIntervalo()" style="background: #6B7280; color: white; border: none; padding: 0.65rem 1.25rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600;">+ Intervalo</button>
+                <button onclick="abrirModalExcluirItens()" style="background: #EF4444; color: white; border: none; padding: 0.65rem 1.25rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600;">Excluir</button>
             </div>
         </div>
 
@@ -1066,14 +1067,38 @@ function criarTelaItens() {
                 </svg>
                 <input type="text" id="searchItens" placeholder="Pesquisar itens" oninput="filterItens()">
                 
-                <select id="filterMarcaItens" onchange="filterItens()" style="margin-left: auto; min-width: 180px;">
-                    <option value="">TODAS AS MARCAS</option>
-                </select>
+                <div class="search-bar-filters">
+                    <div class="filter-dropdown-inline">
+                        <select id="filterMarcaItens" onchange="filterItens()">
+                            <option value="">Marca</option>
+                        </select>
+                        <svg class="dropdown-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                </div>
+
+                <button onclick="abrirModalCotacao()" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; display: flex; align-items: center;" title="Enviar Cotação">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="20" height="16" x="2" y="4" rx="2"/>
+                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                    </svg>
+                </button>
                 
-                <button onclick="gerarPDFsProposta()" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; margin-left: 0.5rem; display: flex; align-items: center;" title="Gerar PDFs">
+                <button onclick="perguntarAssinaturaPDF()" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; display: flex; align-items: center;" title="Gerar Proposta PDF">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                         <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                </button>
+
+                <button onclick="funcaoEmDesenvolvimento()" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; display: flex; align-items: center;" title="Em desenvolvimento">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/>
+                        <path d="M14 2v5a1 1 0 0 0 1 1h5"/>
+                        <path d="M10 9H8"/>
+                        <path d="M16 13H8"/>
+                        <path d="M16 17H8"/>
                     </svg>
                 </button>
                 
@@ -1092,11 +1117,6 @@ function criarTelaItens() {
                     </svg>
                 </button>
             </div>
-        </div>
-
-        <div class="month-navigation">
-            <button class="month-nav-btn active" onclick="switchItemsView('proposta')" id="btnProposta">Proposta</button>
-            <button class="month-nav-btn" onclick="switchItemsView('exequibilidade')" id="btnExequibilidade">Comprovante de Exequibilidade</button>
         </div>
 
         <div class="card table-card">
@@ -1126,16 +1146,113 @@ function criarTelaItens() {
                 </table>
             </div>
         </div>
+
+        <!-- Modal + Intervalo -->
+        <div class="modal-overlay" id="modalIntervalo">
+            <div class="modal-content modal-delete" style="min-width: 380px;">
+                <button class="close-modal" onclick="fecharModalIntervalo()">✕</button>
+                <div style="padding: 1rem 0 0.5rem 0;">
+                    <h3 style="margin: 0 0 1rem 0; font-size: 1.1rem;">Adicionar Intervalo</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1rem;">Digite o intervalo de itens (ex: 1-5, 10, 15-20)</p>
+                    <input type="text" id="inputIntervalo" placeholder="Ex: 1-5, 10, 15-20" 
+                           style="width: 100%; padding: 0.65rem 0.875rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.9rem; background: var(--bg-secondary); color: var(--text-primary); box-sizing: border-box;">
+                </div>
+                <div class="modal-actions modal-actions-no-border">
+                    <button class="danger" onclick="fecharModalIntervalo()">Cancelar</button>
+                    <button class="success" onclick="confirmarAdicionarIntervalo()">Adicionar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Excluir Itens -->
+        <div class="modal-overlay" id="modalExcluirItens">
+            <div class="modal-content modal-delete" style="min-width: 380px;">
+                <button class="close-modal" onclick="fecharModalExcluirItens()">✕</button>
+                <div class="modal-message-delete" style="font-size: 1rem; padding: 1rem 0 0.5rem 0;">
+                    EXCLUIR ITENS
+                </div>
+                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.75rem; text-align: center;">Digite o intervalo de itens a excluir (ex: 1-5, 10)<br>ou deixe em branco para excluir os selecionados.</p>
+                <input type="text" id="inputExcluirIntervalo" placeholder="Ex: 1-5, 10 (ou deixe vazio para selecionados)" 
+                       style="width: 100%; padding: 0.65rem 0.875rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.9rem; background: var(--bg-secondary); color: var(--text-primary); box-sizing: border-box;">
+                <div class="modal-actions modal-actions-no-border">
+                    <button class="secondary" onclick="fecharModalExcluirItens()">Cancelar</button>
+                    <button class="danger" onclick="confirmarExcluirItens()">Sim</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Assinatura PDF -->
+        <div class="modal-overlay" id="modalAssinatura">
+            <div class="modal-content modal-delete">
+                <button class="close-modal" onclick="fecharModalAssinatura()">✕</button>
+                <div class="modal-message-delete">
+                    Deseja gerar a proposta com assinatura padrão?
+                </div>
+                <div class="modal-actions modal-actions-no-border">
+                    <button class="danger" onclick="gerarPDFsProposta(false)">Não</button>
+                    <button class="success" onclick="gerarPDFsProposta(true)">Sim</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Cotação -->
+        <div class="modal-overlay" id="modalCotacao">
+            <div class="modal-content" style="max-width: 500px;">
+                <div class="modal-header">
+                    <h3 class="modal-title">Enviar Cotação</h3>
+                    <button class="close-modal" onclick="fecharModalCotacao()">✕</button>
+                </div>
+                <div style="padding: 0.5rem 0;">
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-secondary);">Fornecedor</label>
+                        <select id="cotacaoFornecedor" onchange="selecionarFornecedorCotacao()" style="width: 100%; padding: 0.65rem 0.875rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); font-size: 0.9rem;">
+                            <option value="">Selecione o fornecedor...</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-secondary);">Contato</label>
+                        <input type="text" id="cotacaoContato" readonly placeholder="Será preenchido ao selecionar fornecedor"
+                               style="width: 100%; padding: 0.65rem 0.875rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-input-readonly, #f3f4f6); color: var(--text-secondary); font-size: 0.9rem; box-sizing: border-box;">
+                    </div>
+                    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                        <div class="form-group" style="flex: 1;">
+                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-secondary);">Tipo de Envio</label>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; font-size: 0.9rem;">
+                                    <input type="radio" name="tipoCotacao" value="descricao" checked onchange="atualizarPreviewCotacao()"> Descrição
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; font-size: 0.9rem;">
+                                    <input type="radio" name="tipoCotacao" value="modelo" onchange="atualizarPreviewCotacao()"> Modelo
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-secondary);">Intervalo de Itens</label>
+                            <input type="text" id="cotacaoIntervalo" placeholder="Ex: 1-5, 10" oninput="atualizarPreviewCotacao()"
+                                   style="width: 100%; padding: 0.65rem 0.875rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); font-size: 0.9rem; box-sizing: border-box;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-secondary);">Pré-visualização da Mensagem</label>
+                        <textarea id="cotacaoPreview" rows="8" readonly
+                                  style="width: 100%; padding: 0.65rem 0.875rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-input-readonly, #f3f4f6); color: var(--text-primary); font-size: 0.85rem; font-family: monospace; resize: vertical; box-sizing: border-box;"></textarea>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="secondary" onclick="fecharModalCotacao()">Cancelar</button>
+                    <button class="success" onclick="enviarCotacao()">Enviar</button>
+                </div>
+            </div>
+        </div>
     `;
     return div;
 }
 
-function switchItemsView(view) {
-    currentItemsView = view;
-    document.getElementById('btnProposta').classList.toggle('active', view === 'proposta');
-    document.getElementById('btnExequibilidade').classList.toggle('active', view === 'exequibilidade');
-    // Por enquanto apenas muda a visualização
+function funcaoEmDesenvolvimento() {
+    showToast('Funcionalidade em desenvolvimento', 'error');
 }
+
+// switchItemsView removido (botões Proposta/Exequibilidade removidos)
 
 async function carregarItens(pregaoId) {
     if (!isOnline) return;
@@ -1173,7 +1290,7 @@ function atualizarMarcasItens() {
     
     const select = document.getElementById('filterMarcaItens');
     if (select) {
-        select.innerHTML = '<option value="">TODAS</option>' + 
+        select.innerHTML = '<option value="">Marca</option>' + 
             Array.from(marcasItens).sort().map(m => `<option value="${m}">${m}</option>`).join('');
     }
 }
@@ -1204,7 +1321,7 @@ function renderItens(itensToRender = itens) {
     }
     
     container.innerHTML = itensToRender.map((item, index) => {
-        const checked = selectedItens.has(item.id) ? 'checked' : '';
+        const checked = item.ganho ? 'checked' : '';
         const rowClass = item.ganho ? 'item-ganho' : '';
         
         return `
@@ -1212,7 +1329,7 @@ function renderItens(itensToRender = itens) {
                 ondblclick="editarItem('${item.id}')" 
                 oncontextmenu="showItemContextMenu(event, '${item.id}')">
                 <td style="text-align: center;">
-                    <input type="checkbox" ${checked} onchange="toggleItemSelection('${item.id}')" 
+                    <input type="checkbox" ${checked} onchange="toggleItemGanho('${item.id}', this.checked)" 
                            style="cursor: pointer; width: 18px; height: 18px;" onclick="event.stopPropagation()">
                 </td>
                 <td><strong>${item.numero}</strong></td>
@@ -1312,13 +1429,36 @@ async function excluirItemContexto(itemId) {
     }
 }
 
+async function toggleItemGanho(id, ganho) {
+    const item = itens.find(i => i.id === id);
+    if (!item) return;
+    
+    item.ganho = ganho;
+    
+    try {
+        const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        
+        if (!id.startsWith('temp-')) {
+            await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens/${id}`, {
+                method: 'PUT',
+                headers: headers,
+                body: JSON.stringify(item)
+            });
+        }
+    } catch (error) {
+        console.error('Erro ao atualizar ganho do item:', error);
+    }
+    
+    renderItens();
+}
+
 function toggleItemSelection(id) {
     if (selectedItens.has(id)) {
         selectedItens.delete(id);
     } else {
         selectedItens.add(id);
     }
-    renderItens();
 }
 
 function toggleSelectAllItens() {
@@ -1358,10 +1498,27 @@ function adicionarItem() {
     editarItem(novoItem.id);
 }
 
-function adicionarIntervalo() {
-    const intervalo = prompt('Digite o intervalo (ex: 1-5, 10, 15-20):');
+function abrirModalIntervalo() {
+    const modal = document.getElementById('modalIntervalo');
+    if (modal) {
+        document.getElementById('inputIntervalo').value = '';
+        modal.classList.add('show');
+    }
+}
+
+function fecharModalIntervalo() {
+    const modal = document.getElementById('modalIntervalo');
+    if (modal) modal.classList.remove('show');
+}
+
+function confirmarAdicionarIntervalo() {
+    const intervalo = document.getElementById('inputIntervalo').value.trim();
+    fecharModalIntervalo();
     if (!intervalo) return;
-    
+    adicionarIntervalo(intervalo);
+}
+
+function adicionarIntervalo(intervalo) {
     const numeros = [];
     const partes = intervalo.split(',').map(p => p.trim());
     
@@ -1419,6 +1576,102 @@ function adicionarIntervalo() {
     itens.sort((a, b) => a.numero - b.numero);
     renderItens();
     showToast(`${numeros.length} itens adicionados`, 'success');
+}
+
+function abrirModalExcluirItens() {
+    const modal = document.getElementById('modalExcluirItens');
+    if (modal) {
+        document.getElementById('inputExcluirIntervalo').value = '';
+        modal.classList.add('show');
+    }
+}
+
+function fecharModalExcluirItens() {
+    const modal = document.getElementById('modalExcluirItens');
+    if (modal) modal.classList.remove('show');
+}
+
+async function confirmarExcluirItens() {
+    const intervalo = document.getElementById('inputExcluirIntervalo').value.trim();
+    fecharModalExcluirItens();
+    
+    if (intervalo) {
+        // Excluir por intervalo de números
+        const numeros = parsearIntervalo(intervalo);
+        if (!numeros) return;
+        
+        const idsParaExcluir = itens
+            .filter(item => numeros.includes(item.numero))
+            .map(item => item.id);
+        
+        if (idsParaExcluir.length === 0) {
+            showToast('Nenhum item encontrado no intervalo informado', 'error');
+            return;
+        }
+        
+        await excluirItensPorIds(idsParaExcluir);
+    } else {
+        // Excluir selecionados
+        if (selectedItens.size === 0) {
+            showToast('Selecione itens para excluir', 'error');
+            return;
+        }
+        await excluirItensPorIds(Array.from(selectedItens));
+    }
+}
+
+function parsearIntervalo(intervalo) {
+    const numeros = [];
+    const partes = intervalo.split(',').map(p => p.trim());
+    
+    for (const parte of partes) {
+        if (parte.includes('-')) {
+            const [inicio, fim] = parte.split('-').map(n => parseInt(n.trim()));
+            if (isNaN(inicio) || isNaN(fim) || inicio > fim) {
+                showToast('Intervalo inválido', 'error');
+                return null;
+            }
+            for (let i = inicio; i <= fim; i++) numeros.push(i);
+        } else {
+            const num = parseInt(parte);
+            if (isNaN(num)) {
+                showToast('Número inválido', 'error');
+                return null;
+            }
+            numeros.push(num);
+        }
+    }
+    return numeros;
+}
+
+async function excluirItensPorIds(ids) {
+    try {
+        const headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        };
+        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        
+        const idsServidor = ids.filter(id => !id.startsWith('temp-'));
+        
+        if (idsServidor.length > 0) {
+            const response = await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens/delete-multiple`, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({ ids: idsServidor })
+            });
+            if (!response.ok) throw new Error('Erro ao excluir');
+        }
+        
+        const idsSet = new Set(ids);
+        itens = itens.filter(item => !idsSet.has(item.id));
+        ids.forEach(id => selectedItens.delete(id));
+        renderItens();
+        showToast('Itens excluídos', 'success');
+    } catch (error) {
+        console.error('Erro:', error);
+        showToast('Erro ao excluir itens', 'error');
+    }
 }
 
 async function excluirItensSelecionados() {
@@ -1698,7 +1951,157 @@ function syncItens() {
     showToast('Itens sincronizados', 'success');
 }
 
-async function gerarPDFsProposta() {
+function perguntarAssinaturaPDF() {
+    if (!currentPregaoId) {
+        showToast('Erro: Pregão não identificado', 'error');
+        return;
+    }
+    const itensSelecionados = itens.filter(item => item.ganho);
+    if (itensSelecionados.length === 0) {
+        showToast('Marque ao menos um item (ganho) para gerar a proposta', 'error');
+        return;
+    }
+    const modal = document.getElementById('modalAssinatura');
+    if (modal) modal.classList.add('show');
+}
+
+function fecharModalAssinatura() {
+    const modal = document.getElementById('modalAssinatura');
+    if (modal) modal.classList.remove('show');
+}
+
+// ============ COTAÇÃO ============
+let fornecedoresDisponiveis = [];
+
+async function abrirModalCotacao() {
+    // Carregar fornecedores do módulo de fornecedores
+    try {
+        const headers = { 'Accept': 'application/json' };
+        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        const response = await fetch(`${API_URL}/fornecedores`, { headers });
+        if (response.ok) {
+            fornecedoresDisponiveis = await response.json();
+        } else {
+            fornecedoresDisponiveis = [];
+        }
+    } catch (e) {
+        fornecedoresDisponiveis = [];
+    }
+    
+    const select = document.getElementById('cotacaoFornecedor');
+    if (select) {
+        select.innerHTML = '<option value="">Selecione o fornecedor...</option>' +
+            fornecedoresDisponiveis.map(f => `<option value="${f.id}">${f.nome || f.razao_social || f.name}</option>`).join('');
+    }
+    
+    document.getElementById('cotacaoContato').value = '';
+    document.getElementById('cotacaoIntervalo').value = '';
+    document.getElementById('cotacaoPreview').value = '';
+    document.querySelector('input[name="tipoCotacao"][value="descricao"]').checked = true;
+    
+    const modal = document.getElementById('modalCotacao');
+    if (modal) modal.classList.add('show');
+}
+
+function fecharModalCotacao() {
+    const modal = document.getElementById('modalCotacao');
+    if (modal) modal.classList.remove('show');
+}
+
+function selecionarFornecedorCotacao() {
+    const select = document.getElementById('cotacaoFornecedor');
+    const fornecedorId = select.value;
+    const fornecedor = fornecedoresDisponiveis.find(f => String(f.id) === fornecedorId);
+    
+    if (fornecedor) {
+        const meio = fornecedor.meio_envio || fornecedor.envio || '';
+        const contato = fornecedor.email || fornecedor.whatsapp || fornecedor.telefone || '';
+        document.getElementById('cotacaoContato').value = `${meio ? meio + ': ' : ''}${contato}`;
+    } else {
+        document.getElementById('cotacaoContato').value = '';
+    }
+    
+    atualizarPreviewCotacao();
+}
+
+function obterSaudacao() {
+    const hora = new Date().getHours();
+    if (hora >= 5 && hora < 12) return 'Bom dia';
+    if (hora >= 12 && hora < 18) return 'Boa tarde';
+    return 'Boa noite';
+}
+
+function parsearIntervaloNumerosLista(intervaloStr) {
+    if (!intervaloStr.trim()) return null;
+    return parsearIntervalo(intervaloStr);
+}
+
+function atualizarPreviewCotacao() {
+    const intervaloStr = document.getElementById('cotacaoIntervalo').value.trim();
+    const tipo = document.querySelector('input[name="tipoCotacao"]:checked')?.value || 'descricao';
+    
+    let itensCotacao = itens;
+    
+    if (intervaloStr) {
+        const numeros = parsearIntervaloNumerosLista(intervaloStr);
+        if (numeros) {
+            itensCotacao = itens.filter(item => numeros.includes(item.numero));
+        }
+    }
+    
+    if (itensCotacao.length === 0) {
+        document.getElementById('cotacaoPreview').value = '';
+        return;
+    }
+    
+    const saudacao = obterSaudacao();
+    let mensagem = `${saudacao}! \n\nSolicito, por gentileza, um orçamento para os itens mencionados a seguir:\n\n`;
+    
+    itensCotacao.forEach((item, idx) => {
+        const numLista = idx + 1;
+        if (tipo === 'descricao') {
+            mensagem += `${numLista} - ${item.descricao}\n${item.qtd} ${item.unidade}\n\n`;
+        } else {
+            mensagem += `ITEM ${numLista} - ${item.modelo || item.descricao}\n${item.qtd} ${item.unidade}\n\n`;
+        }
+    });
+    
+    document.getElementById('cotacaoPreview').value = mensagem.trim();
+}
+
+function enviarCotacao() {
+    const select = document.getElementById('cotacaoFornecedor');
+    const fornecedorId = select.value;
+    const fornecedor = fornecedoresDisponiveis.find(f => String(f.id) === fornecedorId);
+    const mensagem = document.getElementById('cotacaoPreview').value;
+    
+    if (!fornecedorId) {
+        showToast('Selecione um fornecedor', 'error');
+        return;
+    }
+    
+    if (!mensagem) {
+        showToast('Nenhuma mensagem gerada', 'error');
+        return;
+    }
+    
+    const meio = (fornecedor?.meio_envio || fornecedor?.envio || '').toLowerCase();
+    const contato = fornecedor?.email || fornecedor?.whatsapp || fornecedor?.telefone || '';
+    const msgEncoded = encodeURIComponent(mensagem);
+    
+    if (meio.includes('whatsapp') || meio.includes('whats')) {
+        const numero = contato.replace(/\D/g, '');
+        window.open(`https://wa.me/${numero}?text=${msgEncoded}`, '_blank');
+    } else {
+        // Email
+        window.open(`mailto:${contato}?body=${msgEncoded}`, '_blank');
+    }
+    
+    fecharModalCotacao();
+}
+
+async function gerarPDFsProposta(comAssinatura = true) {
+    fecharModalAssinatura();
     if (!currentPregaoId) {
         showToast('Erro: Pregão não identificado', 'error');
         return;
@@ -1710,9 +2113,10 @@ async function gerarPDFsProposta() {
         return;
     }
     
-    // Verificar se há itens selecionados
-    if (selectedItens.size === 0) {
-        showToast('Selecione ao menos um item para gerar a proposta', 'error');
+    // Usar itens marcados como ganho
+    const itensSelecionados = itens.filter(item => item.ganho);
+    if (itensSelecionados.length === 0) {
+        showToast('Marque ao menos um item (ganho) para gerar a proposta', 'error');
         return;
     }
     
@@ -1723,7 +2127,7 @@ async function gerarPDFsProposta() {
             attempts++;
             if (typeof window.jspdf !== 'undefined') {
                 clearInterval(checkInterval);
-                gerarPDFPropostaInterno(pregao);
+                gerarPDFPropostaInterno(pregao, comAssinatura);
             } else if (attempts >= maxAttempts) {
                 clearInterval(checkInterval);
                 showToast('Erro: Biblioteca PDF não carregou. Recarregue a página (F5).', 'error');
@@ -1732,10 +2136,10 @@ async function gerarPDFsProposta() {
         return;
     }
     
-    gerarPDFPropostaInterno(pregao);
+    gerarPDFPropostaInterno(pregao, comAssinatura);
 }
 
-async function gerarPDFPropostaInterno(pregao) {
+async function gerarPDFPropostaInterno(pregao, comAssinatura = true) {
     // Buscar dados bancários do backend (protegidos)
     let dadosBancarios = null;
     try {
@@ -1807,23 +2211,23 @@ async function gerarPDFPropostaInterno(pregao) {
             doc.setTextColor(0, 0, 0);
             y = logoY + logoHeight + 8;
             
-            continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pageWidth, pageHeight, lineHeight, maxWidth, addTextWithWrap);
+            continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pageWidth, pageHeight, lineHeight, maxWidth, addTextWithWrap, comAssinatura);
             
         } catch (e) {
             console.log('Erro ao adicionar logo:', e);
             y = 25;
-            continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pageWidth, pageHeight, lineHeight, maxWidth, addTextWithWrap);
+            continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pageWidth, pageHeight, lineHeight, maxWidth, addTextWithWrap, comAssinatura);
         }
     };
     
     logoHeader.onerror = function() {
         console.log('Erro ao carregar logo, gerando PDF sem ela');
         y = 25;
-        continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pageWidth, pageHeight, lineHeight, maxWidth, addTextWithWrap);
+        continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pageWidth, pageHeight, lineHeight, maxWidth, addTextWithWrap, comAssinatura);
     };
 }
 
-function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pageWidth, pageHeight, lineHeight, maxWidth, addTextWithWrap) {
+function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pageWidth, pageHeight, lineHeight, maxWidth, addTextWithWrap, comAssinatura = true) {
     const logoHeaderImg = new Image();
     logoHeaderImg.crossOrigin = 'anonymous';
     logoHeaderImg.src = 'I.R.-COMERCIO-E-MATERIAIS-ELETRICOS-LTDA-PDF.png';
@@ -2020,8 +2424,8 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
         doc.setFontSize(8);
         doc.setFont(undefined, 'normal');
         
-        // Itens selecionados
-        const itensSelecionados = itens.filter(item => selectedItens.has(item.id));
+        // Itens marcados como ganho
+        const itensSelecionados = itens.filter(item => item.ganho);
         
         itensSelecionados.forEach((item, index) => {
             const descricaoUpper = toUpperCase(item.descricao);
@@ -2165,52 +2569,56 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
         
         y += 5;
         
-        // Carregar e adicionar imagem da assinatura
-        const assinatura = new Image();
-        assinatura.crossOrigin = 'anonymous';
-        assinatura.src = 'assinatura.png';
-        
-        assinatura.onload = function() {
-            try {
-                const imgWidth = 50;
-                const imgHeight = (assinatura.height / assinatura.width) * imgWidth;
-                
-                doc.addImage(assinatura, 'PNG', (pageWidth / 2) - (imgWidth / 2), y + 2, imgWidth, imgHeight);
-                
-                let yFinal = y + imgHeight + 5;
-                
-                yFinal += 5;
-                doc.setFontSize(10);
-                doc.setFont(undefined, 'bold');
-                doc.text('ROSEMEIRE BICALHO DE LIMA GRAVINO', pageWidth / 2, yFinal, { align: 'center' });
-                
-                yFinal += 5;
-                doc.setFontSize(9);
-                doc.setFont(undefined, 'normal');
-                doc.text('MG-10.078.568 / CPF: 045.160.616-78', pageWidth / 2, yFinal, { align: 'center' });
-                
-                yFinal += 5;
-                doc.text('DIRETORA', pageWidth / 2, yFinal, { align: 'center' });
-                
-                // Salvar PDF
-                const nomeArquivo = `PROPOSTA-${pregao.numero_pregao}${pregao.uasg ? '-' + pregao.uasg : ''}.pdf`;
-                doc.save(nomeArquivo);
-                
-                showToast('PDF gerado com sucesso!', 'success');
-                
-            } catch (e) {
-                console.log('Erro ao adicionar assinatura:', e);
+        if (comAssinatura) {
+            // Carregar e adicionar imagem da assinatura
+            const assinatura = new Image();
+            assinatura.crossOrigin = 'anonymous';
+            assinatura.src = 'assinatura.png';
+            
+            assinatura.onload = function() {
+                try {
+                    const imgWidth = 50;
+                    const imgHeight = (assinatura.height / assinatura.width) * imgWidth;
+                    
+                    doc.addImage(assinatura, 'PNG', (pageWidth / 2) - (imgWidth / 2), y + 2, imgWidth, imgHeight);
+                    
+                    let yFinal = y + imgHeight + 5;
+                    
+                    yFinal += 5;
+                    doc.setFontSize(10);
+                    doc.setFont(undefined, 'bold');
+                    doc.text('ROSEMEIRE BICALHO DE LIMA GRAVINO', pageWidth / 2, yFinal, { align: 'center' });
+                    
+                    yFinal += 5;
+                    doc.setFontSize(9);
+                    doc.setFont(undefined, 'normal');
+                    doc.text('MG-10.078.568 / CPF: 045.160.616-78', pageWidth / 2, yFinal, { align: 'center' });
+                    
+                    yFinal += 5;
+                    doc.text('DIRETORA', pageWidth / 2, yFinal, { align: 'center' });
+                    
+                    const nomeArquivo = `PROPOSTA-${pregao.numero_pregao}${pregao.uasg ? '-' + pregao.uasg : ''}.pdf`;
+                    doc.save(nomeArquivo);
+                    showToast('PDF gerado com sucesso!', 'success');
+                    
+                } catch (e) {
+                    console.log('Erro ao adicionar assinatura:', e);
+                    gerarPDFSemAssinatura();
+                }
+            };
+            
+            assinatura.onerror = function() {
+                console.log('Erro ao carregar assinatura, gerando PDF sem ela');
                 gerarPDFSemAssinatura();
-            }
-        };
-        
-        assinatura.onerror = function() {
-            console.log('Erro ao carregar assinatura, gerando PDF sem ela');
+            };
+        } else {
             gerarPDFSemAssinatura();
-        };
+        }
         
         function gerarPDFSemAssinatura() {
-            // Linha de assinatura manual
+            // Espaço em branco para assinatura manual/digital
+            y += 20;
+            doc.setDrawColor(0, 0, 0);
             doc.line(pageWidth / 2 - 40, y, pageWidth / 2 + 40, y);
             
             y += 5;
@@ -2225,10 +2633,8 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
             doc.setFont(undefined, 'bold');
             doc.text('DIRETORA', pageWidth / 2, y, { align: 'center' });
             
-            // Salvar PDF
             const nomeArquivo = `PROPOSTA-${pregao.numero_pregao}${pregao.uasg ? '-' + pregao.uasg : ''}.pdf`;
             doc.save(nomeArquivo);
-            
             showToast('PDF gerado (sem assinatura)', 'success');
         }
     }
