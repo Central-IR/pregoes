@@ -1050,7 +1050,7 @@ function mostrarTelaItens() {
         const tituloEl = document.getElementById('tituloItens');
         if (tituloEl) {
             const uasgPart = pregao.uasg ? ` — UASG ${pregao.uasg}` : '';
-            tituloEl.textContent = `${pregao.numero_pregao}${uasgPart}`;
+            tituloEl.textContent = `Pregão ${pregao.numero_pregao}${uasgPart}`;
         }
     }
 }
