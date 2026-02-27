@@ -1647,3 +1647,41 @@ tr.item-ganho:hover {
     background: rgba(204, 112, 0, 0.1);
     color: var(--primary);
 }
+
+/* ===== Linha de item com venda > compra ===== */
+.row-venda-alta {
+    background-color: rgba(239, 68, 68, 0.08) !important;
+}
+.row-venda-alta td {
+    background-color: rgba(239, 68, 68, 0.08) !important;
+}
+.row-venda-alta:hover td {
+    background-color: rgba(239, 68, 68, 0.14) !important;
+}
+
+/* Checkbox vermelha com X para linha de venda alta */
+.cb-label-venda-alta {
+    border-color: #EF4444 !important;
+    background-color: #FEE2E2 !important;
+}
+.cb-venda-alta:checked + .cb-label-venda-alta {
+    background-color: #EF4444 !important;
+    border-color: #EF4444 !important;
+}
+.cb-label-venda-alta::after {
+    content: '✕' !important;
+    color: #EF4444;
+    font-size: 12px;
+    font-weight: 700;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: block !important;
+}
+
+/* ===== Linha vermelha quando venda > compra ===== */
+.row-venda-alta { background-color: rgba(239, 68, 68, 0.08) !important; }
+.row-venda-alta td { background-color: rgba(239, 68, 68, 0.08) !important; }
+.cb-label-venda-alta { border-color: #EF4444 !important; background-color: #FEE2E2 !important; }
+.cb-label-venda-alta::after { content: '✕'; color: #EF4444; font-size: 12px; font-weight: 700; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: block; }
