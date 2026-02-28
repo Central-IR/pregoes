@@ -3487,6 +3487,7 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
         }
 
         // MODO GRUPOS: uma tabela por grupo
+        let totalFinalProposta = 0;
         if (gruposEstrutura) {
             doc.setFontSize(11); doc.setFont(undefined, 'bold');
             doc.text('ITENS DA PROPOSTA', margin, y);
@@ -3515,6 +3516,7 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
                 doc.setTextColor(0,0,0); doc.setFont(undefined, 'normal');
                 y += 8;
             }
+            totalFinalProposta = totalGeralGlobal;
         } else {
             // MODO ITEM: tabela única
             doc.setFontSize(11); doc.setFont(undefined, 'bold');
@@ -3525,6 +3527,7 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
             itensSelecionados.forEach((item, index) => desenharLinhaItem(item, index));
             const totalGeral = itensSelecionados.reduce((acc, item) => acc + (item.venda_total || 0), 0);
             desenharRodapeTabela(totalGeral);
+            totalFinalProposta = totalGeral;
         }
 
         y += 8;
@@ -3550,7 +3553,10 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
                 y += lineHeight;
             }
         }
-        
+
+        // VALOR TOTAL — logo acima de VALIDADE DA PROPOSTA
+        addCampoCondicao('VALOR TOTAL DA PROPOSTA', fmtValorPdf(totalFinalProposta));
+
         addCampoCondicao('VALIDADE DA PROPOSTA', pregao.validade_proposta);
         addCampoCondicao('PRAZO DE ENTREGA', pregao.prazo_entrega);
         addCampoCondicao('FORMA DE PAGAMENTO', pregao.prazo_pagamento);
