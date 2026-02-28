@@ -1008,14 +1008,13 @@ async function confirmarExclusao() {
 async function openItems(id) {
     currentPregaoId = id;
     const pregao = pregoes.find(p => p.id === id);
-    // Garantir que disputa_por seja lido corretamente (pode vir null do banco se campo não existia)
     const disputa = pregao?.disputa_por || 'ITEM';
     
     if (disputa === 'GRUPO') {
-        mostrarTelaGrupos(); // carregarGrupos() é chamado internamente
+        mostrarTelaGrupos();
     } else {
         mostrarTelaItens();
-        await carregarItens(id); // só carrega itens no modo ITEM
+        await carregarItens(id);
     }
 }
 
@@ -1045,13 +1044,6 @@ function mostrarTelaItens() {
         if (tituloEl) {
             const uasgPart = pregao.uasg ? ` — UASG ${pregao.uasg}` : '';
             tituloEl.textContent = `Pregão ${pregao.numero_pregao}${uasgPart}`;
-        }
-        // Se o pregão foi configurado como GRUPO, redirecionar para tela de grupos
-        if (pregao.disputa_por === 'GRUPO') {
-            telaItens.style.display = 'none';
-            document.querySelector('.container').style.display = 'block';
-            mostrarTelaGrupos();
-            return;
         }
     }
 }
@@ -1582,7 +1574,7 @@ function criarTelaItens() {
                     <p id="tituloItens" style="color: var(--text-secondary); font-size: 0.8rem; font-weight: 400; margin-top: 2px; letter-spacing: 0.01em;"></p>
                 </div>
             </div>
-            <div style="display: flex; gap: 0.75rem;">
+            <div style="display: flex; gap: 0.75rem; align-items:center;">
                 <button onclick="adicionarItem()" style="background: #22C55E; color: white; border: none; padding: 0.65rem 1.25rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600;">+ Item</button>
                 <button onclick="abrirModalIntervalo()" style="background: #6B7280; color: white; border: none; padding: 0.65rem 1.25rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600;">+ Intervalo</button>
                 <button onclick="abrirModalExcluirItens()" style="background: #EF4444; color: white; border: none; padding: 0.65rem 1.25rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600;">Excluir</button>
