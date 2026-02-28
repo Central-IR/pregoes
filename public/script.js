@@ -389,7 +389,7 @@ function displayPregoes(pregoesToDisplay) {
                 <td class="actions-cell">
                     <button class="action-btn view" onclick="viewPregao('${pregao.id}')" title="Visualizar">Ver</button>
                     <button class="action-btn edit" onclick="editPregao('${pregao.id}')" title="Editar">Editar</button>
-                    <button class="action-btn btn-items" onclick="openItems('${pregao.id}')" title="Itens">Itens</button>
+                    <button class="action-btn btn-items" onclick="openItems('${pregao.id}')" title="${pregao.disputa_por === 'GRUPO' ? 'Grupos' : 'Itens'}">${pregao.disputa_por === 'GRUPO' ? 'Grupos' : 'Itens'}</button>
                     <button class="action-btn delete" onclick="openDeleteModal('${pregao.id}')" title="Excluir">Excluir</button>
                 </td>
             </tr>
@@ -1005,21 +1005,20 @@ async function confirmarExclusao() {
 }
 
 // Abrir tela de itens
-function openItems(id) {
+async function openItems(id) {
     currentPregaoId = id;
     const pregao = pregoes.find(p => p.id === id);
+    // Garantir que disputa_por seja lido corretamente (pode vir null do banco se campo não existia)
     const disputa = pregao?.disputa_por || 'ITEM';
-    carregarItens(id);
+    
     if (disputa === 'GRUPO') {
-        mostrarTelaGrupos();
+        mostrarTelaGrupos(); // carregarGrupos() é chamado internamente
     } else {
         mostrarTelaItens();
+        await carregarItens(id); // só carrega itens no modo ITEM
     }
 }
 
-function openDocs(id) {
-    showToast('Funcionalidade em desenvolvimento', 'error');
-}
 
 // ============================================
 // GESTÃO DE ITENS DO PREGÃO
@@ -1033,24 +1032,26 @@ let currentItemsView = 'proposta';
 let marcasItens = new Set();
 
 function mostrarTelaItens() {
-    // Esconder tela principal
     document.querySelector('.container').style.display = 'none';
-    
-    // Criar ou mostrar tela de itens
     let telaItens = document.getElementById('telaItens');
     if (!telaItens) {
         telaItens = criarTelaItens();
         document.body.querySelector('.app-content').appendChild(telaItens);
     }
     telaItens.style.display = 'block';
-    
-    // Atualizar informações do pregão
     const pregao = pregoes.find(p => p.id === currentPregaoId);
     if (pregao) {
         const tituloEl = document.getElementById('tituloItens');
         if (tituloEl) {
             const uasgPart = pregao.uasg ? ` — UASG ${pregao.uasg}` : '';
             tituloEl.textContent = `Pregão ${pregao.numero_pregao}${uasgPart}`;
+        }
+        // Se o pregão foi configurado como GRUPO, redirecionar para tela de grupos
+        if (pregao.disputa_por === 'GRUPO') {
+            telaItens.style.display = 'none';
+            document.querySelector('.container').style.display = 'block';
+            mostrarTelaGrupos();
+            return;
         }
     }
 }
@@ -1327,9 +1328,11 @@ function renderGrupos() {
             rows += `<tr style="${rs}" ondblclick="editarItemGrupoById('${item.id}')" oncontextmenu="showItemContextMenu(event,'${item.id}')">
                 <td style="text-align:center;padding:8px;">
                     <div class="checkbox-wrapper">
-                        <input type="checkbox" id="${cbId}" ${ck} onchange="toggleItemGanho('${item.id}',this.checked)"
-                               class="styled-checkbox${vm?' cb-venda-alta':''}" onclick="event.stopPropagation()">
-                        <label for="${cbId}" class="checkbox-label-styled${vm?' cb-label-venda-alta':''}"></label>
+                        <input type="checkbox" id="${cbId}" ${ck}
+                               onchange="${vm ? '' : `toggleItemGanho('${item.id}',this.checked)`}"
+                               onclick="${vm ? 'event.preventDefault();event.stopPropagation()' : 'event.stopPropagation()'}"
+                               class="styled-checkbox${vm?' cb-venda-alta':''}">
+                        <label for="${cbId}" class="checkbox-label-styled${vm?' cb-label-venda-alta':''}">${vm?'✕':''}</label>
                     </div>
                 </td>
                 <td style="text-align:center;font-size:0.8rem;color:var(--text-secondary);">${lbl}</td>
@@ -2059,7 +2062,7 @@ function filterItens() {
     
     const filtered = itens.filter(item => {
         const matchSearch = !search || 
-            item.descricao.toLowerCase().includes(search) ||
+            (item.descricao || '').toLowerCase().includes(search) ||
             (item.marca && item.marca.toLowerCase().includes(search)) ||
             item.numero.toString().includes(search);
         const matchMarca = !marca || item.marca === marca;
@@ -2102,9 +2105,10 @@ function renderItens(itensToRender = itens) {
                 <td style="text-align: center; padding: 8px;">
                     <div class="checkbox-wrapper">
                         <input type="checkbox" id="${cbId}" ${checked}
-                               onchange="toggleItemGanho('${item.id}', this.checked)"
-                               class="styled-checkbox ${vendaMaior ? 'cb-venda-alta' : ''}" onclick="event.stopPropagation()">
-                        <label for="${cbId}" class="checkbox-label-styled ${vendaMaior ? 'cb-label-venda-alta' : ''}"></label>
+                               onchange="${vendaMaior ? '' : `toggleItemGanho('${item.id}', this.checked)`}"
+                               onclick="${vendaMaior ? 'event.preventDefault(); event.stopPropagation();' : 'event.stopPropagation()'}"
+                               class="styled-checkbox ${vendaMaior ? 'cb-venda-alta' : ''}">
+                        <label for="${cbId}" class="checkbox-label-styled ${vendaMaior ? 'cb-label-venda-alta' : ''}">${vendaMaior ? '✕' : ''}</label>
                     </div>
                 </td>
                 <td><strong>${item.numero}</strong></td>
@@ -2315,13 +2319,13 @@ function adicionarIntervalo(intervalo) {
         }
     }
     
-    // Verificar duplicatas
+    // Verificar duplicatas - ignorar silenciosamente
     const numerosExistentes = new Set(itens.map(i => i.numero));
     const duplicatas = numeros.filter(n => numerosExistentes.has(n));
     if (duplicatas.length > 0) {
-        if (!confirm(`Os itens ${duplicatas.join(', ')} já existem. Deseja adicionar mesmo assim?`)) {
-            return;
-        }
+        showToast(`Itens ${duplicatas.join(', ')} já existem — ignorados`, 'error');
+        numeros = numeros.filter(n => !numerosExistentes.has(n));
+        if (numeros.length === 0) return;
     }
     
     numeros.forEach(numero => {
@@ -2448,7 +2452,7 @@ async function excluirItensSelecionados() {
         return;
     }
     
-    if (!confirm(`Deseja excluir ${selectedItens.size} item(ns)?`)) return;
+    // sem confirmação — exclusão direta
     
     try {
         const headers = {
@@ -2799,11 +2803,19 @@ async function salvarItemAtual(fechar = true) {
         if (response.ok) {
             const savedItem = await response.json();
             itens[editingItemIndex] = savedItem;
-            atualizarMarcasItens();
-            renderItens();
+            if (editandoGrupoIdx !== null) {
+                reconstruirGruposDeItens();
+                atualizarSelectsGrupos();
+                renderGrupos();
+            } else {
+                atualizarMarcasItens();
+                renderItens();
+            }
             if (fechar) {
                 showToast('Item salvo', 'success');
-                fecharModalItem();
+                fecharModalItemContexto();
+            } else if (editandoGrupoIdx !== null) {
+                showToast('Item salvo', 'success');
             }
         }
     } catch (error) {
@@ -2815,6 +2827,12 @@ async function salvarItemAtual(fechar = true) {
 function fecharModalItem() {
     document.getElementById('modalItem').classList.remove('show');
     editingItemIndex = null;
+    editandoGrupoIdx = null;
+    editandoGrupoItemIdx = null;
+}
+
+function fecharModalItemContexto() {
+    fecharModalItem();
 }
 
 function syncItens() {
