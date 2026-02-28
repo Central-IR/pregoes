@@ -1106,8 +1106,9 @@ function criarTelaGrupos() {
                     <p id="tituloGrupos" style="color:var(--text-secondary);font-size:0.8rem;font-weight:400;margin-top:2px;"></p>
                 </div>
             </div>
-            <div style="display:flex;gap:0.75rem;">
+            <div style="display:flex;gap:0.75rem;align-items:center;">
                 <button onclick="abrirModalNovoGrupo()" style="background:#22C55E;color:white;border:none;padding:0.65rem 1.25rem;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:600;">+ Grupo</button>
+                <button onclick="abrirModalIntervaloGrupos()" style="background:#6B7280;color:white;border:none;padding:0.65rem 1.25rem;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:600;">+ Intervalo</button>
                 <button onclick="abrirModalExcluirGrupo()" style="background:#EF4444;color:white;border:none;padding:0.65rem 1.25rem;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:600;">Excluir</button>
             </div>
         </div>
@@ -1137,6 +1138,19 @@ function criarTelaGrupos() {
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline>
                     </svg>
                 </button>
+                <button onclick="abrirModalDeclaracoesGrupos()" style="background:transparent;border:none;color:var(--text-secondary);cursor:pointer;padding:0.5rem;display:flex;align-items:center;" title="Declarações">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/>
+                        <path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>
+                    </svg>
+                </button>
+                <button onclick="syncGrupos()" style="background:transparent;border:none;color:var(--text-secondary);cursor:pointer;padding:0.5rem;display:flex;align-items:center;" title="Sincronizar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                        <path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                        <path d="M8 16H3v5"/>
+                    </svg>
+                </button>
                 <button onclick="voltarPregoesDeGrupos()" style="background:transparent;border:none;color:var(--text-secondary);cursor:pointer;padding:0.5rem;display:flex;align-items:center;" title="Voltar">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line>
@@ -1145,26 +1159,8 @@ function criarTelaGrupos() {
             </div>
         </div>
 
-        <div class="card table-card">
-            <div style="overflow-x:auto;">
-                <table>
-                    <thead><tr>
-                        <th style="width:40px;text-align:center;"><span style="font-size:1.1rem;">✓</span></th>
-                        <th style="width:90px;">GRUPO/LOTE</th>
-                        <th style="width:60px;">ITEM</th>
-                        <th style="min-width:250px;">DESCRIÇÃO</th>
-                        <th style="width:60px;">QTD</th>
-                        <th style="width:55px;">UN</th>
-                        <th style="width:100px;">MARCA</th>
-                        <th style="width:100px;">MODELO</th>
-                        <th style="width:110px;">VENDA UNT</th>
-                        <th style="width:110px;">VENDA TOTAL</th>
-                    </tr></thead>
-                    <tbody id="gruposContainer">
-                        <tr><td colspan="10" style="text-align:center;padding:3rem;color:var(--text-secondary);">Nenhum grupo cadastrado</td></tr>
-                    </tbody>
-                </table>
-            </div>
+        <div id="gruposWrapper" style="margin-top:0.5rem;">
+            <div style="text-align:center;padding:3rem;color:var(--text-secondary);">Nenhum grupo cadastrado</div>
         </div>
 
         <!-- Modal Novo Grupo -->
@@ -1230,6 +1226,43 @@ function criarTelaGrupos() {
                 </div>
             </div>
         </div>
+
+        <!-- Modal + Intervalo de Grupos -->
+        <div class="modal-overlay" id="modalIntervaloGrupos">
+            <div class="modal-content" style="max-width:520px;">
+                <div class="modal-header">
+                    <h3 class="modal-title">Adicionar Grupos em Intervalo</h3>
+                    <button class="close-modal" onclick="fecharModalIntervaloGrupos()">✕</button>
+                </div>
+                <div style="padding:0.5rem 0 0.25rem;">
+                    <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:1rem;">
+                        Crie múltiplos grupos de uma vez. Ex: Tipo "GRUPO", grupos 1 a 3, cada um com itens 1-5.
+                    </p>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-size:0.85rem;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:0.4rem;">Tipo</label>
+                            <select id="intervGrupoTipo" style="width:100%;padding:0.65rem;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:0.9rem;">
+                                <option value="GRUPO">Grupo</option>
+                                <option value="LOTE">Lote</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-size:0.85rem;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:0.4rem;">Números dos grupos (ex: 1-3, 5)</label>
+                            <input type="text" id="intervGrupoNumeros" placeholder="Ex: 1-3, 5" style="width:100%;padding:0.65rem;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:0.9rem;box-sizing:border-box;">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0.5rem;">
+                        <label style="font-size:0.85rem;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:0.4rem;">Itens de cada grupo (ex: 1-5, 10)</label>
+                        <input type="text" id="intervGrupoItens" placeholder="Ex: 1-5, 10" style="width:100%;padding:0.65rem;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:0.9rem;box-sizing:border-box;">
+                        <p style="color:var(--text-secondary);font-size:0.8rem;margin-top:0.35rem;">Cada grupo criado terá os mesmos itens indicados.</p>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="danger" onclick="fecharModalIntervaloGrupos()">Cancelar</button>
+                    <button class="success" onclick="confirmarIntervaloGrupos()">Criar Grupos</button>
+                </div>
+            </div>
+        </div>
     `;
     return div;
 }
@@ -1286,20 +1319,22 @@ function grupoByKey(key) {
 }
 
 function renderGrupos() {
-    const container = document.getElementById('gruposContainer');
-    if (!container) return;
+    const wrapper = document.getElementById('gruposWrapper');
+    if (!wrapper) return;
     const search = (document.getElementById('searchGrupos')?.value || '').toLowerCase();
     const gKey = document.getElementById('filterGrupoGrupos')?.value || '';
     const marcaFiltro = gKey ? (document.getElementById('filterMarcaGrupos')?.value || '') : '';
     const fmtUnt = v => 'R$ ' + (v || 0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:6});
     const fmtTot = v => 'R$ ' + (v || 0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
     let gruposRender = gKey ? [grupoByKey(gKey)].filter(Boolean) : grupos;
+
     if (gruposRender.length === 0) {
-        container.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:3rem;color:var(--text-secondary);">Nenhum grupo cadastrado</td></tr>';
+        wrapper.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text-secondary);">Nenhum grupo cadastrado</div>';
         return;
     }
-    let rows = '';
-    gruposRender.forEach(grupo => {
+
+    // Cada grupo é uma tabela separada
+    wrapper.innerHTML = gruposRender.map(grupo => {
         let its = grupo.itens;
         if (marcaFiltro) its = its.filter(i => i.marca === marcaFiltro);
         if (search) its = its.filter(i =>
@@ -1308,16 +1343,13 @@ function renderGrupos() {
             String(i.numero).includes(search)
         );
         const lbl = grupo.tipo + ' ' + grupo.numero;
-        rows += `<tr style="background:var(--bg-secondary);">
-            <td colspan="10" style="font-weight:700;font-size:0.88rem;padding:6px 12px;border-bottom:2px solid var(--border-color);">
-                ${lbl} <span style="margin-left:0.6rem;font-weight:400;font-size:0.8rem;color:var(--text-secondary);">${grupo.itens.length} item(s)</span>
-            </td></tr>`;
-        its.forEach(item => {
+
+        const itemRows = its.map(item => {
             const vm = (item.venda_unt || 0) > (item.estimado_unt || 0) && (item.estimado_unt || 0) > 0;
-            const rs = vm ? 'background:rgba(239,68,68,0.08);' : '';
+            const rs = vm ? 'background:rgba(239,68,68,0.07);' : '';
             const cbId = 'grp-' + item.id;
             const ck = item.ganho ? 'checked' : '';
-            rows += `<tr style="${rs}" ondblclick="editarItemGrupoById('${item.id}')" oncontextmenu="showItemContextMenu(event,'${item.id}')">
+            return `<tr style="${rs}" ondblclick="editarItemGrupoById('${item.id}')" oncontextmenu="showItemContextMenu(event,'${item.id}')">
                 <td style="text-align:center;padding:8px;">
                     <div class="checkbox-wrapper">
                         <input type="checkbox" id="${cbId}" ${ck}
@@ -1327,19 +1359,56 @@ function renderGrupos() {
                         <label for="${cbId}" class="checkbox-label-styled${vm?' cb-label-venda-alta':''}">${vm?'✕':''}</label>
                     </div>
                 </td>
-                <td style="text-align:center;font-size:0.8rem;color:var(--text-secondary);">${lbl}</td>
                 <td><strong>${item.numero}</strong></td>
                 <td class="descricao-cell">${item.descricao || '-'}</td>
                 <td>${item.qtd || 1}</td>
                 <td>${item.unidade || 'UN'}</td>
                 <td>${item.marca || '-'}</td>
                 <td>${item.modelo || '-'}</td>
+                <td>${fmtTot(item.estimado_total)}</td>
+                <td>${fmtTot(item.custo_total)}</td>
                 <td>${fmtUnt(item.venda_unt)}</td>
                 <td>${fmtTot(item.venda_total)}</td>
             </tr>`;
-        });
-    });
-    container.innerHTML = rows;
+        }).join('');
+
+        // Totais do grupo
+        const totCompra = its.reduce((s,i) => s + (i.estimado_total || 0), 0);
+        const totCusto  = its.reduce((s,i) => s + (i.custo_total || 0), 0);
+        const totVenda  = its.reduce((s,i) => s + (i.venda_total || 0), 0);
+        const totalRow = `<tr style="background:var(--bg-secondary);font-weight:700;border-top:2px solid var(--border-color);">
+            <td colspan="7" style="text-align:right;padding:8px 12px;font-size:0.82rem;color:var(--text-secondary);">TOTAL ${lbl}</td>
+            <td style="padding:8px 6px;font-size:0.82rem;">${fmtTot(totCompra)}</td>
+            <td style="padding:8px 6px;font-size:0.82rem;">${fmtTot(totCusto)}</td>
+            <td style="padding:8px 6px;font-size:0.82rem;"></td>
+            <td style="padding:8px 6px;font-size:0.82rem;">${fmtTot(totVenda)}</td>
+        </tr>`;
+
+        return `<div class="card table-card" style="margin-bottom:1.25rem;">
+            <div style="padding:10px 14px 6px;border-bottom:2px solid var(--border-color);display:flex;align-items:center;gap:0.75rem;">
+                <span style="font-weight:700;font-size:0.95rem;">${lbl}</span>
+                <span style="font-size:0.8rem;color:var(--text-secondary);">${grupo.itens.length} item(s)</span>
+            </div>
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead><tr>
+                        <th style="width:40px;text-align:center;"><span style="font-size:1.1rem;">✓</span></th>
+                        <th style="width:55px;">ITEM</th>
+                        <th style="min-width:220px;">DESCRIÇÃO</th>
+                        <th style="width:55px;">QTD</th>
+                        <th style="width:50px;">UN</th>
+                        <th style="width:90px;">MARCA</th>
+                        <th style="width:90px;">MODELO</th>
+                        <th style="width:105px;">COMPRA TOTAL</th>
+                        <th style="width:100px;">CUSTO TOTAL</th>
+                        <th style="width:100px;">VENDA UNT</th>
+                        <th style="width:105px;">VENDA TOTAL</th>
+                    </tr></thead>
+                    <tbody>${itemRows}${totalRow}</tbody>
+                </table>
+            </div>
+        </div>`;
+    }).join('');
 }
 
 // ============================================================
@@ -1505,6 +1574,66 @@ async function confirmarExcluirGrupo() {
     atualizarSelectsGrupos();
     renderGrupos();
     showToast(`${grupo.tipo} ${grupo.numero} excluído`, 'success');
+}
+
+// ============================================================
+// INTERVALO DE GRUPOS
+// ============================================================
+function abrirModalIntervaloGrupos() {
+    document.getElementById('intervGrupoTipo').value = 'GRUPO';
+    document.getElementById('intervGrupoNumeros').value = '';
+    document.getElementById('intervGrupoItens').value = '';
+    document.getElementById('modalIntervaloGrupos').classList.add('show');
+}
+
+function fecharModalIntervaloGrupos() {
+    document.getElementById('modalIntervaloGrupos').classList.remove('show');
+}
+
+async function confirmarIntervaloGrupos() {
+    const tipo = document.getElementById('intervGrupoTipo').value;
+    const numerosGruposStr = document.getElementById('intervGrupoNumeros').value.trim();
+    const itensStr = document.getElementById('intervGrupoItens').value.trim();
+    if (!numerosGruposStr || !itensStr) { showToast('Preencha todos os campos', 'error'); return; }
+    const numerosGrupos = parsearIntervalo(numerosGruposStr);
+    const numerosItens = parsearIntervalo(itensStr);
+    if (!numerosGrupos || !numerosItens) return;
+    fecharModalIntervaloGrupos();
+    const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+    if (sessionToken) headers['X-Session-Token'] = sessionToken;
+    let criados = 0;
+    for (const numGrupo of numerosGrupos) {
+        for (const numItem of numerosItens) {
+            const jaExiste = itens.find(i => i.grupo_tipo === tipo && i.grupo_numero === numGrupo && i.numero === numItem);
+            if (jaExiste) continue;
+            const novo = {
+                pregao_id: currentPregaoId,
+                numero: numItem, descricao: '', qtd: 1, unidade: 'UN',
+                marca: '', modelo: '',
+                estimado_unt: 0, estimado_total: 0, custo_unt: 0, custo_total: 0,
+                porcentagem: 149, venda_unt: 0, venda_total: 0, ganho: false,
+                grupo_tipo: tipo, grupo_numero: numGrupo
+            };
+            try {
+                const r = await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens`, { method:'POST', headers, body:JSON.stringify(novo) });
+                if (r.ok) { itens.push(await r.json()); criados++; }
+            } catch(e) { console.error(e); }
+        }
+    }
+    reconstruirGruposDeItens();
+    atualizarSelectsGrupos();
+    renderGrupos();
+    showToast(`${numerosGrupos.length} grupo(s) criado(s) com ${numerosItens.length} item(s) cada`, 'success');
+}
+
+function syncGrupos() {
+    carregarGrupos();
+    showToast('Grupos sincronizados', 'success');
+}
+
+function abrirModalDeclaracoesGrupos() {
+    // Reutiliza o mesmo modal de declarações da tela de itens
+    abrirModalDeclaracoes();
 }
 
 // ============================================================
@@ -2073,23 +2202,21 @@ function renderItens(itensToRender = itens) {
         return;
     }
     
-    container.innerHTML = itensToRender.map((item, index) => {
+    const fmtUntGlobal = (v) => {
+        const n = v || 0;
+        const s2 = n.toFixed(6).replace(/(\.(\d*?)?)0+$/, '$1').replace(/\.$/, '');
+        return 'R$ ' + (parseFloat(s2 || 0)).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 6});
+    };
+    const fmtTotalGlobal = (v) => 'R$ ' + (v || 0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+    const rows = itensToRender.map((item) => {
         const vendaUnt = item.venda_unt || 0;
         const compraUnt = item.estimado_unt || 0;
         const vendaMaior = compraUnt > 0 && vendaUnt > compraUnt;
-        
         const checked = item.ganho ? 'checked' : '';
         let rowClass = item.ganho ? 'item-ganho row-won' : '';
         if (vendaMaior) rowClass += ' row-venda-alta';
         const cbId = `item-ganho-${item.id}`;
-        
-        const fmtUnt = (v) => {
-            const n = v || 0;
-            const s = n.toFixed(6).replace(/(\.(\d*?)?)0+$/, '$1').replace(/\.$/, '');
-            return 'R$ ' + (parseFloat(s || 0)).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 6});
-        };
-        const fmtTotal = (v) => 'R$ ' + (v || 0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
-        
         return `
             <tr class="${rowClass}" 
                 ondblclick="editarItem('${item.id}')" 
@@ -2109,15 +2236,29 @@ function renderItens(itensToRender = itens) {
                 <td>${item.unidade || 'UN'}</td>
                 <td>${item.marca || '-'}</td>
                 <td>${item.modelo || '-'}</td>
-                <td>${fmtUnt(compraUnt)}</td>
-                <td>${fmtTotal(item.estimado_total)}</td>
-                <td>${fmtUnt(item.custo_unt)}</td>
-                <td>${fmtTotal(item.custo_total)}</td>
-                <td>${fmtUnt(vendaUnt)}</td>
-                <td>${fmtTotal(item.venda_total)}</td>
-            </tr>
-        `;
+                <td>${fmtUntGlobal(compraUnt)}</td>
+                <td>${fmtTotalGlobal(item.estimado_total)}</td>
+                <td>${fmtUntGlobal(item.custo_unt)}</td>
+                <td>${fmtTotalGlobal(item.custo_total)}</td>
+                <td>${fmtUntGlobal(vendaUnt)}</td>
+                <td>${fmtTotalGlobal(item.venda_total)}</td>
+            </tr>`;
     }).join('');
+
+    // Linha de totais
+    const totCompra = itensToRender.reduce((s, i) => s + (i.estimado_total || 0), 0);
+    const totCusto  = itensToRender.reduce((s, i) => s + (i.custo_total || 0), 0);
+    const totVenda  = itensToRender.reduce((s, i) => s + (i.venda_total || 0), 0);
+    const totalRow = `<tr style="background:var(--bg-secondary);font-weight:700;border-top:2px solid var(--border-color);">
+        <td colspan="8" style="text-align:right;padding:8px 12px;font-size:0.85rem;color:var(--text-secondary);">TOTAIS</td>
+        <td style="padding:8px 12px;font-size:0.85rem;">${fmtTotalGlobal(totCompra)}</td>
+        <td style="padding:8px 12px;font-size:0.85rem;"></td>
+        <td style="padding:8px 12px;font-size:0.85rem;">${fmtTotalGlobal(totCusto)}</td>
+        <td style="padding:8px 12px;font-size:0.85rem;"></td>
+        <td style="padding:8px 12px;font-size:0.85rem;">${fmtTotalGlobal(totVenda)}</td>
+    </tr>`;
+
+    container.innerHTML = rows + totalRow;
 }
 
 function showItemContextMenu(event, itemId) {
@@ -2240,31 +2381,29 @@ function toggleSelectAllItens() {
     renderItens();
 }
 
-function adicionarItem() {
+async function adicionarItem() {
     const numero = itens.length > 0 ? Math.max(...itens.map(i => i.numero)) + 1 : 1;
-    
     const novoItem = {
-        id: 'temp-' + Date.now(),
         pregao_id: currentPregaoId,
-        numero: numero,
-        descricao: '',
-        qtd: 1,
-        unidade: 'UN',
-        marca: '',
-        modelo: '',
-        estimado_unt: 0,
-        estimado_total: 0,
-        custo_unt: 0,
-        custo_total: 0,
-        porcentagem: 149,
-        venda_unt: 0,
-        venda_total: 0,
-        ganho: false
+        numero, descricao: '', qtd: 1, unidade: 'UN',
+        marca: '', modelo: '',
+        estimado_unt: 0, estimado_total: 0, custo_unt: 0, custo_total: 0,
+        porcentagem: 149, venda_unt: 0, venda_total: 0, ganho: false
     };
-    
-    itens.push(novoItem);
-    renderItens();
-    // Não abre modal — apenas insere o item na tabela
+    try {
+        const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        const r = await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens`, { method:'POST', headers, body:JSON.stringify(novoItem) });
+        if (r.ok) {
+            const saved = await r.json();
+            itens.push(saved);
+            renderItens();
+            showToast('Item ' + numero + ' adicionado', 'success');
+        } else { throw new Error('Erro ' + r.status); }
+    } catch(e) {
+        console.error(e);
+        showToast('Erro ao criar item', 'error');
+    }
 }
 
 function abrirModalIntervalo() {
@@ -2287,7 +2426,7 @@ function confirmarAdicionarIntervalo() {
     adicionarIntervalo(intervalo);
 }
 
-function adicionarIntervalo(intervalo) {
+async function adicionarIntervalo(intervalo) {
     const numeros = [];
     const partes = intervalo.split(',').map(p => p.trim());
     
@@ -2320,31 +2459,25 @@ function adicionarIntervalo(intervalo) {
         if (numeros.length === 0) return;
     }
     
-    numeros.forEach(numero => {
+    const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+    if (sessionToken) headers['X-Session-Token'] = sessionToken;
+    let criados = 0;
+    for (const numero of numeros) {
         const novoItem = {
-            id: 'temp-' + Date.now() + '-' + numero,
             pregao_id: currentPregaoId,
-            numero: numero,
-            descricao: '',
-            qtd: 1,
-            unidade: 'UN',
-            marca: '',
-            modelo: '',
-            estimado_unt: 0,
-            estimado_total: 0,
-            custo_unt: 0,
-            custo_total: 0,
-            porcentagem: 149,
-            venda_unt: 0,
-            venda_total: 0,
-            ganho: false
+            numero, descricao: '', qtd: 1, unidade: 'UN',
+            marca: '', modelo: '',
+            estimado_unt: 0, estimado_total: 0, custo_unt: 0, custo_total: 0,
+            porcentagem: 149, venda_unt: 0, venda_total: 0, ganho: false
         };
-        itens.push(novoItem);
-    });
-    
+        try {
+            const r = await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens`, { method:'POST', headers, body:JSON.stringify(novoItem) });
+            if (r.ok) { itens.push(await r.json()); criados++; }
+        } catch(e) { console.error(e); }
+    }
     itens.sort((a, b) => a.numero - b.numero);
     renderItens();
-    showToast(`${numeros.length} itens adicionados`, 'success');
+    showToast(`${criados} item(s) adicionado(s)`, 'success');
 }
 
 function abrirModalExcluirItens() {
