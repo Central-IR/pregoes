@@ -619,22 +619,21 @@ app.post('/api/pregoes/:pregao_id/itens', async (req, res) => {
 
         const novoItem = {
             pregao_id: req.params.pregao_id,
-            numero,
+            numero: String(numero || 1),
             descricao: descricao || null,
-            qtd: qtd || 1,
+            qtd: parseInt(qtd) || 1,
             unidade: unidade || 'UN',
             marca: marca || null,
             modelo: modelo || null,
-            estimado_unt: estimado_unt || 0,
-            estimado_total: estimado_total || 0,
-            custo_unt: custo_unt || 0,
-            custo_total: custo_total || 0,
-            porcentagem: porcentagem || 149,
-            venda_unt: venda_unt || 0,
-            venda_total: venda_total || 0,
-            ganho: ganho || false
+            estimado_unt: parseFloat(estimado_unt) || 0,
+            estimado_total: parseFloat(estimado_total) || 0,
+            custo_unt: parseFloat(custo_unt) || 0,
+            custo_total: parseFloat(custo_total) || 0,
+            porcentagem: parseFloat(porcentagem) || 149,
+            venda_unt: parseFloat(venda_unt) || 0,
+            venda_total: parseFloat(venda_total) || 0,
+            ganho: ganho === true || ganho === 'true' || false
         };
-        // Campos de grupo (só adiciona se as colunas existirem no banco)
         if (grupo_tipo !== undefined) novoItem.grupo_tipo = grupo_tipo || null;
         if (grupo_numero !== undefined) novoItem.grupo_numero = grupo_numero != null ? parseInt(grupo_numero) : null;
 
@@ -671,23 +670,22 @@ app.put('/api/pregoes/:pregao_id/itens/:id', async (req, res) => {
         } = req.body;
 
         const itemAtualizado = {
-            numero,
+            numero: String(numero || 1),
             descricao: descricao || null,
-            qtd: qtd || 1,
+            qtd: parseInt(qtd) || 1,
             unidade: unidade || 'UN',
             marca: marca || null,
             modelo: modelo || null,
-            estimado_unt: estimado_unt || 0,
-            estimado_total: estimado_total || 0,
-            custo_unt: custo_unt || 0,
-            custo_total: custo_total || 0,
-            porcentagem: porcentagem || 149,
-            venda_unt: venda_unt || 0,
-            venda_total: venda_total || 0,
-            ganho: ganho !== undefined ? ganho : false,
+            estimado_unt: parseFloat(estimado_unt) || 0,
+            estimado_total: parseFloat(estimado_total) || 0,
+            custo_unt: parseFloat(custo_unt) || 0,
+            custo_total: parseFloat(custo_total) || 0,
+            porcentagem: parseFloat(porcentagem) || 149,
+            venda_unt: parseFloat(venda_unt) || 0,
+            venda_total: parseFloat(venda_total) || 0,
+            ganho: ganho === true || ganho === 'true' || false,
             updated_at: new Date().toISOString()
         };
-        // Campos de grupo (só adiciona se as colunas existirem no banco)
         if (grupo_tipo !== undefined) itemAtualizado.grupo_tipo = grupo_tipo || null;
         if (grupo_numero !== undefined) itemAtualizado.grupo_numero = grupo_numero != null ? parseInt(grupo_numero) : null;
 
