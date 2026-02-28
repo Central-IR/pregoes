@@ -441,9 +441,9 @@ app.post('/api/pregoes', async (req, res) => {
             detalhes: detalhes || [],
             banco: banco || null,
             status: status || 'ABERTO',
-            ganho: ganho || false,
-            disputa_por: disputa_por || 'ITEM'
+            ganho: ganho || false
         };
+        if (disputa_por !== undefined) novoPregao.disputa_por = disputa_por || 'ITEM';
 
         const { data: dataResponse, error } = await supabase
             .from('pregoes')
@@ -496,9 +496,9 @@ app.put('/api/pregoes/:id', async (req, res) => {
             banco: banco || null,
             status: status || 'ABERTO',
             ganho: ganho !== undefined ? ganho : false,
-            disputa_por: disputa_por || 'ITEM',
             updated_at: new Date().toISOString()
         };
+        if (disputa_por !== undefined) pregaoAtualizado.disputa_por = disputa_por || 'ITEM';
 
         const { data: dataResponse, error } = await supabase
             .from('pregoes')
@@ -632,10 +632,11 @@ app.post('/api/pregoes/:pregao_id/itens', async (req, res) => {
             porcentagem: porcentagem || 149,
             venda_unt: venda_unt || 0,
             venda_total: venda_total || 0,
-            ganho: ganho || false,
-            grupo_tipo: grupo_tipo || null,
-            grupo_numero: grupo_numero != null ? parseInt(grupo_numero) : null
+            ganho: ganho || false
         };
+        // Campos de grupo (só adiciona se as colunas existirem no banco)
+        if (grupo_tipo !== undefined) novoItem.grupo_tipo = grupo_tipo || null;
+        if (grupo_numero !== undefined) novoItem.grupo_numero = grupo_numero != null ? parseInt(grupo_numero) : null;
 
         const { data, error } = await supabase
             .from('pregoes_itens')
@@ -684,10 +685,11 @@ app.put('/api/pregoes/:pregao_id/itens/:id', async (req, res) => {
             venda_unt: venda_unt || 0,
             venda_total: venda_total || 0,
             ganho: ganho !== undefined ? ganho : false,
-            grupo_tipo: grupo_tipo || null,
-            grupo_numero: grupo_numero != null ? parseInt(grupo_numero) : null,
             updated_at: new Date().toISOString()
         };
+        // Campos de grupo (só adiciona se as colunas existirem no banco)
+        if (grupo_tipo !== undefined) itemAtualizado.grupo_tipo = grupo_tipo || null;
+        if (grupo_numero !== undefined) itemAtualizado.grupo_numero = grupo_numero != null ? parseInt(grupo_numero) : null;
 
         const { data, error } = await supabase
             .from('pregoes_itens')
