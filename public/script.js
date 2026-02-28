@@ -1606,14 +1606,11 @@ async function confirmarIntervaloGrupos() {
         for (const numItem of numerosItens) {
             const jaExiste = itens.find(i => i.grupo_tipo === tipo && i.grupo_numero === numGrupo && i.numero === numItem);
             if (jaExiste) continue;
-            const novo = {
+            const novo = payloadItemSeguro({
                 pregao_id: currentPregaoId,
-                numero: numItem, descricao: '', qtd: 1, unidade: 'UN',
-                marca: '', modelo: '',
-                estimado_unt: 0, estimado_total: 0, custo_unt: 0, custo_total: 0,
-                porcentagem: 149, venda_unt: 0, venda_total: 0, ganho: false,
+                numero: numItem,
                 grupo_tipo: tipo, grupo_numero: numGrupo
-            };
+            });
             try {
                 const r = await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens`, { method:'POST', headers, body:JSON.stringify(novo) });
                 if (r.ok) { itens.push(await r.json()); criados++; }
@@ -2381,15 +2378,35 @@ function toggleSelectAllItens() {
     renderItens();
 }
 
+
+// Helper: payload seguro para criação de item (compatível com server antigo)
+function payloadItemSeguro(fields) {
+    return {
+        pregao_id: fields.pregao_id,
+        numero: fields.numero || 1,
+        descricao: fields.descricao || ' ',
+        qtd: fields.qtd || 1,
+        unidade: fields.unidade || 'UN',
+        marca: fields.marca || null,
+        modelo: fields.modelo || null,
+        estimado_unt: fields.estimado_unt || 0,
+        estimado_total: fields.estimado_total || 0,
+        custo_unt: fields.custo_unt || 0,
+        custo_total: fields.custo_total || 0,
+        porcentagem: fields.porcentagem || 149,
+        venda_unt: fields.venda_unt || 0,
+        venda_total: fields.venda_total || 0,
+        ganho: fields.ganho || false,
+        ...(fields.grupo_tipo !== undefined ? { grupo_tipo: fields.grupo_tipo } : {}),
+        ...(fields.grupo_numero !== undefined ? { grupo_numero: fields.grupo_numero } : {})
+    };
+}
 async function adicionarItem() {
     const numero = itens.length > 0 ? Math.max(...itens.map(i => i.numero)) + 1 : 1;
-    const novoItem = {
+    const novoItem = payloadItemSeguro({
         pregao_id: currentPregaoId,
-        numero, descricao: '', qtd: 1, unidade: 'UN',
-        marca: '', modelo: '',
-        estimado_unt: 0, estimado_total: 0, custo_unt: 0, custo_total: 0,
-        porcentagem: 149, venda_unt: 0, venda_total: 0, ganho: false
-    };
+        numero
+    });
     try {
         const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
         if (sessionToken) headers['X-Session-Token'] = sessionToken;
@@ -2463,13 +2480,7 @@ async function adicionarIntervalo(intervalo) {
     if (sessionToken) headers['X-Session-Token'] = sessionToken;
     let criados = 0;
     for (const numero of numeros) {
-        const novoItem = {
-            pregao_id: currentPregaoId,
-            numero, descricao: '', qtd: 1, unidade: 'UN',
-            marca: '', modelo: '',
-            estimado_unt: 0, estimado_total: 0, custo_unt: 0, custo_total: 0,
-            porcentagem: 149, venda_unt: 0, venda_total: 0, ganho: false
-        };
+        const novoItem = payloadItemSeguro({ pregao_id: currentPregaoId, numero });
         try {
             const r = await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens`, { method:'POST', headers, body:JSON.stringify(novoItem) });
             if (r.ok) { itens.push(await r.json()); criados++; }
