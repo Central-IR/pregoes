@@ -421,7 +421,7 @@ app.post('/api/pregoes', async (req, res) => {
         const { 
             responsavel, data, hora, numero_pregao, uasg, nome_orgao, municipio, uf,
             telefones, emails, validade_proposta, prazo_entrega, prazo_pagamento,
-            detalhes, banco, status, ganho
+            detalhes, banco, status, ganho, disputa_por
         } = req.body;
 
         const novoPregao = {
@@ -441,7 +441,8 @@ app.post('/api/pregoes', async (req, res) => {
             detalhes: detalhes || [],
             banco: banco || null,
             status: status || 'ABERTO',
-            ganho: ganho || false
+            ganho: ganho || false,
+            disputa_por: disputa_por || 'ITEM'
         };
 
         const { data: dataResponse, error } = await supabase
@@ -474,7 +475,7 @@ app.put('/api/pregoes/:id', async (req, res) => {
         const { 
             responsavel, data, hora, numero_pregao, uasg, nome_orgao, municipio, uf,
             telefones, emails, validade_proposta, prazo_entrega, prazo_pagamento,
-            detalhes, banco, status, ganho
+            detalhes, banco, status, ganho, disputa_por
         } = req.body;
 
         const pregaoAtualizado = {
@@ -495,6 +496,7 @@ app.put('/api/pregoes/:id', async (req, res) => {
             banco: banco || null,
             status: status || 'ABERTO',
             ganho: ganho !== undefined ? ganho : false,
+            disputa_por: disputa_por || 'ITEM',
             updated_at: new Date().toISOString()
         };
 
@@ -526,23 +528,25 @@ app.put('/api/pregoes/:id', async (req, res) => {
 
 app.delete('/api/pregoes/:id', async (req, res) => {
     try {
-        console.log(`🗑️ Deletando pregão ID: ${req.params.id}`);
+        const pid = req.params.id;
+        console.log(`🗑️ Deletando pregão ID: ${pid} (com itens)`);
+        // Excluir itens primeiro para evitar FK violation
+        const { error: erroItens } = await supabase
+            .from('pregoes_itens')
+            .delete()
+            .eq('pregao_id', pid);
+        if (erroItens) console.warn('⚠️ Aviso ao excluir itens:', erroItens.message);
+        // Excluir o pregão
         const { error } = await supabase
             .from('pregoes')
             .delete()
-            .eq('id', req.params.id);
-
+            .eq('id', pid);
         if (error) throw error;
-
-        console.log('✅ Pregão deletado com sucesso!');
+        console.log('✅ Pregão e itens deletados!');
         res.json({ success: true, message: 'Pregão removido com sucesso' });
     } catch (error) {
         console.error('❌ Erro ao deletar pregão:', error.message);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Erro ao deletar pregão',
-            message: error.message
-        });
+        res.status(500).json({ success: false, error: 'Erro ao deletar pregão', message: error.message });
     }
 });
 
@@ -609,25 +613,28 @@ app.post('/api/pregoes/:pregao_id/itens', async (req, res) => {
         const { 
             numero, descricao, qtd, unidade, marca, modelo,
             estimado_unt, estimado_total, custo_unt, custo_total,
-            porcentagem, venda_unt, venda_total, ganho
+            porcentagem, venda_unt, venda_total, ganho,
+            grupo_tipo, grupo_numero
         } = req.body;
 
         const novoItem = {
             pregao_id: req.params.pregao_id,
             numero,
-            descricao,
-            qtd,
-            unidade,
+            descricao: descricao || null,
+            qtd: qtd || 1,
+            unidade: unidade || 'UN',
             marca: marca || null,
             modelo: modelo || null,
             estimado_unt: estimado_unt || 0,
             estimado_total: estimado_total || 0,
             custo_unt: custo_unt || 0,
             custo_total: custo_total || 0,
-            porcentagem: porcentagem || 10,
+            porcentagem: porcentagem || 149,
             venda_unt: venda_unt || 0,
             venda_total: venda_total || 0,
-            ganho: ganho || false
+            ganho: ganho || false,
+            grupo_tipo: grupo_tipo || null,
+            grupo_numero: grupo_numero != null ? parseInt(grupo_numero) : null
         };
 
         const { data, error } = await supabase
@@ -658,24 +665,27 @@ app.put('/api/pregoes/:pregao_id/itens/:id', async (req, res) => {
         const { 
             numero, descricao, qtd, unidade, marca, modelo,
             estimado_unt, estimado_total, custo_unt, custo_total,
-            porcentagem, venda_unt, venda_total, ganho
+            porcentagem, venda_unt, venda_total, ganho,
+            grupo_tipo, grupo_numero
         } = req.body;
 
         const itemAtualizado = {
             numero,
-            descricao,
-            qtd,
-            unidade,
+            descricao: descricao || null,
+            qtd: qtd || 1,
+            unidade: unidade || 'UN',
             marca: marca || null,
             modelo: modelo || null,
             estimado_unt: estimado_unt || 0,
             estimado_total: estimado_total || 0,
             custo_unt: custo_unt || 0,
             custo_total: custo_total || 0,
-            porcentagem: porcentagem || 10,
+            porcentagem: porcentagem || 149,
             venda_unt: venda_unt || 0,
             venda_total: venda_total || 0,
             ganho: ganho !== undefined ? ganho : false,
+            grupo_tipo: grupo_tipo || null,
+            grupo_numero: grupo_numero != null ? parseInt(grupo_numero) : null,
             updated_at: new Date().toISOString()
         };
 
