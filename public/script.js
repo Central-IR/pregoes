@@ -1145,12 +1145,6 @@ function criarTelaGrupos() {
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline>
                     </svg>
                 </button>
-                <button onclick="abrirModalDeclaracoesGrupos()" style="background:transparent;border:none;color:var(--text-secondary);cursor:pointer;padding:0.5rem;display:flex;align-items:center;" title="Declarações">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/>
-                        <path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>
-                    </svg>
-                </button>
                 <button onclick="syncGrupos()" style="background:transparent;border:none;color:var(--text-secondary);cursor:pointer;padding:0.5rem;display:flex;align-items:center;" title="Sincronizar">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
@@ -1779,15 +1773,6 @@ function criarTelaItens() {
                     </svg>
                 </button>
 
-                <button onclick="abrirModalDeclaracoes()" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; display: flex; align-items: center;" title="Declarações">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/>
-                        <path d="M14 2v5a1 1 0 0 0 1 1h5"/>
-                        <path d="M10 9H8"/>
-                        <path d="M16 13H8"/>
-                        <path d="M16 17H8"/>
-                    </svg>
-                </button>
                 
                 <button onclick="syncItens()" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; display: flex; align-items: center;" title="Sincronizar">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1835,16 +1820,19 @@ function criarTelaItens() {
 
         <!-- Modal + Intervalo -->
         <div class="modal-overlay" id="modalIntervalo">
-            <div class="modal-content modal-delete" style="min-width: 380px;">
-                <button class="close-modal" onclick="fecharModalIntervalo()">✕</button>
-                <div style="padding: 1rem 0 0.5rem 0;">
-                    <h3 style="margin: 0 0 1rem 0; font-size: 1.1rem;">Adicionar Intervalo</h3>
-                    <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1rem;">Digite o intervalo de itens (ex: 1-5, 10, 15-20)</p>
-                    <input type="text" id="inputIntervalo" placeholder="Ex: 1-5, 10, 15-20" 
-                           style="width: 100%; padding: 0.65rem 0.875rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.9rem; background: var(--bg-secondary); color: var(--text-primary); box-sizing: border-box;">
+            <div class="modal-content" style="max-width:520px;">
+                <div class="modal-header">
+                    <h3 class="modal-title">Adicionar Intervalo</h3>
+                    <button class="close-modal" onclick="fecharModalIntervalo()">✕</button>
                 </div>
-                <div class="modal-actions modal-actions-no-border">
-                    <button class="danger" onclick="fecharModalIntervalo()">Cancelar</button>
+                <div class="form-grid">
+                    <div class="form-group" style="grid-column:1/-1;">
+                        <label>Intervalo de itens <span style="color:var(--text-secondary);font-weight:400;">(ex: 1-5, 10, 15-20)</span></label>
+                        <input type="text" id="inputIntervalo" placeholder="Ex: 1-5, 10, 15-20">
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="secondary" onclick="fecharModalIntervalo();showToast('Registro cancelado','error')">Cancelar</button>
                     <button class="success" onclick="confirmarAdicionarIntervalo()">Adicionar</button>
                 </div>
             </div>
@@ -1852,79 +1840,86 @@ function criarTelaItens() {
 
         <!-- Modal Excluir Itens -->
         <div class="modal-overlay" id="modalExcluirItens">
-            <div class="modal-content modal-delete" style="min-width: 380px;">
-                <button class="close-modal" onclick="fecharModalExcluirItens()">✕</button>
-                <div class="modal-message-delete" style="font-size: 1rem; padding: 1rem 0 0.5rem 0;">
-                    EXCLUIR ITENS
+            <div class="modal-content" style="max-width:520px;">
+                <div class="modal-header">
+                    <h3 class="modal-title">Excluir Itens</h3>
+                    <button class="close-modal" onclick="fecharModalExcluirItens()">✕</button>
                 </div>
-                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.75rem; text-align: center;">Digite o intervalo de itens a excluir (ex: 1-5, 10)</p>
-                <input type="text" id="inputExcluirIntervalo" placeholder="Ex: 1-5, 10" 
-                       style="width: 100%; padding: 0.65rem 0.875rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.9rem; background: var(--bg-secondary); color: var(--text-primary); box-sizing: border-box;">
-                <div class="modal-actions modal-actions-no-border">
-                    <button class="secondary" onclick="fecharModalExcluirItens()">Cancelar</button>
-                    <button class="danger" onclick="confirmarExcluirItens()">Sim</button>
+                <div class="form-grid">
+                    <div class="form-group" style="grid-column:1/-1;">
+                        <label>Intervalo a excluir <span style="color:var(--text-secondary);font-weight:400;">(ex: 1-5, 10)</span></label>
+                        <input type="text" id="inputExcluirIntervalo" placeholder="Ex: 1-5, 10">
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="secondary" onclick="fecharModalExcluirItens();showToast('Registro cancelado','error')">Cancelar</button>
+                    <button class="danger" onclick="confirmarExcluirItens()">Excluir</button>
                 </div>
             </div>
         </div>
 
         <!-- Modal Assinatura PDF -->
         <div class="modal-overlay" id="modalAssinatura">
-            <div class="modal-content modal-delete">
-                <button class="close-modal" onclick="fecharModalAssinatura()">✕</button>
-                <div class="modal-message-delete">
-                    Deseja gerar a proposta com assinatura padrão?
+            <div class="modal-content" style="max-width:440px;">
+                <div class="modal-header">
+                    <h3 class="modal-title">Gerar Proposta</h3>
+                    <button class="close-modal" onclick="fecharModalAssinatura()">✕</button>
                 </div>
-                <div class="modal-actions modal-actions-no-border">
-                    <button class="danger" onclick="gerarPDFsProposta(false)">Não</button>
-                    <button class="success" onclick="gerarPDFsProposta(true)">Sim</button>
+                <p style="color:var(--text-secondary);margin-bottom:0.5rem;">Deseja incluir a assinatura padrão na proposta?</p>
+                <div class="modal-actions">
+                    <button class="secondary" onclick="gerarPDFsProposta(false)">Sem assinatura</button>
+                    <button class="success" onclick="gerarPDFsProposta(true)">Com assinatura</button>
                 </div>
             </div>
         </div>
 
         <!-- Modal Cotação -->
         <div class="modal-overlay" id="modalCotacao">
-            <div class="modal-content" style="max-width: 680px; width: 90vw;">
+            <div class="modal-content">
                 <div class="modal-header">
                     <h3 class="modal-title">Enviar Cotação</h3>
                     <button class="close-modal" onclick="fecharModalCotacao()">✕</button>
                 </div>
-                <div style="padding: 0.5rem 0;">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                        <div class="form-group" style="margin: 0;">
-                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-secondary);">Fornecedor</label>
-                            <div class="filter-dropdown-inline" style="width: 100%; padding: 0;">
-                                <select id="cotacaoFornecedor" onchange="selecionarFornecedorCotacao()" style="width: 100%; padding: 0.65rem 0.875rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); font-size: 0.9rem; appearance: none;">
+                <div class="tabs-container">
+                    <div class="tabs-nav">
+                        <button class="tab-btn active" onclick="switchCotacaoTab('cotacao-tab-fornecedor')">Fornecedor</button>
+                        <button class="tab-btn" onclick="switchCotacaoTab('cotacao-tab-envio')">Envio</button>
+                    </div>
+                    <div class="tab-content active" id="cotacao-tab-fornecedor">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Fornecedor</label>
+                                <select id="cotacaoFornecedor" onchange="selecionarFornecedorCotacao()">
                                     <option value="">Selecione...</option>
                                 </select>
                             </div>
+                            <div class="form-group">
+                                <label>Contato</label>
+                                <input type="text" id="cotacaoContato" readonly placeholder="Preenchido ao selecionar fornecedor">
+                            </div>
                         </div>
-                        <div class="form-group" style="margin: 0;">
-                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-secondary);">Tipo de Envio</label>
-                            <div class="filter-dropdown-inline" style="width: 100%; padding: 0;">
-                                <select id="cotacaoTipo" style="width: 100%; padding: 0.65rem 0.875rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); font-size: 0.9rem; appearance: none;">
+                    </div>
+                    <div class="tab-content" id="cotacao-tab-envio">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Tipo de Envio</label>
+                                <select id="cotacaoTipo">
                                     <option value="descricao">Descrição</option>
                                     <option value="modelo">Modelo</option>
                                 </select>
                             </div>
+                            <div class="form-group">
+                                <label>Intervalo de Itens</label>
+                                <input type="text" id="cotacaoIntervalo" placeholder="Ex: 1-5, 10">
+                            </div>
                         </div>
                     </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                        <div class="form-group" style="margin: 0;">
-                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-secondary);">Contato</label>
-                            <input type="text" id="cotacaoContato" readonly placeholder="Preenchido ao selecionar fornecedor"
-                                   style="width: 100%; padding: 0.65rem 0.875rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-secondary); font-size: 0.9rem; box-sizing: border-box; opacity: 0.8;">
-                        </div>
-                        <div class="form-group" style="margin: 0;">
-                            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-secondary);">Intervalo de Itens</label>
-                            <input type="text" id="cotacaoIntervalo" placeholder="Ex: 1-5, 10"
-                                   style="width: 100%; padding: 0.65rem 0.875rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); font-size: 0.9rem; box-sizing: border-box;">
-                        </div>
-                    </div>
-                    <div id="cotacaoAviso" style="display:none; color: var(--text-secondary); font-size: 0.85rem; padding: 0.5rem; background: var(--bg-secondary); border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 0.5rem;"></div>
                 </div>
                 <div class="modal-actions">
-                    <button class="secondary" onclick="fecharModalCotacao()">Cancelar</button>
-                    <button class="success" onclick="enviarCotacao()">Enviar</button>
+                    <button type="button" id="btnCotacaoPrev" class="secondary" style="display:none;" onclick="prevCotacaoTab()">Anterior</button>
+                    <button type="button" id="btnCotacaoNext" class="secondary" onclick="nextCotacaoTab()">Próximo</button>
+                    <button type="button" id="btnCotacaoEnviar" class="success" style="display:none;" onclick="enviarCotacao()">Enviar</button>
+                    <button type="button" class="danger" onclick="fecharModalCotacao()">Cancelar</button>
                 </div>
             </div>
         </div>
@@ -2003,12 +1998,15 @@ function perguntarAssinaturaDeclaracao() {
         modal.id = 'modalAssinaturaDeclaracao';
         modal.className = 'modal-overlay';
         modal.innerHTML = `
-            <div class="modal-content modal-delete">
-                <button class="close-modal" onclick="fecharModalAssinaturaDeclaracao()">✕</button>
-                <div class="modal-message-delete">Deseja gerar a declaração com assinatura padrão?</div>
-                <div class="modal-actions modal-actions-no-border">
-                    <button class="danger" onclick="gerarPDFDeclaracao(false)">Não</button>
-                    <button class="success" onclick="gerarPDFDeclaracao(true)">Sim</button>
+            <div class="modal-content" style="max-width:440px;">
+                <div class="modal-header">
+                    <h3 class="modal-title">Gerar Declaração</h3>
+                    <button class="close-modal" onclick="fecharModalAssinaturaDeclaracao()">✕</button>
+                </div>
+                <p style="color:var(--text-secondary);margin-bottom:0.5rem;">Deseja incluir a assinatura padrão?</p>
+                <div class="modal-actions">
+                    <button class="secondary" onclick="gerarPDFDeclaracao(false)">Sem assinatura</button>
+                    <button class="success" onclick="gerarPDFDeclaracao(true)">Com assinatura</button>
                 </div>
             </div>
         `;
@@ -2748,10 +2746,13 @@ function switchItemTab(tabId) {
 }
 
 function atualizarNavegacaoAbasItem() {
-    const btnPrev = document.getElementById('btnItemTabPrev');
-    const btnNext = document.getElementById('btnItemTabNext');
-    if (btnPrev) btnPrev.style.display = currentItemTab === 0 ? 'none' : 'inline-block';
-    if (btnNext) btnNext.style.display = currentItemTab === itemTabs.length - 1 ? 'none' : 'inline-block';
+    const btnPrev   = document.getElementById('btnItemTabPrev');
+    const btnNext   = document.getElementById('btnItemTabNext');
+    const btnSalvar = document.getElementById('btnSalvarItem');
+    const isLast = currentItemTab === itemTabs.length - 1;
+    if (btnPrev)   btnPrev.style.display   = currentItemTab === 0 ? 'none' : 'inline-block';
+    if (btnNext)   btnNext.style.display   = isLast ? 'none' : 'inline-block';
+    if (btnSalvar) btnSalvar.style.display = isLast ? 'inline-block' : 'none';
 }
 
 function nextItemTab() {
@@ -2887,7 +2888,7 @@ function criarModalItem() {
             <div class="modal-actions">
                 <button type="button" id="btnItemTabPrev" onclick="prevItemTab()" class="secondary" style="display: none;">Anterior</button>
                 <button type="button" id="btnItemTabNext" onclick="nextItemTab()" class="secondary">Próximo</button>
-                <button type="button" onclick="salvarItemAtual()" class="success">Salvar</button>
+                <button type="button" id="btnSalvarItem" onclick="salvarItemAtual()" class="success" style="display:none;">Salvar</button>
                 <button type="button" onclick="fecharModalItem()" class="danger">Cancelar</button>
             </div>
         </div>
@@ -3066,8 +3067,8 @@ async function abrirModalCotacao() {
     document.getElementById('cotacaoIntervalo').value = '';
     document.getElementById('cotacaoTipo').value = 'descricao';
     
-    const aviso = document.getElementById('cotacaoAviso');
-    if (aviso) aviso.style.display = 'none';
+    // Reset para primeira aba
+    switchCotacaoTab('cotacao-tab-fornecedor');
     
     const modal = document.getElementById('modalCotacao');
     if (modal) modal.classList.add('show');
@@ -3078,55 +3079,74 @@ function fecharModalCotacao() {
     if (modal) modal.classList.remove('show');
 }
 
+const cotacaoTabs = ['cotacao-tab-fornecedor', 'cotacao-tab-envio'];
+let currentCotacaoTab = 0;
+
+function switchCotacaoTab(tabId) {
+    const allTabs = document.querySelectorAll('#modalCotacao .tab-content');
+    const allBtns = document.querySelectorAll('#modalCotacao .tab-btn');
+    allTabs.forEach(t => t.classList.remove('active'));
+    allBtns.forEach(b => b.classList.remove('active'));
+    const active = document.getElementById(tabId);
+    if (active) active.classList.add('active');
+    currentCotacaoTab = cotacaoTabs.indexOf(tabId);
+    const idx = currentCotacaoTab;
+    if (allBtns[idx]) allBtns[idx].classList.add('active');
+    const isLast = idx === cotacaoTabs.length - 1;
+    const prev = document.getElementById('btnCotacaoPrev');
+    const next = document.getElementById('btnCotacaoNext');
+    const enviar = document.getElementById('btnCotacaoEnviar');
+    if (prev) prev.style.display = idx === 0 ? 'none' : 'inline-block';
+    if (next) next.style.display = isLast ? 'none' : 'inline-block';
+    if (enviar) enviar.style.display = isLast ? 'inline-block' : 'none';
+}
+
+function nextCotacaoTab() {
+    if (currentCotacaoTab < cotacaoTabs.length - 1) {
+        currentCotacaoTab++;
+        switchCotacaoTab(cotacaoTabs[currentCotacaoTab]);
+    }
+}
+
+function prevCotacaoTab() {
+    if (currentCotacaoTab > 0) {
+        currentCotacaoTab--;
+        switchCotacaoTab(cotacaoTabs[currentCotacaoTab]);
+    }
+}
+
 async function selecionarFornecedorCotacao() {
     const marca = document.getElementById('cotacaoFornecedor').value;
     const contatoEl = document.getElementById('cotacaoContato');
-    const aviso = document.getElementById('cotacaoAviso');
-    
-    if (!marca) {
-        contatoEl.value = '';
-        if (aviso) aviso.style.display = 'none';
-        return;
-    }
-    
-    // Buscar fornecedor pelo nome/marca no banco de dados
+
+    if (!marca) { contatoEl.value = ''; return; }
+
     try {
         const headers = { 'Accept': 'application/json' };
         if (sessionToken) headers['X-Session-Token'] = sessionToken;
         const response = await fetch(`${API_URL}/fornecedores`, { headers });
-        
+
         if (response.ok) {
             const lista = await response.json();
-            const fornecedor = lista.find(f => 
+            const fornecedor = lista.find(f =>
                 (f.nome || f.razao_social || f.name || '').toUpperCase() === marca.toUpperCase()
             );
-            
             if (fornecedor) {
                 const meio = fornecedor.meio_envio || fornecedor.envio || '';
                 const contato = fornecedor.email || fornecedor.whatsapp || fornecedor.telefone || '';
                 contatoEl.value = `${meio ? meio + ': ' : ''}${contato}`;
                 fornecedoresDisponiveis = lista;
-                if (aviso) aviso.style.display = 'none';
             } else {
                 contatoEl.value = '';
-                if (aviso) {
-                    aviso.textContent = 'Fornecedor não encontrado';
-                    aviso.style.display = 'block';
-                }
+                showToast('Fornecedor não encontrado', 'error');
             }
         } else {
             contatoEl.value = '';
-            if (aviso) {
-                aviso.textContent = 'Fornecedor não encontrado';
-                aviso.style.display = 'block';
-            }
+            showToast('Fornecedor não encontrado', 'error');
         }
     } catch (e) {
         contatoEl.value = '';
-        if (aviso) {
-            aviso.textContent = 'Fornecedor não encontrado';
-            aviso.style.display = 'block';
-        }
+        showToast('Fornecedor não encontrado', 'error');
     }
 }
 
@@ -3394,28 +3414,25 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
             'RUA TADORNA Nº 472, SALA 2, NOVO HORIZONTE – SERRA/ES  |  CEP: 29.163-318',
             'TELEFAX: (27) 3209-4291  |  E-MAIL: COMERCIAL.IRCOMERCIO@GMAIL.COM'
         ];
-        const footerH = footerLines.length * 4 + 4;
+        const footerLineH = 5;   // espaçamento entre linhas do rodapé (mm), igual ao lineHeight das declarações
+        const footerH = footerLines.length * footerLineH + 4;
         function addFooter(docRef) {
             const totalPags = docRef.internal.getNumberOfPages();
             for (let pg = 1; pg <= totalPags; pg++) {
                 docRef.setPage(pg);
-                docRef.setFontSize(7);
+                docRef.setFontSize(10);           // igual ao tamanho das declarações
                 docRef.setFont(undefined, 'normal');
-                docRef.setTextColor(130, 130, 130);
-                // Linha separadora
-                const fyBase = pageHeight - footerH;
-                docRef.setDrawColor(200, 200, 200);
-                docRef.line(margin, fyBase, pageWidth - margin, fyBase);
+                docRef.setTextColor(150, 150, 150);
+                const fyBase = pageHeight - footerH + 2;
                 footerLines.forEach((line, i) => {
-                    docRef.text(line, pageWidth / 2, fyBase + 4 + (i * 4), { align: 'center' });
+                    docRef.text(line, pageWidth / 2, fyBase + (i * footerLineH), { align: 'center' });
                 });
                 docRef.setTextColor(0, 0, 0);
-                docRef.setDrawColor(0, 0, 0);
             }
         }
-        
-        // Redefinir pageHeight com margem de rodapé
-        const footerMargin = 20; // espaço para rodapé de 3 linhas
+
+        // Margem reservada para o rodapé (limita conteúdo da página)
+        const footerMargin = footerH + 4;
         
         // Título
         doc.setFontSize(18);
