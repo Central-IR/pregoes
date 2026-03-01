@@ -1153,6 +1153,9 @@ function criarTelaGrupos() {
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline>
                     </svg>
                 </button>
+                <button onclick="abrirModalDeclaracoesGrupos()" style="background:transparent;border:none;color:var(--text-secondary);cursor:pointer;padding:0.5rem;display:flex;align-items:center;" title="Declarações / Comprovante">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z"/><path d="M14 8H8"/><path d="M16 12H8"/><path d="M13 16H8"/></svg>
+                </button>
                 <button onclick="syncGrupos()" style="background:transparent;border:none;color:var(--text-secondary);cursor:pointer;padding:0.5rem;display:flex;align-items:center;" title="Sincronizar">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
@@ -1400,14 +1403,7 @@ function renderGrupos() {
                 '<td>' + fmtTotal(item.venda_total || 0) + '</td>' +
                 '</tr>';
         }
-        const totalRow =
-            '<tr style="background:var(--bg-secondary);font-weight:700;border-top:2px solid var(--border-color);">' +
-            '<td colspan="6" style="padding:8px 6px;"></td>' +
-            '<td style="padding:8px 6px;font-size:0.82rem;">' + fmtTotal(totC) + '</td>' +
-            '<td style="padding:8px 6px;font-size:0.82rem;">' + fmtTotal(totCu) + '</td>' +
-            '<td></td>' +
-            '<td style="padding:8px 6px;font-size:0.82rem;">' + fmtTotal(totV) + '</td>' +
-            '</tr>';
+        // totalRow removido — totais ficam soltos abaixo da tabela
         // Checkbox ganho por grupo
         const grupoGanho = grupo.itens.length > 0 && grupo.itens.every(i => i.ganho);
         const grupoGanhoId = 'grp-ganho-' + grupo.tipo + '-' + grupo.numero;
@@ -1432,8 +1428,13 @@ function renderGrupos() {
             '<th style="width:105px;">COMPRA TOTAL</th><th style="width:100px;">CUSTO TOTAL</th>' +
             '<th style="width:100px;">VENDA UNT</th><th style="width:105px;">VENDA TOTAL</th>' +
             '</tr></thead>' +
-            '<tbody>' + rowParts.join('') + totalRow + '</tbody>' +
-            '</table></div></div>'
+            '<tbody>' + rowParts.join('') + '</tbody>' +
+            '</table></div>' +
+            '<div style="display:flex;gap:3rem;padding:0.75rem 1rem 0.25rem 1rem;font-size:10pt;color:var(--text-primary);">' +
+            '<span><strong>COMPRA TOTAL:</strong> ' + fmtTot(totC) + '</span>' +
+            '<span><strong>CUSTO TOTAL:</strong> ' + fmtTot(totCu) + '</span>' +
+            '<span><strong>VENDA TOTAL:</strong> ' + fmtTot(totV) + '</span>' +
+            '</div></div>'
         );
     }
     wrapper.innerHTML = cards.join('');
@@ -1839,7 +1840,9 @@ function criarTelaItens() {
                         <polyline points="14 2 14 8 20 8"></polyline>
                     </svg>
                 </button>
-
+                <button onclick="abrirModalDeclaracoes()" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; display: flex; align-items: center;" title="Declarações / Comprovante">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z"/><path d="M14 8H8"/><path d="M16 12H8"/><path d="M13 16H8"/></svg>
+                </button>
                 
                 <button onclick="syncItens()" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; display: flex; align-items: center;" title="Sincronizar">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1884,6 +1887,8 @@ function criarTelaItens() {
                 </table>
             </div>
         </div>
+        <!-- Totais da tabela de itens -->
+        <div id="itensTotaisBar" style="display:flex;gap:3rem;padding:0.75rem 1rem 0.25rem 1rem;font-size:10pt;color:var(--text-primary);"></div>
 
         <!-- Modal + Intervalo -->
         <div class="modal-overlay" id="modalIntervalo">
@@ -1939,56 +1944,6 @@ function criarTelaItens() {
             </div>
         </div>
 
-        <!-- Modal Cotação -->
-        <div class="modal-overlay" id="modalCotacao">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 class="modal-title">Enviar Cotação</h3>
-                    <button class="close-modal" onclick="fecharModalCotacao()">✕</button>
-                </div>
-                <div class="tabs-container">
-                    <div class="tabs-nav">
-                        <button class="tab-btn active" onclick="switchCotacaoTab('cotacao-tab-fornecedor')">Fornecedor</button>
-                        <button class="tab-btn" onclick="switchCotacaoTab('cotacao-tab-envio')">Envio</button>
-                    </div>
-                    <div class="tab-content active" id="cotacao-tab-fornecedor">
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label>Fornecedor</label>
-                                <select id="cotacaoFornecedor" onchange="selecionarFornecedorCotacao()">
-                                    <option value="">Selecione...</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Contato</label>
-                                <input type="text" id="cotacaoContato" readonly placeholder="Preenchido ao selecionar fornecedor">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="tab-content" id="cotacao-tab-envio">
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label>Tipo de Envio</label>
-                                <select id="cotacaoTipo">
-                                    <option value="descricao">Descrição</option>
-                                    <option value="modelo">Modelo</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Intervalo de Itens</label>
-                                <input type="text" id="cotacaoIntervalo" placeholder="Ex: 1-5, 10">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" id="btnCotacaoPrev" class="secondary" style="display:none;" onclick="prevCotacaoTab()">Anterior</button>
-                    <button type="button" id="btnCotacaoNext" class="secondary" onclick="nextCotacaoTab()">Próximo</button>
-                    <button type="button" id="btnCotacaoEnviar" class="success" style="display:none;" onclick="enviarCotacao()">Enviar</button>
-                    <button type="button" class="danger" onclick="fecharModalCotacao()">Cancelar</button>
-                </div>
-            </div>
-        </div>
     `;
     return div;
 }
@@ -2346,15 +2301,16 @@ function renderItens(itensToRender = itens) {
             '</tr>';
     }
 
-    container.innerHTML = parts.join('') +
-        '<tr style="background:var(--bg-secondary);font-weight:700;border-top:2px solid var(--border-color);">' +
-        '<td colspan="8" style="padding:8px 12px;"></td>' +
-        '<td style="padding:8px 12px;font-size:0.85rem;">' + fmtTotal(totCompra) + '</td>' +
-        '<td></td>' +
-        '<td style="padding:8px 12px;font-size:0.85rem;">' + fmtTotal(totCusto) + '</td>' +
-        '<td></td>' +
-        '<td style="padding:8px 12px;font-size:0.85rem;">' + fmtTotal(totVenda) + '</td>' +
-        '</tr>';
+    container.innerHTML = parts.join('');
+
+    // Totais soltos abaixo da tabela
+    const totaisContainer = document.getElementById('itensTotaisBar');
+    if (totaisContainer) {
+        totaisContainer.innerHTML =
+            '<span><strong>COMPRA TOTAL:</strong> ' + fmtTotal(totCompra) + '</span>' +
+            '<span><strong>CUSTO TOTAL:</strong> ' + fmtTotal(totCusto) + '</span>' +
+            '<span><strong>VENDA TOTAL:</strong> ' + fmtTotal(totVenda) + '</span>';
+    }
 }
 
 function showItemContextMenu(event, itemId) {
@@ -3126,24 +3082,76 @@ function fecharModalAssinatura() {
 let fornecedoresDisponiveis = [];
 
 async function abrirModalCotacao() {
+    // Garantir que o modal existe no body (acessível de itens e grupos)
+    let modal = document.getElementById('modalCotacao');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'modalCotacao';
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">Enviar Cotação</h3>
+                    <button class="close-modal" onclick="fecharModalCotacao()">✕</button>
+                </div>
+                <div class="tabs-container">
+                    <div class="tabs-nav">
+                        <button class="tab-btn active" onclick="switchCotacaoTab('cotacao-tab-fornecedor')">Fornecedor</button>
+                        <button class="tab-btn" onclick="switchCotacaoTab('cotacao-tab-envio')">Envio</button>
+                    </div>
+                    <div class="tab-content active" id="cotacao-tab-fornecedor">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Fornecedor</label>
+                                <select id="cotacaoFornecedor" onchange="selecionarFornecedorCotacao()">
+                                    <option value="">Selecione...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Contato</label>
+                                <input type="text" id="cotacaoContato" readonly placeholder="Preenchido ao selecionar fornecedor">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="cotacao-tab-envio">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Tipo de Envio</label>
+                                <select id="cotacaoTipo">
+                                    <option value="descricao">Descrição</option>
+                                    <option value="modelo">Modelo</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Intervalo de Itens</label>
+                                <input type="text" id="cotacaoIntervalo" placeholder="Ex: 1-5, 10">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="btnCotacaoPrev" class="secondary" style="display:none;" onclick="prevCotacaoTab()">Anterior</button>
+                    <button type="button" id="btnCotacaoNext" class="secondary" onclick="nextCotacaoTab()">Próximo</button>
+                    <button type="button" id="btnCotacaoEnviar" class="success" style="display:none;" onclick="enviarCotacao()">Enviar</button>
+                    <button type="button" class="danger" onclick="fecharModalCotacao()">Cancelar</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
     // Fornecedores disponíveis = marcas preenchidas nos itens do pregão atual
     const marcasNosItens = [...new Set(itens.filter(i => i.marca).map(i => i.marca))].sort();
-    
     const select = document.getElementById('cotacaoFornecedor');
     if (select) {
         select.innerHTML = '<option value="">Selecione...</option>' +
             marcasNosItens.map(m => `<option value="${m}">${m}</option>`).join('');
     }
-    
     document.getElementById('cotacaoContato').value = '';
     document.getElementById('cotacaoIntervalo').value = '';
     document.getElementById('cotacaoTipo').value = 'descricao';
-    
-    // Reset para primeira aba
     switchCotacaoTab('cotacao-tab-fornecedor');
-    
-    const modal = document.getElementById('modalCotacao');
-    if (modal) modal.classList.add('show');
+    modal.classList.add('show');
 }
 
 function fecharModalCotacao() {
@@ -3676,7 +3684,7 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
             const itensSelecionados = itens.filter(item => item.ganho);
             itensSelecionados.forEach((item, index) => desenharLinhaItem(item, index));
             const totalGeral = itensSelecionados.reduce((acc, item) => acc + (item.venda_total || 0), 0);
-            desenharRodapeTabela(totalGeral);
+            // Rodapé de total removido da tabela — aparece só em VALOR TOTAL DA PROPOSTA
             totalFinalProposta = totalGeral;
         }
 
