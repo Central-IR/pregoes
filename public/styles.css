@@ -9,7 +9,7 @@
     --border-color: #E5E7EB;
     --input-bg: #F9FAFB;
     --success-color: #22C55E;
-    --warning-color: #F59E0B;
+    --warning-color: #ff521d;
     --info-color: #3B82F6;
     --table-stripe: #FAFAFA;
     --table-hover: rgba(0, 0, 0, 0.02);
@@ -21,7 +21,7 @@
     --btn-register: #3B82F6;
     --btn-delete: #EF4444;
     --btn-edit: #6B7280;
-    --btn-view: #F59E0B;
+    --btn-view: #ff521d;
     --btn-save: #22C55E;
     --alert-color: #EF4444;
 }
@@ -64,7 +64,7 @@ body {
     width: 48px;
     height: 48px;
     border: 4px solid rgba(204, 112, 0, 0.2);
-    border-top-color: #ff521d;
+    border-top-color: #CC7000;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
 }
@@ -553,8 +553,8 @@ h2 {
 }
 
 .stat-icon-warning {
-    background: rgba(245, 158, 11, 0.1);
-    color: #F59E0B;
+    background: rgba(255,82,29, 0.1);
+    color: #ff521d;
 }
 
 .stat-icon-info {
@@ -579,20 +579,11 @@ h2 {
 }
 
 .stat-value-warning {
-    color: #F59E0B;
+    color: #ff521d;
 }
 
 .stat-value-info {
     color: #3B82F6;
-}
-
-.stat-icon-danger {
-    background: rgba(239, 68, 68, 0.1);
-    color: #EF4444;
-}
-
-.stat-value-danger {
-    color: #EF4444;
 }
 
 .stat-label {
@@ -762,47 +753,6 @@ tbody tr.row-fechada:hover {
     background: rgba(34, 197, 94, 0.1);
     color: #16A34A;
     border: 1px solid rgba(34, 197, 94, 0.2);
-}
-
-/* Status badges para Pregões - cores idênticas ao dashboard */
-.status-badge {
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    white-space: nowrap;
-    display: inline-block;
-}
-
-.status-badge-warning {
-    background: rgba(245, 158, 11, 0.15);
-    color: #B45309;
-    border: 1px solid rgba(245, 158, 11, 0.3);
-}
-
-.status-badge-success {
-    background: rgba(34, 197, 94, 0.15);
-    color: #15803D;
-    border: 1px solid rgba(34, 197, 94, 0.3);
-}
-
-.status-badge-danger {
-    background: rgba(239, 68, 68, 0.15);
-    color: #B91C1C;
-    border: 1px solid rgba(239, 68, 68, 0.3);
-}
-
-.status-badge-suspended {
-    background: rgba(107, 114, 128, 0.15);
-    color: #374151;
-    border: 1px solid rgba(107, 114, 128, 0.3);
-}
-
-.status-badge-default {
-    background: rgba(107, 114, 128, 0.1);
-    color: var(--text-secondary);
-    border: 1px solid var(--border-color);
 }
 
 .form-grid {
@@ -1655,30 +1605,4 @@ tr.item-ganho:hover {
     border-color: var(--primary);
     background: rgba(204, 112, 0, 0.1);
     color: var(--primary);
-}
-
-/* ===== Linha de item com venda > compra ===== */
-
-/* ===== Linha vermelha quando Venda UNT > Estimado UNT ===== */
-.row-venda-alta td {
-    background-color: rgba(239, 68, 68, 0.07) !important;
-}
-.row-venda-alta:hover td {
-    background-color: rgba(239, 68, 68, 0.13) !important;
-}
-
-/* Checkbox de venda alta — estilo vermelho, não desmarcável pelo usuário */
-.checkbox-label-styled.cb-label-venda-alta {
-    border-color: #EF4444 !important;
-    background-color: #FEE2E2 !important;
-    cursor: not-allowed !important;
-    font-size: 1rem;
-    font-weight: 900;
-    color: #EF4444;
-}
-/* Quando ganho marcado: fundo sólido vermelho, texto branco */
-.cb-venda-alta:checked + .checkbox-label-styled.cb-label-venda-alta {
-    background-color: #EF4444 !important;
-    border-color: #DC2626 !important;
-    color: white !important;
 }
