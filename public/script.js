@@ -722,7 +722,7 @@ async function salvarPregao() {
             throw new Error(errorMessage);
         }
 
-        showToast('Item registrado', 'success');
+        showToast('Pregão salvo com sucesso', 'success');
         closeFormModal();
         await loadPregoes();
     } catch (error) {
@@ -1073,6 +1073,7 @@ function voltarPregoes() {
 let grupos = [];  // [{tipo, numero, itens:[]}]
 let editandoGrupoIdx = null;
 let editandoGrupoItemIdx = null;
+let modoNavegacaoGrupo = false; // true = navega em grupo, false = navega em itens
 
 // ============================================================
 // TELA DE GRUPOS
@@ -1236,11 +1237,11 @@ function criarTelaGrupos() {
             <div class="modal-content modal-delete">
                 <button class="close-modal" onclick="document.getElementById('modalAssinaturaGrupos').classList.remove('show')">✕</button>
                 <div class="modal-message-delete">
-                    DESEJA INCLUIR A ASSINATURA PADRÃO NA PROPOSTA?
+                    Deseja incluir a assinatura padrão na proposta?
                 </div>
                 <div class="modal-actions modal-actions-no-border">
-                    <button class="secondary" onclick="gerarPDFGruposComAssinatura(false)">Sem assinatura</button>
-                    <button class="success" onclick="gerarPDFGruposComAssinatura(true)">Com assinatura</button>
+                    <button class="success" onclick="gerarPDFGruposComAssinatura(true)">Sim</button>
+                    <button class="danger" onclick="gerarPDFGruposComAssinatura(false)">Não</button>
                 </div>
             </div>
         </div>
@@ -1383,9 +1384,10 @@ function renderGrupos() {
             totCu += item.custo_total || 0;
             totV  += item.venda_total || 0;
             const iid = item.id;
-            const rowBg = grupoAllGanho ? 'background:rgba(34,197,94,0.08);' : (vm ? 'background:rgba(239,68,68,0.07);' : '');
+            const rowBg = '';
+            const rowClass = grupoAllGanho ? 'row-won' : (vm ? 'row-venda-alta' : '');
             rowParts[idx] =
-                '<tr style="' + rowBg + '" ondblclick="editarItemGrupoById(\'' + iid + '\')" oncontextmenu="showItemContextMenu(event,\'' + iid + '\')">' +
+                '<tr class="' + rowClass + '" ondblclick="editarItemGrupoById(\'' + iid + '\')" oncontextmenu="showItemContextMenu(event,\'' + iid + '\')">' +
                 '<td><strong>' + item.numero + '</strong></td>' +
                 '<td class="descricao-cell">' + (item.descricao || '-') + '</td>' +
                 '<td>' + (item.qtd || 1) + '</td>' +
@@ -1413,7 +1415,7 @@ function renderGrupos() {
 
         cards.push(
             '<div class="card table-card" style="margin-bottom:1.25rem;">' +
-            '<div style="background:#1e3a5f;display:flex;align-items:center;justify-content:center;padding:8px 14px;border-radius:8px 8px 0 0;gap:0.75rem;">' +
+            '<div style="background:#1e3a5f;display:flex;align-items:center;justify-content:flex-start;padding:8px 14px;border-radius:8px 8px 0 0;gap:0.75rem;">' +
             '<div class="checkbox-wrapper" style="position:relative;">' +
             '<input type="checkbox" id="' + grupoGanhoId + '"' + grupoGanhoChk +
             ' onchange="toggleGrupoGanho(\'' + grupo.tipo + '\',' + grupo.numero + ',this.checked)"' +
@@ -1484,7 +1486,7 @@ async function confirmarNovoGrupo() {
     renderGrupos();
     const grupoNovo = grupos.find(g => g.tipo === tipo && g.numero === numero);
     if (grupoNovo && grupoNovo.itens.length > 0) {
-        showToast('Item registrado', 'success');
+        showToast('Grupo criado', 'success');
         abrirEdicaoGrupoItem(grupoNovo, 0);
     }
 }
@@ -1511,7 +1513,7 @@ function editarItemGrupoById(itemId) {
 function mostrarModalItemGrupo(item, grupo, idxItem) {
     // Reutiliza o mesmo modal de item mas com título e navegação especial
     let modal = document.getElementById('modalItem');
-    if (!modal) { modal = criarModalItem(); document.getElementById('telaGrupos').appendChild(modal); }
+    if (!modal) { modal = criarModalItem(); document.body.appendChild(modal); }
     // Preencher campos (mesmo que mostrarModalItem)
     document.getElementById('itemNumero').value = item.numero || '';
     document.getElementById('itemDescricao').value = item.descricao || '';
@@ -1526,19 +1528,19 @@ function mostrarModalItemGrupo(item, grupo, idxItem) {
     document.getElementById('itemPorcentagem').value = item.porcentagem ?? 149;
     document.getElementById('itemVendaUnt').value = item.venda_unt || '';
     document.getElementById('itemVendaTotal').value = item.venda_total || '';
-    // Título especial para grupo
+    // Título e navegação para grupo
     const tituloEl = document.getElementById('modalItemTitle');
-    if (tituloEl) tituloEl.textContent = `${grupo.tipo} ${grupo.numero} – Item ${item.numero}`;
-    // Setas: percorrem itens do grupo primeiro, depois próximo grupo
+    if (tituloEl) tituloEl.textContent = `Item ${item.numero}`;
     const btnPrev = document.getElementById('btnPrevPagItem');
     const btnNext = document.getElementById('btnNextPagItem');
     const temAnterior = idxItem > 0 || editandoGrupoIdx > 0;
     const temProximo = idxItem < grupo.itens.length - 1 || editandoGrupoIdx < grupos.length - 1;
     if (btnPrev) btnPrev.style.visibility = temAnterior ? 'visible' : 'hidden';
     if (btnNext) btnNext.style.visibility = temProximo ? 'visible' : 'hidden';
-    // Substituir handlers de navegação
-    if (btnPrev) btnPrev.onclick = navegarGrupoAnterior;
-    if (btnNext) btnNext.onclick = navegarGrupoProximo;
+    modoNavegacaoGrupo = true;
+    // Reset to first tab
+    currentItemTab = 0;
+    switchItemTab(itemTabs[0]);
     modal.classList.add('show');
     configurarCalculosAutomaticos();
     setTimeout(calcularValoresItem, 50);
@@ -1703,7 +1705,7 @@ async function confirmarIntervaloGrupos() {
     reconstruirGruposDeItens();
     atualizarSelectsGrupos();
     renderGrupos();
-    showToast('Item registrado', 'success');
+    showToast('Grupos criados', 'success');
 }
 
 async function toggleGrupoGanho(tipo, numero, ganho) {
@@ -1928,11 +1930,11 @@ function criarTelaItens() {
             <div class="modal-content modal-delete">
                 <button class="close-modal" onclick="fecharModalAssinatura()">✕</button>
                 <div class="modal-message-delete">
-                    DESEJA INCLUIR A ASSINATURA PADRÃO NA PROPOSTA?
+                    Deseja incluir a assinatura padrão na proposta?
                 </div>
                 <div class="modal-actions modal-actions-no-border">
-                    <button class="secondary" onclick="gerarPDFsProposta(false)">Sem assinatura</button>
-                    <button class="success" onclick="gerarPDFsProposta(true)">Com assinatura</button>
+                    <button class="success" onclick="gerarPDFsProposta(true)">Sim</button>
+                    <button class="danger" onclick="gerarPDFsProposta(false)">Não</button>
                 </div>
             </div>
         </div>
@@ -2066,11 +2068,11 @@ function perguntarAssinaturaDeclaracao() {
             <div class="modal-content modal-delete">
                 <button class="close-modal" onclick="fecharModalAssinaturaDeclaracao()">✕</button>
                 <div class="modal-message-delete">
-                    DESEJA INCLUIR A ASSINATURA PADRÃO NA DECLARAÇÃO?
+                    Deseja incluir a assinatura padrão na declaração?
                 </div>
                 <div class="modal-actions modal-actions-no-border">
-                    <button class="secondary" onclick="gerarPDFDeclaracao(false)">Sem assinatura</button>
-                    <button class="success" onclick="gerarPDFDeclaracao(true)">Com assinatura</button>
+                    <button class="success" onclick="gerarPDFDeclaracao(true)">Sim</button>
+                    <button class="danger" onclick="gerarPDFDeclaracao(false)">Não</button>
                 </div>
             </div>
         `;
@@ -2529,7 +2531,7 @@ async function adicionarItem() {
             const saved = await r.json();
             itens.push(saved);
             renderItens();
-            showToast('Item registrado', 'success');
+            showToast('Item salvo', 'success');
         } else { throw new Error('Erro ' + r.status); }
     } catch(e) {
         console.error(e);
@@ -2603,7 +2605,7 @@ async function adicionarIntervalo(intervalo) {
     }
     itens.sort((a, b) => a.numero - b.numero);
     renderItens();
-    showToast('Item registrado', 'success');
+    showToast('Item salvo', 'success');
 }
 
 function abrirModalExcluirItens() {
@@ -2766,6 +2768,7 @@ function mostrarModalItem(item) {
     document.getElementById('itemVendaUnt').value = item.venda_unt || 0;
     document.getElementById('itemVendaTotal').value = item.venda_total || 0;
     
+    modoNavegacaoGrupo = false;
     atualizarTituloModalItem(item);
     
     currentItemTab = 0;
@@ -3004,6 +3007,7 @@ function configurarCalculosAutomaticos() {
 }
     
 function navegarItemAnterior() {
+    if (modoNavegacaoGrupo) { navegarGrupoAnterior(); return; }
     if (editingItemIndex > 0) {
         salvarItemAtual(false);
         editingItemIndex--;
@@ -3012,6 +3016,7 @@ function navegarItemAnterior() {
 }
 
 function navegarProximoItem() {
+    if (modoNavegacaoGrupo) { navegarGrupoProximo(); return; }
     if (editingItemIndex < itens.length - 1) {
         salvarItemAtual(false);
         editingItemIndex++;
@@ -3068,7 +3073,7 @@ async function salvarItemAtual(fechar = true) {
                     atualizarMarcasItens();
                     renderItens();
                 }
-                showToast('Item registrado', 'success');
+                showToast('Item salvo', 'success');
                 fecharModalItemContexto();
             }
             // Ao navegar (fechar=false): não re-renderiza — o item foi atualizado no array
@@ -3081,10 +3086,12 @@ async function salvarItemAtual(fechar = true) {
 }
 
 function fecharModalItem() {
-    document.getElementById('modalItem').classList.remove('show');
+    const modal = document.getElementById('modalItem');
+    if (modal) modal.classList.remove('show');
     editingItemIndex = null;
     editandoGrupoIdx = null;
     editandoGrupoItemIdx = null;
+    modoNavegacaoGrupo = false;
 }
 
 function fecharModalItemContexto() {
