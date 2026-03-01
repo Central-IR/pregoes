@@ -479,8 +479,10 @@ function openFormModal() {
 }
 
 function closeFormModal() {
+    const wasEditing = !!editingId;
     document.getElementById('formModal').classList.remove('show');
     resetForm();
+    showToast('Registro cancelado', 'error');
 }
 
 function resetForm() {
@@ -714,7 +716,7 @@ async function salvarPregao() {
             throw new Error(errorMessage);
         }
 
-        showToast(editingId ? 'Pregão atualizado' : 'Pregão criado', 'success');
+        showToast('Item registrado', 'success');
         closeFormModal();
         await loadPregoes();
     } catch (error) {
@@ -993,7 +995,7 @@ async function confirmarExclusao() {
         pregoes = pregoes.filter(p => p.id !== deleteId);
         lastDataHash = JSON.stringify(pregoes.map(p => p.id));
         updateDisplay();
-        showToast('Pregão excluído', 'success');
+        showToast('Item excluído', 'error');
     } catch (error) {
         console.error('Erro ao deletar:', error);
         if (error.name === 'AbortError') {
@@ -1133,6 +1135,11 @@ function criarTelaGrupos() {
                         <svg class="dropdown-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
                     </div>
                 </div>
+                <button onclick="abrirModalCotacao()" style="background:transparent;border:none;color:var(--text-secondary);cursor:pointer;padding:0.5rem;display:flex;align-items:center;" title="Enviar Cotação">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3-8.59A2 2 0 0 1 3.77 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+                    </svg>
+                </button>
                 <button onclick="perguntarAssinaturaPDFGrupos()" style="background:transparent;border:none;color:var(--text-secondary);cursor:pointer;padding:0.5rem;display:flex;align-items:center;" title="Gerar Proposta PDF">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline>
@@ -1188,7 +1195,7 @@ function criarTelaGrupos() {
                     </div>
                 </div>
                 <div class="modal-actions">
-                    <button class="secondary" onclick="fecharModalNovoGrupo()">Cancelar</button>
+                    <button class="secondary" onclick="fecharModalNovoGrupo();showToast('Registro cancelado','error')">Cancelar</button>
                     <button class="success" onclick="confirmarNovoGrupo()">Criar Grupo</button>
                 </div>
             </div>
@@ -1210,7 +1217,7 @@ function criarTelaGrupos() {
                     </div>
                 </div>
                 <div class="modal-actions">
-                    <button class="secondary" onclick="fecharModalExcluirGrupo()">Cancelar</button>
+                    <button class="secondary" onclick="fecharModalExcluirGrupo();showToast('Registro cancelado','error')">Cancelar</button>
                     <button class="danger" onclick="confirmarExcluirGrupo()">Excluir</button>
                 </div>
             </div>
@@ -1254,7 +1261,7 @@ function criarTelaGrupos() {
                 <div id="intervGrupoLinhas" style="display:flex;flex-direction:column;gap:0.75rem;max-height:340px;overflow-y:auto;margin-bottom:1rem;">
                 </div>
                 <div class="modal-actions">
-                    <button class="secondary" onclick="fecharModalIntervaloGrupos()">Cancelar</button>
+                    <button class="secondary" onclick="fecharModalIntervaloGrupos();showToast('Registro cancelado','error')">Cancelar</button>
                     <button class="success" onclick="confirmarIntervaloGrupos()">Criar Grupos</button>
                 </div>
             </div>
@@ -1349,24 +1356,17 @@ function renderGrupos() {
         const lbl = grupo.tipo + ' ' + grupo.numero;
         let totC = 0, totCu = 0, totV = 0;
         const rowParts = new Array(its.length);
+        const grupoAllGanho = grupo.itens.every(i => i.ganho);
         for (let idx = 0; idx < its.length; idx++) {
             const item = its[idx];
             const vm = (item.venda_unt || 0) > (item.estimado_unt || 0) && (item.estimado_unt || 0) > 0;
-            const cbId = 'grp-' + item.id;
-            const ck = item.ganho ? ' checked' : '';
             totC  += item.estimado_total || 0;
             totCu += item.custo_total || 0;
             totV  += item.venda_total || 0;
             const iid = item.id;
+            const rowBg = grupoAllGanho ? 'background:rgba(34,197,94,0.08);' : (vm ? 'background:rgba(239,68,68,0.07);' : '');
             rowParts[idx] =
-                '<tr' + (vm ? ' style="background:rgba(239,68,68,0.07);"' : '') +
-                ' ondblclick="editarItemGrupoById(\'' + iid + '\')" oncontextmenu="showItemContextMenu(event,\'' + iid + '\')">' +
-                '<td style="text-align:center;padding:8px;"><div class="checkbox-wrapper">' +
-                '<input type="checkbox" id="' + cbId + '"' + ck +
-                (vm ? ' onclick="event.preventDefault();event.stopPropagation()"' : ' onchange="toggleItemGanho(\'' + iid + '\',this.checked)" onclick="event.stopPropagation()"') +
-                ' class="styled-checkbox' + (vm ? ' cb-venda-alta' : '') + '">' +
-                '<label for="' + cbId + '" class="checkbox-label-styled' + (vm ? ' cb-label-venda-alta' : '') + '">' + (vm ? '✕' : '') + '</label>' +
-                '</div></td>' +
+                '<tr style="' + rowBg + '" ondblclick="editarItemGrupoById(\'' + iid + '\')" oncontextmenu="showItemContextMenu(event,\'' + iid + '\')">' +
                 '<td><strong>' + item.numero + '</strong></td>' +
                 '<td class="descricao-cell">' + (item.descricao || '-') + '</td>' +
                 '<td>' + (item.qtd || 1) + '</td>' +
@@ -1381,20 +1381,27 @@ function renderGrupos() {
         }
         const totalRow =
             '<tr style="background:var(--bg-secondary);font-weight:700;border-top:2px solid var(--border-color);">' +
-            '<td colspan="7" style="text-align:right;padding:8px 12px;font-size:0.82rem;color:var(--text-secondary);">TOTAL ' + lbl + '</td>' +
+            '<td colspan="6" style="padding:8px 6px;"></td>' +
             '<td style="padding:8px 6px;font-size:0.82rem;">' + fmtTotal(totC) + '</td>' +
             '<td style="padding:8px 6px;font-size:0.82rem;">' + fmtTotal(totCu) + '</td>' +
             '<td></td>' +
             '<td style="padding:8px 6px;font-size:0.82rem;">' + fmtTotal(totV) + '</td>' +
             '</tr>';
+        // Checkbox ganho por grupo
+        const grupoGanho = grupo.itens.length > 0 && grupo.itens.every(i => i.ganho);
+        const grupoGanhoId = 'grp-ganho-' + grupo.tipo + '-' + grupo.numero;
+        const grupoGanhoChk = grupoGanho ? ' checked' : '';
+
         cards.push(
             '<div class="card table-card" style="margin-bottom:1.25rem;">' +
-            '<div style="padding:10px 14px 6px;border-bottom:2px solid var(--border-color);display:flex;align-items:center;gap:0.75rem;">' +
-            '<span style="font-weight:700;font-size:0.95rem;">' + lbl + '</span>' +
-            '<span style="font-size:0.8rem;color:var(--text-secondary);">' + grupo.itens.length + ' item(s)</span>' +
-            '</div><div style="overflow-x:auto;"><table>' +
+            '<div style="background:#1e3a5f;display:flex;align-items:center;justify-content:center;padding:8px 14px;border-radius:8px 8px 0 0;gap:1rem;">' +
+            '<input type="checkbox" id="' + grupoGanhoId + '"' + grupoGanhoChk +
+            ' onchange="toggleGrupoGanho(\'' + grupo.tipo + '\',' + grupo.numero + ',this.checked)"' +
+            ' class="styled-checkbox" style="accent-color:#22C55E;">' +
+            '<label for="' + grupoGanhoId + '" style="font-weight:700;font-size:1rem;color:#fff;cursor:pointer;">' + lbl + '</label>' +
+            '</div>' +
+            '<div style="overflow-x:auto;"><table>' +
             '<thead><tr>' +
-            '<th style="width:40px;text-align:center;"><span style="font-size:1.1rem;">✓</span></th>' +
             '<th style="width:55px;">ITEM</th><th style="min-width:220px;">DESCRIÇÃO</th>' +
             '<th style="width:55px;">QTD</th><th style="width:50px;">UN</th>' +
             '<th style="width:90px;">MARCA</th><th style="width:90px;">MODELO</th>' +
@@ -1455,7 +1462,7 @@ async function confirmarNovoGrupo() {
     renderGrupos();
     const grupoNovo = grupos.find(g => g.tipo === tipo && g.numero === numero);
     if (grupoNovo && grupoNovo.itens.length > 0) {
-        showToast(`${tipo} ${numero} criado. Preencha os itens.`, 'success');
+        showToast('Item registrado', 'success');
         abrirEdicaoGrupoItem(grupoNovo, 0);
     }
 }
@@ -1570,7 +1577,7 @@ async function confirmarExcluirGrupo() {
     reconstruirGruposDeItens();
     atualizarSelectsGrupos();
     renderGrupos();
-    showToast(`${grupo.tipo} ${grupo.numero} excluído`, 'success');
+    showToast('Item excluído', 'error');
 }
 
 // ============================================================
@@ -1637,12 +1644,27 @@ async function confirmarIntervaloGrupos() {
     reconstruirGruposDeItens();
     atualizarSelectsGrupos();
     renderGrupos();
-    showToast(`${linhas.length} grupo(s) criado(s) — ${totalCriados} item(s) no total`, 'success');
+    showToast('Item registrado', 'success');
+}
+
+async function toggleGrupoGanho(tipo, numero, ganho) {
+    const grupoItens = itens.filter(i => i.grupo_tipo === tipo && parseInt(i.grupo_numero) === parseInt(numero));
+    const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+    if (sessionToken) headers['X-Session-Token'] = sessionToken;
+    for (const item of grupoItens) {
+        item.ganho = ganho;
+        if (!String(item.id).startsWith('temp-')) {
+            fetch(`${API_URL}/pregoes/${currentPregaoId}/itens/${item.id}`, {
+                method: 'PUT', headers, body: JSON.stringify(item)
+            }).catch(e => console.error(e));
+        }
+    }
+    renderGrupos();
 }
 
 function syncGrupos() {
     carregarGrupos();
-    showToast('Grupos sincronizados', 'success');
+    showToast('Item registrado', 'success');
 }
 
 function abrirModalDeclaracoesGrupos() {
@@ -2445,7 +2467,7 @@ async function adicionarItem() {
             const saved = await r.json();
             itens.push(saved);
             renderItens();
-            showToast('Item ' + numero + ' adicionado', 'success');
+            showToast('Item registrado', 'success');
         } else { throw new Error('Erro ' + r.status); }
     } catch(e) {
         console.error(e);
@@ -2464,6 +2486,7 @@ function abrirModalIntervalo() {
 function fecharModalIntervalo() {
     const modal = document.getElementById('modalIntervalo');
     if (modal) modal.classList.remove('show');
+    showToast('Registro cancelado', 'error');
 }
 
 function confirmarAdicionarIntervalo() {
@@ -2518,7 +2541,7 @@ async function adicionarIntervalo(intervalo) {
     }
     itens.sort((a, b) => a.numero - b.numero);
     renderItens();
-    showToast(`${criados} item(s) adicionado(s)`, 'success');
+    showToast('Item registrado', 'success');
 }
 
 function abrirModalExcluirItens() {
@@ -2979,7 +3002,7 @@ async function salvarItemAtual(fechar = true) {
                     atualizarMarcasItens();
                     renderItens();
                 }
-                showToast('Item salvo', 'success');
+                showToast('Item registrado', 'success');
                 fecharModalItemContexto();
             }
             // Ao navegar (fechar=false): não re-renderiza — o item foi atualizado no array
@@ -3366,23 +3389,33 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
         };
         
         // Rodapé em todas as páginas (empresa)
-        const footerH = 8;
-        const footerText = 'I.R. COMÉRCIO E MATERIAIS ELÉTRICOS LTDA  |  CNPJ: 33.149.502/0001-38  |  RUA TADORNA Nº 472, SALA 2, NOVO HORIZONTE – SERRA/ES  |  (27) 3209-4291';
+        const footerLines = [
+            'I.R. COMÉRCIO E MATERIAIS ELÉTRICOS LTDA  |  CNPJ: 33.149.502/0001-38  |  IE: 083.780.74-2',
+            'RUA TADORNA Nº 472, SALA 2, NOVO HORIZONTE – SERRA/ES  |  CEP: 29.163-318',
+            'TELEFAX: (27) 3209-4291  |  E-MAIL: COMERCIAL.IRCOMERCIO@GMAIL.COM'
+        ];
+        const footerH = footerLines.length * 4 + 4;
         function addFooter(docRef) {
             const totalPags = docRef.internal.getNumberOfPages();
             for (let pg = 1; pg <= totalPags; pg++) {
                 docRef.setPage(pg);
-                docRef.setFontSize(7.5);
+                docRef.setFontSize(7);
                 docRef.setFont(undefined, 'normal');
-                docRef.setTextColor(150, 150, 150);
-                const fy = pageHeight - 4;
-                docRef.text(footerText, pageWidth / 2, fy, { align: 'center' });
+                docRef.setTextColor(130, 130, 130);
+                // Linha separadora
+                const fyBase = pageHeight - footerH;
+                docRef.setDrawColor(200, 200, 200);
+                docRef.line(margin, fyBase, pageWidth - margin, fyBase);
+                footerLines.forEach((line, i) => {
+                    docRef.text(line, pageWidth / 2, fyBase + 4 + (i * 4), { align: 'center' });
+                });
                 docRef.setTextColor(0, 0, 0);
+                docRef.setDrawColor(0, 0, 0);
             }
         }
         
         // Redefinir pageHeight com margem de rodapé
-        const footerMargin = 14; // espaço reservado para rodapé
+        const footerMargin = 20; // espaço para rodapé de 3 linhas
         
         // Título
         doc.setFontSize(18);
@@ -3399,20 +3432,6 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
         const fs = 10;
         doc.setFontSize(fs);
         doc.setTextColor(0, 0, 0);
-        
-        // Dados da empresa (fixos — sempre presentes)
-        doc.setFont(undefined, 'bold');
-        doc.text('I.R. COMÉRCIO E MATERIAIS ELÉTRICOS LTDA', margin, y);
-        y += lineHeight + 1;
-        doc.setFont(undefined, 'normal');
-        doc.text('CNPJ: 33.149.502/0001-38  |  IE: 083.780.74-2', margin, y);
-        y += lineHeight + 1;
-        doc.text('RUA TADORNA Nº 472, SALA 2', margin, y);
-        y += lineHeight + 1;
-        doc.text('NOVO HORIZONTE - SERRA/ES  |  CEP: 29.163-318', margin, y);
-        y += lineHeight + 1;
-        doc.text('TELEFAX: (27) 3209-4291  |  E-MAIL: COMERCIAL.IRCOMERCIO@GMAIL.COM', margin, y);
-        y += 10;
         
         // Destinatário — só mostra campos preenchidos
         doc.text('AO', margin, y);
@@ -3607,7 +3626,7 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
             addCampoCondicao('DADOS BANCÁRIOS', dadosBancarios);
         }
         
-        y += 6;
+        y += 16;
         
         if (y > pageHeight - footerMargin - 60) {
             y = addPageWithHeader();
