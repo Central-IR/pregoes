@@ -10,6 +10,8 @@ let currentTab = 0;
 let currentInfoTab = 0;
 let isOnline = false;
 let sessionToken = null;
+let consecutive401Count = 0;
+const MAX_401_BEFORE_LOGOUT = 3;
 let lastDataHash = '';
 let deleteId = null;
 let detalhes = [];
@@ -102,10 +104,14 @@ async function checkServerStatus() {
         clearTimeout(timeoutId);
 
         if (response.status === 401) {
-            sessionStorage.removeItem('pregoesSession');
-            mostrarTelaAcessoNegado('Sua sessão expirou');
+            consecutive401Count++;
+            if (consecutive401Count >= MAX_401_BEFORE_LOGOUT) {
+                sessionStorage.removeItem('pregoesSession');
+                mostrarTelaAcessoNegado('Sua sessão expirou');
+            }
             return false;
         }
+        consecutive401Count = 0; // reset on success
 
         const wasOffline = !isOnline;
         isOnline = response.ok;
@@ -1137,7 +1143,8 @@ function criarTelaGrupos() {
                 </div>
                 <button onclick="abrirModalCotacao()" style="background:transparent;border:none;color:var(--text-secondary);cursor:pointer;padding:0.5rem;display:flex;align-items:center;" title="Enviar Cotação">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3-8.59A2 2 0 0 1 3.77 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+                        <rect width="20" height="16" x="2" y="4" rx="2"/>
+                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
                     </svg>
                 </button>
                 <button onclick="perguntarAssinaturaPDFGrupos()" style="background:transparent;border:none;color:var(--text-secondary);cursor:pointer;padding:0.5rem;display:flex;align-items:center;" title="Gerar Proposta PDF">
@@ -1202,30 +1209,36 @@ function criarTelaGrupos() {
                     <h3 class="modal-title">Excluir Grupo / Lote</h3>
                     <button class="close-modal" onclick="fecharModalExcluirGrupo()">✕</button>
                 </div>
-                <div class="form-grid">
-                    <div class="form-group" style="grid-column:1/-1;">
-                        <label>Selecione o grupo a excluir</label>
-                        <select id="excluirGrupoSelect">
-                            <option value="">Selecione...</option>
-                        </select>
+                <div class="tabs-container">
+                    <div class="tabs-nav">
+                        <button class="tab-btn active">Selecionar</button>
+                    </div>
+                    <div class="tab-content active">
+                        <div class="form-grid">
+                            <div class="form-group" style="grid-column:1/-1;">
+                                <label>Selecione o grupo a excluir</label>
+                                <select id="excluirGrupoSelect">
+                                    <option value="">Selecione...</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-actions">
-                    <button class="secondary" onclick="fecharModalExcluirGrupo();showToast('Registro cancelado','error')">Cancelar</button>
                     <button class="danger" onclick="confirmarExcluirGrupo()">Excluir</button>
+                    <button class="secondary" onclick="fecharModalExcluirGrupo()">Cancelar</button>
                 </div>
             </div>
         </div>
 
         <!-- Modal Assinatura PDF Grupos -->
         <div class="modal-overlay" id="modalAssinaturaGrupos">
-            <div class="modal-content" style="max-width:440px;">
-                <div class="modal-header">
-                    <h3 class="modal-title">Gerar Proposta</h3>
-                    <button class="close-modal" onclick="document.getElementById('modalAssinaturaGrupos').classList.remove('show')">✕</button>
+            <div class="modal-content modal-delete">
+                <button class="close-modal" onclick="document.getElementById('modalAssinaturaGrupos').classList.remove('show')">✕</button>
+                <div class="modal-message-delete">
+                    DESEJA INCLUIR A ASSINATURA PADRÃO NA PROPOSTA?
                 </div>
-                <p style="color:var(--text-secondary);margin-bottom:0.5rem;">Deseja incluir a assinatura padrão na proposta?</p>
-                <div class="modal-actions">
+                <div class="modal-actions modal-actions-no-border">
                     <button class="secondary" onclick="gerarPDFGruposComAssinatura(false)">Sem assinatura</button>
                     <button class="success" onclick="gerarPDFGruposComAssinatura(true)">Com assinatura</button>
                 </div>
@@ -1239,24 +1252,36 @@ function criarTelaGrupos() {
                     <h3 class="modal-title">Adicionar Grupos em Intervalo</h3>
                     <button class="close-modal" onclick="fecharModalIntervaloGrupos()">✕</button>
                 </div>
-                <div class="form-grid" style="margin-bottom:1rem;">
-                    <div class="form-group">
-                        <label>Tipo</label>
-                        <select id="intervGrupoTipo" onchange="atualizarLinhasIntervalo()">
-                            <option value="GRUPO">Grupo</option>
-                            <option value="LOTE">Lote</option>
-                        </select>
+                <div class="tabs-container">
+                    <div class="tabs-nav">
+                        <button class="tab-btn active" onclick="switchIntervaloTab('intervalo-tab-config')">Configuração</button>
+                        <button class="tab-btn" onclick="switchIntervaloTab('intervalo-tab-itens')">Itens</button>
                     </div>
-                    <div class="form-group">
-                        <label>Quantidade de grupos</label>
-                        <input type="number" id="intervGrupoQtd" min="1" max="50" value="1" placeholder="Ex: 3" oninput="atualizarLinhasIntervalo()">
+                    <div class="tab-content active" id="intervalo-tab-config">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Tipo</label>
+                                <select id="intervGrupoTipo" onchange="atualizarLinhasIntervalo()">
+                                    <option value="GRUPO">Grupo</option>
+                                    <option value="LOTE">Lote</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Quantidade de grupos</label>
+                                <input type="number" id="intervGrupoQtd" min="1" max="50" value="1" placeholder="Ex: 3" oninput="atualizarLinhasIntervalo()">
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div id="intervGrupoLinhas" style="display:flex;flex-direction:column;gap:0.75rem;max-height:340px;overflow-y:auto;margin-bottom:1rem;">
+                    <div class="tab-content" id="intervalo-tab-itens">
+                        <div id="intervGrupoLinhas" style="display:flex;flex-direction:column;gap:0.75rem;max-height:300px;overflow-y:auto;">
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-actions">
-                    <button class="secondary" onclick="fecharModalIntervaloGrupos();showToast('Registro cancelado','error')">Cancelar</button>
-                    <button class="success" onclick="confirmarIntervaloGrupos()">Criar Grupos</button>
+                    <button type="button" id="btnIntervaloPrev" class="secondary" style="display:none;" onclick="prevIntervaloTab()">Anterior</button>
+                    <button type="button" id="btnIntervaloNext" class="secondary" onclick="nextIntervaloTab()">Próximo</button>
+                    <button type="button" id="btnIntervaloCriar" class="success" style="display:none;" onclick="confirmarIntervaloGrupos()">Criar Grupos</button>
+                    <button type="button" class="danger" onclick="fecharModalIntervaloGrupos()">Cancelar</button>
                 </div>
             </div>
         </div>
@@ -1388,11 +1413,14 @@ function renderGrupos() {
 
         cards.push(
             '<div class="card table-card" style="margin-bottom:1.25rem;">' +
-            '<div style="background:#1e3a5f;display:flex;align-items:center;justify-content:center;padding:8px 14px;border-radius:8px 8px 0 0;gap:1rem;">' +
+            '<div style="background:#1e3a5f;display:flex;align-items:center;justify-content:center;padding:8px 14px;border-radius:8px 8px 0 0;gap:0.75rem;">' +
+            '<div class="checkbox-wrapper" style="position:relative;">' +
             '<input type="checkbox" id="' + grupoGanhoId + '"' + grupoGanhoChk +
             ' onchange="toggleGrupoGanho(\'' + grupo.tipo + '\',' + grupo.numero + ',this.checked)"' +
-            ' class="styled-checkbox" style="accent-color:#22C55E;">' +
-            '<label for="' + grupoGanhoId + '" style="font-weight:700;font-size:1rem;color:#fff;cursor:pointer;">' + lbl + '</label>' +
+            ' class="styled-checkbox">' +
+            '<label for="' + grupoGanhoId + '" class="checkbox-label-styled"></label>' +
+            '</div>' +
+            '<label for="' + grupoGanhoId + '" style="font-weight:700;font-size:1rem;color:#fff;cursor:pointer;margin:0;">' + lbl + '</label>' +
             '</div>' +
             '<div style="overflow-x:auto;"><table>' +
             '<thead><tr>' +
@@ -1514,6 +1542,7 @@ function mostrarModalItemGrupo(item, grupo, idxItem) {
     modal.classList.add('show');
     configurarCalculosAutomaticos();
     setTimeout(calcularValoresItem, 50);
+    setTimeout(setupUpperCaseInputs, 50);
 }
 
 async function navegarGrupoAnterior() {
@@ -1577,10 +1606,46 @@ async function confirmarExcluirGrupo() {
 // ============================================================
 // INTERVALO DE GRUPOS
 // ============================================================
+const intervaloTabs = ['intervalo-tab-config', 'intervalo-tab-itens'];
+let currentIntervaloTab = 0;
+
+function switchIntervaloTab(tabId) {
+    const allTabs = document.querySelectorAll('#modalIntervaloGrupos .tab-content');
+    const allBtns = document.querySelectorAll('#modalIntervaloGrupos .tab-btn');
+    allTabs.forEach(t => t.classList.remove('active'));
+    allBtns.forEach(b => b.classList.remove('active'));
+    const active = document.getElementById(tabId);
+    if (active) active.classList.add('active');
+    currentIntervaloTab = intervaloTabs.indexOf(tabId);
+    if (allBtns[currentIntervaloTab]) allBtns[currentIntervaloTab].classList.add('active');
+    const isLast = currentIntervaloTab === intervaloTabs.length - 1;
+    const prev = document.getElementById('btnIntervaloPrev');
+    const next = document.getElementById('btnIntervaloNext');
+    const criar = document.getElementById('btnIntervaloCriar');
+    if (prev) prev.style.display = currentIntervaloTab === 0 ? 'none' : 'inline-block';
+    if (next) next.style.display = isLast ? 'none' : 'inline-block';
+    if (criar) criar.style.display = isLast ? 'inline-block' : 'none';
+}
+
+function nextIntervaloTab() {
+    if (currentIntervaloTab < intervaloTabs.length - 1) {
+        currentIntervaloTab++;
+        switchIntervaloTab(intervaloTabs[currentIntervaloTab]);
+    }
+}
+
+function prevIntervaloTab() {
+    if (currentIntervaloTab > 0) {
+        currentIntervaloTab--;
+        switchIntervaloTab(intervaloTabs[currentIntervaloTab]);
+    }
+}
+
 function abrirModalIntervaloGrupos() {
     document.getElementById('intervGrupoTipo').value = 'GRUPO';
     document.getElementById('intervGrupoQtd').value = 1;
     atualizarLinhasIntervalo();
+    switchIntervaloTab('intervalo-tab-config');
     document.getElementById('modalIntervaloGrupos').classList.add('show');
 }
 
@@ -1658,7 +1723,7 @@ async function toggleGrupoGanho(tipo, numero, ganho) {
 
 function syncGrupos() {
     carregarGrupos();
-    showToast('Item registrado', 'success');
+    showToast('Dados sincronizados', 'success');
 }
 
 function abrirModalDeclaracoesGrupos() {
@@ -1860,13 +1925,12 @@ function criarTelaItens() {
 
         <!-- Modal Assinatura PDF -->
         <div class="modal-overlay" id="modalAssinatura">
-            <div class="modal-content" style="max-width:440px;">
-                <div class="modal-header">
-                    <h3 class="modal-title">Gerar Proposta</h3>
-                    <button class="close-modal" onclick="fecharModalAssinatura()">✕</button>
+            <div class="modal-content modal-delete">
+                <button class="close-modal" onclick="fecharModalAssinatura()">✕</button>
+                <div class="modal-message-delete">
+                    DESEJA INCLUIR A ASSINATURA PADRÃO NA PROPOSTA?
                 </div>
-                <p style="color:var(--text-secondary);margin-bottom:0.5rem;">Deseja incluir a assinatura padrão na proposta?</p>
-                <div class="modal-actions">
+                <div class="modal-actions modal-actions-no-border">
                     <button class="secondary" onclick="gerarPDFsProposta(false)">Sem assinatura</button>
                     <button class="success" onclick="gerarPDFsProposta(true)">Com assinatura</button>
                 </div>
@@ -1944,6 +2008,7 @@ function abrirModalDeclaracoes() {
     document.getElementById('declaracaoTitulo').value = '';
     document.getElementById('declaracaoTexto').value = '';
     modal.classList.add('show');
+    setTimeout(setupUpperCaseInputs, 50);
 }
 
 function fecharModalDeclaracoes() {
@@ -1998,13 +2063,12 @@ function perguntarAssinaturaDeclaracao() {
         modal.id = 'modalAssinaturaDeclaracao';
         modal.className = 'modal-overlay';
         modal.innerHTML = `
-            <div class="modal-content" style="max-width:440px;">
-                <div class="modal-header">
-                    <h3 class="modal-title">Gerar Declaração</h3>
-                    <button class="close-modal" onclick="fecharModalAssinaturaDeclaracao()">✕</button>
+            <div class="modal-content modal-delete">
+                <button class="close-modal" onclick="fecharModalAssinaturaDeclaracao()">✕</button>
+                <div class="modal-message-delete">
+                    DESEJA INCLUIR A ASSINATURA PADRÃO NA DECLARAÇÃO?
                 </div>
-                <p style="color:var(--text-secondary);margin-bottom:0.5rem;">Deseja incluir a assinatura padrão?</p>
-                <div class="modal-actions">
+                <div class="modal-actions modal-actions-no-border">
                     <button class="secondary" onclick="gerarPDFDeclaracao(false)">Sem assinatura</button>
                     <button class="success" onclick="gerarPDFDeclaracao(true)">Com assinatura</button>
                 </div>
@@ -2711,6 +2775,7 @@ function mostrarModalItem(item) {
     configurarCalculosAutomaticos();
     // Calcular valores imediatamente ao abrir
     setTimeout(calcularValoresItem, 50);
+    setTimeout(setupUpperCaseInputs, 50);
 }
 
 function atualizarTituloModalItem(item) {
@@ -3028,7 +3093,7 @@ function fecharModalItemContexto() {
 
 function syncItens() {
     carregarItens(currentPregaoId);
-    showToast('Itens sincronizados', 'success');
+    showToast('Dados sincronizados', 'success');
 }
 
 function perguntarAssinaturaPDF() {
