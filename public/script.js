@@ -1165,33 +1165,30 @@ function criarTelaGrupos() {
 
         <!-- Modal Novo Grupo -->
         <div class="modal-overlay" id="modalNovoGrupo">
-            <div class="modal-content" style="max-width:500px;">
+            <div class="modal-content" style="max-width:520px;">
                 <div class="modal-header">
                     <h3 class="modal-title">Novo Grupo / Lote</h3>
                     <button class="close-modal" onclick="fecharModalNovoGrupo()">✕</button>
                 </div>
-                <div style="padding:0.5rem 0 0.25rem;">
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
-                        <div class="form-group" style="margin:0;">
-                            <label style="font-size:0.85rem;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:0.4rem;">Tipo</label>
-                            <select id="novoGrupoTipo" style="width:100%;padding:0.65rem;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:0.9rem;">
-                                <option value="GRUPO">Grupo</option>
-                                <option value="LOTE">Lote</option>
-                            </select>
-                        </div>
-                        <div class="form-group" style="margin:0;">
-                            <label style="font-size:0.85rem;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:0.4rem;">Número</label>
-                            <input type="number" id="novoGrupoNumero" min="1" style="width:100%;padding:0.65rem;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:0.9rem;box-sizing:border-box;">
-                        </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Tipo</label>
+                        <select id="novoGrupoTipo">
+                            <option value="GRUPO">Grupo</option>
+                            <option value="LOTE">Lote</option>
+                        </select>
                     </div>
-                    <div class="form-group" style="margin-bottom:0.5rem;">
-                        <label style="font-size:0.85rem;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:0.4rem;">Itens do grupo (ex: 1-5, 10)</label>
-                        <input type="text" id="novoGrupoItens" placeholder="Ex: 1-5, 10, 15-20" style="width:100%;padding:0.65rem;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:0.9rem;box-sizing:border-box;">
-                        <p style="color:var(--text-secondary);font-size:0.8rem;margin-top:0.35rem;">Os itens serão criados na ordem indicada e poderão ser preenchidos no modal de edição.</p>
+                    <div class="form-group">
+                        <label>Número</label>
+                        <input type="number" id="novoGrupoNumero" min="1" placeholder="Nº do grupo">
+                    </div>
+                    <div class="form-group" style="grid-column:1/-1;">
+                        <label>Itens do grupo <span style="color:var(--text-secondary);font-weight:400;">(ex: 1-5, 10, 15-20)</span></label>
+                        <input type="text" id="novoGrupoItens" placeholder="Ex: 1-5, 10, 15-20">
                     </div>
                 </div>
                 <div class="modal-actions">
-                    <button class="danger" onclick="fecharModalNovoGrupo()">Cancelar</button>
+                    <button class="secondary" onclick="fecharModalNovoGrupo()">Cancelar</button>
                     <button class="success" onclick="confirmarNovoGrupo()">Criar Grupo</button>
                 </div>
             </div>
@@ -1199,16 +1196,20 @@ function criarTelaGrupos() {
 
         <!-- Modal Excluir Grupo -->
         <div class="modal-overlay" id="modalExcluirGrupo">
-            <div class="modal-content modal-delete" style="min-width:380px;">
-                <button class="close-modal" onclick="fecharModalExcluirGrupo()">✕</button>
-                <div class="modal-message-delete" style="font-size:1rem;padding:1rem 0 0.75rem;">EXCLUIR GRUPO / LOTE</div>
-                <div class="form-group" style="margin-bottom:1rem;text-align:left;">
-                    <label style="font-size:0.85rem;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:0.4rem;">Selecione o grupo a excluir</label>
-                    <select id="excluirGrupoSelect" style="width:100%;padding:0.65rem;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:0.9rem;">
-                        <option value="">Selecione...</option>
-                    </select>
+            <div class="modal-content" style="max-width:520px;">
+                <div class="modal-header">
+                    <h3 class="modal-title">Excluir Grupo / Lote</h3>
+                    <button class="close-modal" onclick="fecharModalExcluirGrupo()">✕</button>
                 </div>
-                <div class="modal-actions modal-actions-no-border">
+                <div class="form-grid">
+                    <div class="form-group" style="grid-column:1/-1;">
+                        <label>Selecione o grupo a excluir</label>
+                        <select id="excluirGrupoSelect">
+                            <option value="">Selecione...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-actions">
                     <button class="secondary" onclick="fecharModalExcluirGrupo()">Cancelar</button>
                     <button class="danger" onclick="confirmarExcluirGrupo()">Excluir</button>
                 </div>
@@ -1217,48 +1218,43 @@ function criarTelaGrupos() {
 
         <!-- Modal Assinatura PDF Grupos -->
         <div class="modal-overlay" id="modalAssinaturaGrupos">
-            <div class="modal-content modal-delete">
-                <button class="close-modal" onclick="document.getElementById('modalAssinaturaGrupos').classList.remove('show')">✕</button>
-                <div class="modal-message-delete">Deseja gerar a proposta com assinatura padrão?</div>
-                <div class="modal-actions modal-actions-no-border">
-                    <button class="danger" onclick="gerarPDFGruposComAssinatura(false)">Não</button>
-                    <button class="success" onclick="gerarPDFGruposComAssinatura(true)">Sim</button>
+            <div class="modal-content" style="max-width:440px;">
+                <div class="modal-header">
+                    <h3 class="modal-title">Gerar Proposta</h3>
+                    <button class="close-modal" onclick="document.getElementById('modalAssinaturaGrupos').classList.remove('show')">✕</button>
+                </div>
+                <p style="color:var(--text-secondary);margin-bottom:0.5rem;">Deseja incluir a assinatura padrão na proposta?</p>
+                <div class="modal-actions">
+                    <button class="secondary" onclick="gerarPDFGruposComAssinatura(false)">Sem assinatura</button>
+                    <button class="success" onclick="gerarPDFGruposComAssinatura(true)">Com assinatura</button>
                 </div>
             </div>
         </div>
 
         <!-- Modal + Intervalo de Grupos -->
         <div class="modal-overlay" id="modalIntervaloGrupos">
-            <div class="modal-content" style="max-width:520px;">
+            <div class="modal-content" style="max-width:600px;">
                 <div class="modal-header">
                     <h3 class="modal-title">Adicionar Grupos em Intervalo</h3>
                     <button class="close-modal" onclick="fecharModalIntervaloGrupos()">✕</button>
                 </div>
-                <div style="padding:0.5rem 0 0.25rem;">
-                    <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:1rem;">
-                        Crie múltiplos grupos de uma vez. Ex: Tipo "GRUPO", grupos 1 a 3, cada um com itens 1-5.
-                    </p>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
-                        <div class="form-group" style="margin:0;">
-                            <label style="font-size:0.85rem;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:0.4rem;">Tipo</label>
-                            <select id="intervGrupoTipo" style="width:100%;padding:0.65rem;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:0.9rem;">
-                                <option value="GRUPO">Grupo</option>
-                                <option value="LOTE">Lote</option>
-                            </select>
-                        </div>
-                        <div class="form-group" style="margin:0;">
-                            <label style="font-size:0.85rem;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:0.4rem;">Números dos grupos (ex: 1-3, 5)</label>
-                            <input type="text" id="intervGrupoNumeros" placeholder="Ex: 1-3, 5" style="width:100%;padding:0.65rem;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:0.9rem;box-sizing:border-box;">
-                        </div>
+                <div class="form-grid" style="margin-bottom:1rem;">
+                    <div class="form-group">
+                        <label>Tipo</label>
+                        <select id="intervGrupoTipo" onchange="atualizarLinhasIntervalo()">
+                            <option value="GRUPO">Grupo</option>
+                            <option value="LOTE">Lote</option>
+                        </select>
                     </div>
-                    <div class="form-group" style="margin-bottom:0.5rem;">
-                        <label style="font-size:0.85rem;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:0.4rem;">Itens de cada grupo (ex: 1-5, 10)</label>
-                        <input type="text" id="intervGrupoItens" placeholder="Ex: 1-5, 10" style="width:100%;padding:0.65rem;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:0.9rem;box-sizing:border-box;">
-                        <p style="color:var(--text-secondary);font-size:0.8rem;margin-top:0.35rem;">Cada grupo criado terá os mesmos itens indicados.</p>
+                    <div class="form-group">
+                        <label>Quantidade de grupos</label>
+                        <input type="number" id="intervGrupoQtd" min="1" max="50" value="1" placeholder="Ex: 3" oninput="atualizarLinhasIntervalo()">
                     </div>
                 </div>
+                <div id="intervGrupoLinhas" style="display:flex;flex-direction:column;gap:0.75rem;max-height:340px;overflow-y:auto;margin-bottom:1rem;">
+                </div>
                 <div class="modal-actions">
-                    <button class="danger" onclick="fecharModalIntervaloGrupos()">Cancelar</button>
+                    <button class="secondary" onclick="fecharModalIntervaloGrupos()">Cancelar</button>
                     <button class="success" onclick="confirmarIntervaloGrupos()">Criar Grupos</button>
                 </div>
             </div>
@@ -1581,8 +1577,8 @@ async function confirmarExcluirGrupo() {
 // ============================================================
 function abrirModalIntervaloGrupos() {
     document.getElementById('intervGrupoTipo').value = 'GRUPO';
-    document.getElementById('intervGrupoNumeros').value = '';
-    document.getElementById('intervGrupoItens').value = '';
+    document.getElementById('intervGrupoQtd').value = 1;
+    atualizarLinhasIntervalo();
     document.getElementById('modalIntervaloGrupos').classList.add('show');
 }
 
@@ -1590,37 +1586,57 @@ function fecharModalIntervaloGrupos() {
     document.getElementById('modalIntervaloGrupos').classList.remove('show');
 }
 
+function atualizarLinhasIntervalo() {
+    const tipo = document.getElementById('intervGrupoTipo').value;
+    const qtd = parseInt(document.getElementById('intervGrupoQtd').value) || 1;
+    const container = document.getElementById('intervGrupoLinhas');
+    const maxN = grupos.reduce((m, g) => Math.max(m, g.numero), 0);
+    let html = '';
+    for (let i = 0; i < qtd; i++) {
+        const n = maxN + i + 1;
+        html += `<div style="display:grid;grid-template-columns:auto 1fr 2fr;gap:0.75rem;align-items:end;padding:0.75rem;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border-color);">
+            <div style="font-weight:700;font-size:0.9rem;color:var(--primary);white-space:nowrap;">${tipo} ${n}</div>
+            <div class="form-group" style="margin:0;">
+                <label style="font-size:0.8rem;">Número</label>
+                <input type="number" class="ig-numero" value="${n}" min="1" style="width:100%;padding:0.5rem 0.65rem;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-card);color:var(--text-primary);font-size:0.9rem;">
+            </div>
+            <div class="form-group" style="margin:0;">
+                <label style="font-size:0.8rem;">Itens (ex: 1-5, 10)</label>
+                <input type="text" class="ig-itens" placeholder="Ex: 1-5, 10" style="width:100%;padding:0.5rem 0.65rem;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-card);color:var(--text-primary);font-size:0.9rem;">
+            </div>
+        </div>`;
+    }
+    container.innerHTML = html;
+}
+
 async function confirmarIntervaloGrupos() {
     const tipo = document.getElementById('intervGrupoTipo').value;
-    const numerosGruposStr = document.getElementById('intervGrupoNumeros').value.trim();
-    const itensStr = document.getElementById('intervGrupoItens').value.trim();
-    if (!numerosGruposStr || !itensStr) { showToast('Preencha todos os campos', 'error'); return; }
-    const numerosGrupos = parsearIntervalo(numerosGruposStr);
-    const numerosItens = parsearIntervalo(itensStr);
-    if (!numerosGrupos || !numerosItens) return;
-    fecharModalIntervaloGrupos();
+    const linhas = document.getElementById('intervGrupoLinhas').querySelectorAll('div[style*="grid"]');
+    if (linhas.length === 0) { showToast('Adicione ao menos um grupo', 'error'); return; }
     const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
     if (sessionToken) headers['X-Session-Token'] = sessionToken;
-    let criados = 0;
-    for (const numGrupo of numerosGrupos) {
+    let totalCriados = 0;
+    fecharModalIntervaloGrupos();
+    for (const linha of linhas) {
+        const numGrupo = parseInt(linha.querySelector('.ig-numero').value);
+        const itensStr = linha.querySelector('.ig-itens').value.trim();
+        if (!numGrupo || !itensStr) continue;
+        const numerosItens = parsearIntervalo(itensStr);
+        if (!numerosItens) continue;
         for (const numItem of numerosItens) {
-            const jaExiste = itens.find(i => i.grupo_tipo === tipo && i.grupo_numero === numGrupo && i.numero === numItem);
+            const jaExiste = itens.find(i => i.grupo_tipo === tipo && i.grupo_numero === numGrupo && String(i.numero) === String(numItem));
             if (jaExiste) continue;
-            const novo = payloadItemSeguro({
-                pregao_id: currentPregaoId,
-                numero: numItem,
-                grupo_tipo: tipo, grupo_numero: numGrupo
-            });
+            const novo = payloadItemSeguro({ pregao_id: currentPregaoId, numero: numItem, grupo_tipo: tipo, grupo_numero: numGrupo });
             try {
                 const r = await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens`, { method:'POST', headers, body:JSON.stringify(novo) });
-                if (r.ok) { itens.push(await r.json()); criados++; }
+                if (r.ok) { itens.push(await r.json()); totalCriados++; }
             } catch(e) { console.error(e); }
         }
     }
     reconstruirGruposDeItens();
     atualizarSelectsGrupos();
     renderGrupos();
-    showToast(`${numerosGrupos.length} grupo(s) criado(s) com ${numerosItens.length} item(s) cada`, 'success');
+    showToast(`${linhas.length} grupo(s) criado(s) — ${totalCriados} item(s) no total`, 'success');
 }
 
 function syncGrupos() {
@@ -2247,7 +2263,7 @@ function renderItens(itensToRender = itens) {
     const totCusto  = itensToRender.reduce((s, i) => s + (i.custo_total || 0), 0);
     const totVenda  = itensToRender.reduce((s, i) => s + (i.venda_total || 0), 0);
     const totalRow = `<tr style="background:var(--bg-secondary);font-weight:700;border-top:2px solid var(--border-color);">
-        <td colspan="8" style="text-align:right;padding:8px 12px;font-size:0.85rem;color:var(--text-secondary);">TOTAIS</td>
+        <td colspan="8" style="padding:8px 12px;"></td>
         <td style="padding:8px 12px;font-size:0.85rem;">${fmtTotalGlobal(totCompra)}</td>
         <td style="padding:8px 12px;font-size:0.85rem;"></td>
         <td style="padding:8px 12px;font-size:0.85rem;">${fmtTotalGlobal(totCusto)}</td>
