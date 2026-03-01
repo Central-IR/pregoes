@@ -33,7 +33,7 @@
         --bg-card: #1A1A1A;
         --text-primary: #FFFFFF;
         --text-secondary: #A0A0A0;
-        --border-color: rgba(204, 112, 0, 0.08);
+        --border-color: rgba(255, 82, 29, 0.08);
         --input-bg: #2A2A2A;
         --table-stripe: #1F1F1F;
         --card-shadow: none;
@@ -63,8 +63,8 @@ body {
 .loader {
     width: 48px;
     height: 48px;
-    border: 4px solid rgba(204, 112, 0, 0.2);
-    border-top-color: #CC7000;
+    border: 4px solid rgba(255, 82, 29, 0.2);
+    border-top-color: #ff521d;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
 }
@@ -499,7 +499,7 @@ h2 {
     color: white;
     border-color: var(--primary);
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(204, 112, 0, 0.3);
+    box-shadow: 0 4px 8px rgba(255, 82, 29, 0.3);
 }
 
 .calendar-month.current {
@@ -718,7 +718,7 @@ tbody tr.row-fechada:hover {
 
 .checkbox-label-styled:hover {
     border-color: var(--primary);
-    background: rgba(204, 112, 0, 0.05);
+    background: rgba(255, 82, 29, 0.05);
 }
 
 .styled-checkbox:checked + .checkbox-label-styled {
@@ -1099,7 +1099,7 @@ button.small {
 
 .tab-btn:hover {
     color: var(--text-primary);
-    background: rgba(204, 112, 0, 0.05);
+    background: rgba(255, 82, 29, 0.05);
 }
 
 .tab-btn.active {
@@ -1289,11 +1289,11 @@ button.small {
 
 /* Row Won (ganho) - pregão ganho com fundo verde*/
 tr.row-won {
-    background: rgba(34, 197, 94, 0.08) !important;
+    background: rgba(34, 197, 94, 0.22) !important;
 }
 
 tr.row-won:hover {
-    background: rgba(34, 197, 94, 0.12) !important;
+    background: rgba(34, 197, 94, 0.28) !important;
 }
 
 /* Botão Itens - VERDE */
@@ -1598,11 +1598,88 @@ tr.item-ganho:hover {
 
 .detalhe-item:hover {
     border-color: var(--primary);
-    background: rgba(204, 112, 0, 0.05);
+    background: rgba(255, 82, 29, 0.05);
 }
 
 .detalhe-item.selected {
     border-color: var(--primary);
     background: rgba(204, 112, 0, 0.1);
     color: var(--primary);
+}
+
+/* STATUS BADGES */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+.status-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+}
+/* GANHO - verde (igual stat-icon-success) */
+.status-badge.success, .status-badge-success {
+    background: rgba(34, 197, 94, 0.15);
+    color: #16a34a;
+    border: 1px solid rgba(34, 197, 94, 0.4);
+}
+/* ABERTO - laranja/warning (igual stat-icon-warning) */
+.status-badge.warning, .status-badge-warning {
+    background: rgba(255, 82, 29, 0.12);
+    color: #ff521d;
+    border: 1px solid rgba(255, 82, 29, 0.35);
+}
+/* OCORRIDO - vermelho/danger (igual stat-icon-danger) */
+.status-badge.danger, .status-badge-danger {
+    background: rgba(239, 68, 68, 0.12);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+}
+/* SUSPENSO */
+.status-badge.suspended, .status-badge-suspended {
+    background: rgba(107, 114, 128, 0.12);
+    color: #4b5563;
+    border: 1px solid rgba(107, 114, 128, 0.3);
+}
+/* DEFAULT */
+.status-badge.default, .status-badge-default {
+    background: rgba(107, 114, 128, 0.08);
+    color: #6b7280;
+    border: 1px solid rgba(107, 114, 128, 0.2);
+}
+
+/* Stat card color variants */
+.stat-card-warning {
+    border-left: 4px solid #ff521d;
+}
+.stat-card-success {
+    border-left: 4px solid #22C55E;
+}
+.stat-card-danger {
+    border-left: 4px solid #EF4444;
+}
+.stat-icon-danger {
+    background: rgba(239, 68, 68, 0.1);
+    color: #EF4444;
+}
+.stat-value-danger {
+    color: #EF4444;
+}
+/* Row venda acima do estimado */
+tr.row-venda-alta {
+    background: rgba(239, 68, 68, 0.09) !important;
+}
+tr.row-venda-alta:hover {
+    background: rgba(239, 68, 68, 0.14) !important;
 }
