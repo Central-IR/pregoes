@@ -1615,7 +1615,7 @@ tr.item-ganho:hover {
 .status-badge {
     display: inline-block;
     padding: 4px 12px;
-    border-radius: 20px;
+    border-radius: 4px;
     font-size: 0.72rem;
     font-weight: 700;
     text-transform: uppercase;
