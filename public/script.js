@@ -1267,7 +1267,14 @@ function criarTelaGrupos() {
 // CRUD GRUPOS
 // ============================================================
 async function carregarGrupos() {
-    await carregarItens(currentPregaoId);
+    await carregarItens(currentPregaoId); // sempre busca do servidor
+    reconstruirGruposDeItens();
+    atualizarSelectsGrupos();
+    renderGrupos();
+}
+
+function reconstruirERenderGrupos() {
+    // Re-render local sem ir ao servidor — usa itens já em memória
     reconstruirGruposDeItens();
     atualizarSelectsGrupos();
     renderGrupos();
@@ -1329,8 +1336,9 @@ function renderGrupos() {
         return;
     }
 
-    // Cada grupo é uma tabela separada
-    wrapper.innerHTML = gruposRender.map(grupo => {
+    // Cada grupo é uma tabela separada — single-pass, formatadores globais
+    const cards = [];
+    for (const grupo of gruposRender) {
         let its = grupo.itens;
         if (marcaFiltro) its = its.filter(i => i.marca === marcaFiltro);
         if (search) its = its.filter(i =>
@@ -1339,72 +1347,65 @@ function renderGrupos() {
             String(i.numero).includes(search)
         );
         const lbl = grupo.tipo + ' ' + grupo.numero;
-
-        const itemRows = its.map(item => {
+        let totC = 0, totCu = 0, totV = 0;
+        const rowParts = new Array(its.length);
+        for (let idx = 0; idx < its.length; idx++) {
+            const item = its[idx];
             const vm = (item.venda_unt || 0) > (item.estimado_unt || 0) && (item.estimado_unt || 0) > 0;
-            const rs = vm ? 'background:rgba(239,68,68,0.07);' : '';
             const cbId = 'grp-' + item.id;
-            const ck = item.ganho ? 'checked' : '';
-            return `<tr style="${rs}" ondblclick="editarItemGrupoById('${item.id}')" oncontextmenu="showItemContextMenu(event,'${item.id}')">
-                <td style="text-align:center;padding:8px;">
-                    <div class="checkbox-wrapper">
-                        <input type="checkbox" id="${cbId}" ${ck}
-                               onchange="${vm ? '' : `toggleItemGanho('${item.id}',this.checked)`}"
-                               onclick="${vm ? 'event.preventDefault();event.stopPropagation()' : 'event.stopPropagation()'}"
-                               class="styled-checkbox${vm?' cb-venda-alta':''}">
-                        <label for="${cbId}" class="checkbox-label-styled${vm?' cb-label-venda-alta':''}">${vm?'✕':''}</label>
-                    </div>
-                </td>
-                <td><strong>${item.numero}</strong></td>
-                <td class="descricao-cell">${item.descricao || '-'}</td>
-                <td>${item.qtd || 1}</td>
-                <td>${item.unidade || 'UN'}</td>
-                <td>${item.marca || '-'}</td>
-                <td>${item.modelo || '-'}</td>
-                <td>${fmtTot(item.estimado_total)}</td>
-                <td>${fmtTot(item.custo_total)}</td>
-                <td>${fmtUnt(item.venda_unt)}</td>
-                <td>${fmtTot(item.venda_total)}</td>
-            </tr>`;
-        }).join('');
-
-        // Totais do grupo
-        const totCompra = its.reduce((s,i) => s + (i.estimado_total || 0), 0);
-        const totCusto  = its.reduce((s,i) => s + (i.custo_total || 0), 0);
-        const totVenda  = its.reduce((s,i) => s + (i.venda_total || 0), 0);
-        const totalRow = `<tr style="background:var(--bg-secondary);font-weight:700;border-top:2px solid var(--border-color);">
-            <td colspan="7" style="text-align:right;padding:8px 12px;font-size:0.82rem;color:var(--text-secondary);">TOTAL ${lbl}</td>
-            <td style="padding:8px 6px;font-size:0.82rem;">${fmtTot(totCompra)}</td>
-            <td style="padding:8px 6px;font-size:0.82rem;">${fmtTot(totCusto)}</td>
-            <td style="padding:8px 6px;font-size:0.82rem;"></td>
-            <td style="padding:8px 6px;font-size:0.82rem;">${fmtTot(totVenda)}</td>
-        </tr>`;
-
-        return `<div class="card table-card" style="margin-bottom:1.25rem;">
-            <div style="padding:10px 14px 6px;border-bottom:2px solid var(--border-color);display:flex;align-items:center;gap:0.75rem;">
-                <span style="font-weight:700;font-size:0.95rem;">${lbl}</span>
-                <span style="font-size:0.8rem;color:var(--text-secondary);">${grupo.itens.length} item(s)</span>
-            </div>
-            <div style="overflow-x:auto;">
-                <table>
-                    <thead><tr>
-                        <th style="width:40px;text-align:center;"><span style="font-size:1.1rem;">✓</span></th>
-                        <th style="width:55px;">ITEM</th>
-                        <th style="min-width:220px;">DESCRIÇÃO</th>
-                        <th style="width:55px;">QTD</th>
-                        <th style="width:50px;">UN</th>
-                        <th style="width:90px;">MARCA</th>
-                        <th style="width:90px;">MODELO</th>
-                        <th style="width:105px;">COMPRA TOTAL</th>
-                        <th style="width:100px;">CUSTO TOTAL</th>
-                        <th style="width:100px;">VENDA UNT</th>
-                        <th style="width:105px;">VENDA TOTAL</th>
-                    </tr></thead>
-                    <tbody>${itemRows}${totalRow}</tbody>
-                </table>
-            </div>
-        </div>`;
-    }).join('');
+            const ck = item.ganho ? ' checked' : '';
+            totC  += item.estimado_total || 0;
+            totCu += item.custo_total || 0;
+            totV  += item.venda_total || 0;
+            const iid = item.id;
+            rowParts[idx] =
+                '<tr' + (vm ? ' style="background:rgba(239,68,68,0.07);"' : '') +
+                ' ondblclick="editarItemGrupoById(\'' + iid + '\')" oncontextmenu="showItemContextMenu(event,\'' + iid + '\')">' +
+                '<td style="text-align:center;padding:8px;"><div class="checkbox-wrapper">' +
+                '<input type="checkbox" id="' + cbId + '"' + ck +
+                (vm ? ' onclick="event.preventDefault();event.stopPropagation()"' : ' onchange="toggleItemGanho(\'' + iid + '\',this.checked)" onclick="event.stopPropagation()"') +
+                ' class="styled-checkbox' + (vm ? ' cb-venda-alta' : '') + '">' +
+                '<label for="' + cbId + '" class="checkbox-label-styled' + (vm ? ' cb-label-venda-alta' : '') + '">' + (vm ? '✕' : '') + '</label>' +
+                '</div></td>' +
+                '<td><strong>' + item.numero + '</strong></td>' +
+                '<td class="descricao-cell">' + (item.descricao || '-') + '</td>' +
+                '<td>' + (item.qtd || 1) + '</td>' +
+                '<td>' + (item.unidade || 'UN') + '</td>' +
+                '<td>' + (item.marca || '-') + '</td>' +
+                '<td>' + (item.modelo || '-') + '</td>' +
+                '<td>' + fmtTotal(item.estimado_total || 0) + '</td>' +
+                '<td>' + fmtTotal(item.custo_total || 0) + '</td>' +
+                '<td>' + fmtUnt(item.venda_unt || 0) + '</td>' +
+                '<td>' + fmtTotal(item.venda_total || 0) + '</td>' +
+                '</tr>';
+        }
+        const totalRow =
+            '<tr style="background:var(--bg-secondary);font-weight:700;border-top:2px solid var(--border-color);">' +
+            '<td colspan="7" style="text-align:right;padding:8px 12px;font-size:0.82rem;color:var(--text-secondary);">TOTAL ' + lbl + '</td>' +
+            '<td style="padding:8px 6px;font-size:0.82rem;">' + fmtTotal(totC) + '</td>' +
+            '<td style="padding:8px 6px;font-size:0.82rem;">' + fmtTotal(totCu) + '</td>' +
+            '<td></td>' +
+            '<td style="padding:8px 6px;font-size:0.82rem;">' + fmtTotal(totV) + '</td>' +
+            '</tr>';
+        cards.push(
+            '<div class="card table-card" style="margin-bottom:1.25rem;">' +
+            '<div style="padding:10px 14px 6px;border-bottom:2px solid var(--border-color);display:flex;align-items:center;gap:0.75rem;">' +
+            '<span style="font-weight:700;font-size:0.95rem;">' + lbl + '</span>' +
+            '<span style="font-size:0.8rem;color:var(--text-secondary);">' + grupo.itens.length + ' item(s)</span>' +
+            '</div><div style="overflow-x:auto;"><table>' +
+            '<thead><tr>' +
+            '<th style="width:40px;text-align:center;"><span style="font-size:1.1rem;">✓</span></th>' +
+            '<th style="width:55px;">ITEM</th><th style="min-width:220px;">DESCRIÇÃO</th>' +
+            '<th style="width:55px;">QTD</th><th style="width:50px;">UN</th>' +
+            '<th style="width:90px;">MARCA</th><th style="width:90px;">MODELO</th>' +
+            '<th style="width:105px;">COMPRA TOTAL</th><th style="width:100px;">CUSTO TOTAL</th>' +
+            '<th style="width:100px;">VENDA UNT</th><th style="width:105px;">VENDA TOTAL</th>' +
+            '</tr></thead>' +
+            '<tbody>' + rowParts.join('') + totalRow + '</tbody>' +
+            '</table></div></div>'
+        );
+    }
+    wrapper.innerHTML = cards.join('');
 }
 
 // ============================================================
@@ -2178,15 +2179,18 @@ async function carregarItens(pregaoId) {
 }
 
 function atualizarMarcasItens() {
-    marcasItens.clear();
-    itens.forEach(item => {
-        if (item.marca) marcasItens.add(item.marca);
-    });
-    
+    const novas = new Set();
+    for (const item of itens) { if (item.marca) novas.add(item.marca); }
+    // Só atualiza o DOM se mudou
+    const antes = Array.from(marcasItens).sort().join('|');
+    const depois = Array.from(novas).sort().join('|');
+    marcasItens = novas;
+    if (antes === depois) return;
     const select = document.getElementById('filterMarcaItens');
     if (select) {
-        select.innerHTML = '<option value="">Marca</option>' + 
-            Array.from(marcasItens).sort().map(m => `<option value="${m}">${m}</option>`).join('');
+        const cur = select.value;
+        select.innerHTML = '<option value="">Marca</option>' +
+            Array.from(novas).sort().map(m => '<option value="' + m + '"' + (m === cur ? ' selected' : '') + '>' + m + '</option>').join('');
     }
 }
 
@@ -2209,69 +2213,62 @@ function filterItens() {
 function renderItens(itensToRender = itens) {
     const container = document.getElementById('itensContainer');
     if (!container) return;
-    
+
     if (itensToRender.length === 0) {
-        container.innerHTML = '<tr><td colspan="13" style="text-align: center; padding: 2rem;">Nenhum item cadastrado</td></tr>';
+        container.innerHTML = '<tr><td colspan="13" style="text-align:center;padding:2rem;">Nenhum item cadastrado</td></tr>';
         return;
     }
-    
-    const fmtUntGlobal = (v) => {
-        const n = v || 0;
-        const s2 = n.toFixed(6).replace(/(\.(\d*?)?)0+$/, '$1').replace(/\.$/, '');
-        return 'R$ ' + (parseFloat(s2 || 0)).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 6});
-    };
-    const fmtTotalGlobal = (v) => 'R$ ' + (v || 0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
 
-    const rows = itensToRender.map((item) => {
-        const vendaUnt = item.venda_unt || 0;
+    // Single-pass: gera HTML e acumula totais ao mesmo tempo
+    let totCompra = 0, totCusto = 0, totVenda = 0;
+    const parts = new Array(itensToRender.length);
+
+    for (let idx = 0; idx < itensToRender.length; idx++) {
+        const item = itensToRender[idx];
+        const vendaUnt  = item.venda_unt  || 0;
         const compraUnt = item.estimado_unt || 0;
-        const vendaMaior = compraUnt > 0 && vendaUnt > compraUnt;
-        const checked = item.ganho ? 'checked' : '';
-        let rowClass = item.ganho ? 'item-ganho row-won' : '';
-        if (vendaMaior) rowClass += ' row-venda-alta';
-        const cbId = `item-ganho-${item.id}`;
-        return `
-            <tr class="${rowClass}" 
-                ondblclick="editarItem('${item.id}')" 
-                oncontextmenu="showItemContextMenu(event, '${item.id}')">
-                <td style="text-align: center; padding: 8px;">
-                    <div class="checkbox-wrapper">
-                        <input type="checkbox" id="${cbId}" ${checked}
-                               onchange="${vendaMaior ? '' : `toggleItemGanho('${item.id}', this.checked)`}"
-                               onclick="${vendaMaior ? 'event.preventDefault(); event.stopPropagation();' : 'event.stopPropagation()'}"
-                               class="styled-checkbox ${vendaMaior ? 'cb-venda-alta' : ''}">
-                        <label for="${cbId}" class="checkbox-label-styled ${vendaMaior ? 'cb-label-venda-alta' : ''}">${vendaMaior ? '✕' : ''}</label>
-                    </div>
-                </td>
-                <td><strong>${item.numero}</strong></td>
-                <td class="descricao-cell">${item.descricao || '-'}</td>
-                <td>${item.qtd || 1}</td>
-                <td>${item.unidade || 'UN'}</td>
-                <td>${item.marca || '-'}</td>
-                <td>${item.modelo || '-'}</td>
-                <td>${fmtUntGlobal(compraUnt)}</td>
-                <td>${fmtTotalGlobal(item.estimado_total)}</td>
-                <td>${fmtUntGlobal(item.custo_unt)}</td>
-                <td>${fmtTotalGlobal(item.custo_total)}</td>
-                <td>${fmtUntGlobal(vendaUnt)}</td>
-                <td>${fmtTotalGlobal(item.venda_total)}</td>
-            </tr>`;
-    }).join('');
+        const estTotal  = item.estimado_total || 0;
+        const custoTotal= item.custo_total || 0;
+        const vendaTotal= item.venda_total || 0;
+        totCompra += estTotal; totCusto += custoTotal; totVenda += vendaTotal;
 
-    // Linha de totais
-    const totCompra = itensToRender.reduce((s, i) => s + (i.estimado_total || 0), 0);
-    const totCusto  = itensToRender.reduce((s, i) => s + (i.custo_total || 0), 0);
-    const totVenda  = itensToRender.reduce((s, i) => s + (i.venda_total || 0), 0);
-    const totalRow = `<tr style="background:var(--bg-secondary);font-weight:700;border-top:2px solid var(--border-color);">
-        <td colspan="8" style="padding:8px 12px;"></td>
-        <td style="padding:8px 12px;font-size:0.85rem;">${fmtTotalGlobal(totCompra)}</td>
-        <td style="padding:8px 12px;font-size:0.85rem;"></td>
-        <td style="padding:8px 12px;font-size:0.85rem;">${fmtTotalGlobal(totCusto)}</td>
-        <td style="padding:8px 12px;font-size:0.85rem;"></td>
-        <td style="padding:8px 12px;font-size:0.85rem;">${fmtTotalGlobal(totVenda)}</td>
-    </tr>`;
+        const vm = compraUnt > 0 && vendaUnt > compraUnt;
+        const rc = (item.ganho ? 'item-ganho row-won' : '') + (vm ? ' row-venda-alta' : '');
+        const cbId = 'ig-' + item.id;
+        const ck = item.ganho ? ' checked' : '';
 
-    container.innerHTML = rows + totalRow;
+        const iid = item.id;
+        parts[idx] = '<tr class="' + rc + '" ondblclick="editarItem(\'' + iid + '\')" oncontextmenu="showItemContextMenu(event,\'' + iid + '\')">' +
+            '<td style="text-align:center;padding:8px;"><div class="checkbox-wrapper">' +
+            '<input type="checkbox" id="' + cbId + '"' + ck +
+            (vm ? ' onclick="event.preventDefault();event.stopPropagation()"' : ' onchange="toggleItemGanho(\'' + iid + '\',this.checked)" onclick="event.stopPropagation()"') +
+            ' class="styled-checkbox' + (vm ? ' cb-venda-alta' : '') + '">' +
+            '<label for="' + cbId + '" class="checkbox-label-styled' + (vm ? ' cb-label-venda-alta' : '') + '">' + (vm ? '✕' : '') + '</label>' +
+            '</div></td>' +
+            '<td><strong>' + item.numero + '</strong></td>' +
+            '<td class="descricao-cell">' + (item.descricao || '-') + '</td>' +
+            '<td>' + (item.qtd || 1) + '</td>' +
+            '<td>' + (item.unidade || 'UN') + '</td>' +
+            '<td>' + (item.marca || '-') + '</td>' +
+            '<td>' + (item.modelo || '-') + '</td>' +
+            '<td>' + fmtUnt(compraUnt) + '</td>' +
+            '<td>' + fmtTotal(estTotal) + '</td>' +
+            '<td>' + fmtUnt(item.custo_unt || 0) + '</td>' +
+            '<td>' + fmtTotal(custoTotal) + '</td>' +
+            '<td>' + fmtUnt(vendaUnt) + '</td>' +
+            '<td>' + fmtTotal(vendaTotal) + '</td>' +
+            '</tr>';
+    }
+
+    container.innerHTML = parts.join('') +
+        '<tr style="background:var(--bg-secondary);font-weight:700;border-top:2px solid var(--border-color);">' +
+        '<td colspan="8" style="padding:8px 12px;"></td>' +
+        '<td style="padding:8px 12px;font-size:0.85rem;">' + fmtTotal(totCompra) + '</td>' +
+        '<td></td>' +
+        '<td style="padding:8px 12px;font-size:0.85rem;">' + fmtTotal(totCusto) + '</td>' +
+        '<td></td>' +
+        '<td style="padding:8px 12px;font-size:0.85rem;">' + fmtTotal(totVenda) + '</td>' +
+        '</tr>';
 }
 
 function showItemContextMenu(event, itemId) {
@@ -2355,25 +2352,30 @@ async function excluirItemContexto(itemId) {
 async function toggleItemGanho(id, ganho) {
     const item = itens.find(i => i.id === id);
     if (!item) return;
-    
     item.ganho = ganho;
-    
+
+    // Atualizar DOM diretamente — sem re-renderizar a tabela inteira
+    const cb = document.getElementById('ig-' + id) || document.getElementById('grp-' + id);
+    if (cb) {
+        cb.checked = ganho;
+        const row = cb.closest('tr');
+        if (row) {
+            if (ganho) row.classList.add('item-ganho', 'row-won');
+            else row.classList.remove('item-ganho', 'row-won');
+        }
+    }
+
     try {
         const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
         if (sessionToken) headers['X-Session-Token'] = sessionToken;
-        
-        if (!id.startsWith('temp-')) {
-            await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens/${id}`, {
-                method: 'PUT',
-                headers: headers,
-                body: JSON.stringify(item)
-            });
+        if (!String(id).startsWith('temp-')) {
+            fetch(`${API_URL}/pregoes/${currentPregaoId}/itens/${id}`, {
+                method: 'PUT', headers, body: JSON.stringify(item)
+            }).catch(e => console.error('Erro ao salvar ganho:', e));
         }
     } catch (error) {
-        console.error('Erro ao atualizar ganho do item:', error);
+        console.error('Erro ao atualizar ganho:', error);
     }
-    
-    renderItens();
 }
 
 function toggleItemSelection(id) {
@@ -2394,6 +2396,18 @@ function toggleSelectAllItens() {
     renderItens();
 }
 
+
+// ── FORMATADORES GLOBAIS (criados uma vez, reutilizados sempre) ──────────────
+const _fmtBRL = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const _fmtBRL6 = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 6 });
+function fmtTotal(v) { return 'R$ ' + _fmtBRL.format(v || 0); }
+function fmtUnt(v) {
+    const n = v || 0;
+    if (n === 0) return 'R$ 0,00';
+    // Remove zeros trailing só quando necessário
+    const s = _fmtBRL6.format(n);
+    return 'R$ ' + s.replace(/,?0+$/, m => m === ',00' ? ',00' : m.replace(/0+$/, '') || ',00');
+}
 
 // Helper: payload seguro para criação de item (compatível com server antigo)
 function payloadItemSeguro(fields) {
@@ -2955,20 +2969,21 @@ async function salvarItemAtual(fechar = true) {
         if (response.ok) {
             const savedItem = await response.json();
             itens[editingItemIndex] = savedItem;
-            if (editandoGrupoIdx !== null) {
-                reconstruirGruposDeItens();
-                atualizarSelectsGrupos();
-                renderGrupos();
-            } else {
-                atualizarMarcasItens();
-                renderItens();
-            }
             if (fechar) {
+                // Ao fechar: re-render completo para refletir tudo
+                if (editandoGrupoIdx !== null) {
+                    reconstruirGruposDeItens();
+                    atualizarSelectsGrupos();
+                    renderGrupos();
+                } else {
+                    atualizarMarcasItens();
+                    renderItens();
+                }
                 showToast('Item salvo', 'success');
                 fecharModalItemContexto();
-            } else if (editandoGrupoIdx !== null) {
-                showToast('Item salvo', 'success');
             }
+            // Ao navegar (fechar=false): não re-renderiza — o item foi atualizado no array
+            // e o próximo modal vai mostrar os dados corretos
         }
     } catch (error) {
         console.error('Erro:', error);
