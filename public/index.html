@@ -46,7 +46,7 @@
                         </svg>
                     </div>
                     <div class="stat-content">
-                        <div class="stat-value stat-value-default" id="totalPregoes">0</div>
+                        <div class="stat-value stat-value-info" id="totalPregoes">0</div>
                         <div class="stat-label">Total de Pregões</div>
                     </div>
                 </div>
@@ -114,7 +114,6 @@
                             <select id="filterStatus" onchange="filterPregoes()">
                                 <option value="">Todos os Status</option>
                                 <option value="ABERTO">ABERTO</option>
-                                <option value="SUSPENSO">SUSPENSO</option>
                                 <option value="GANHO">GANHO</option>
                                 <option value="OCORRIDO">OCORRIDO</option>
                             </select>
@@ -171,7 +170,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title" id="formTitle">Novo Pregão</h3>
-                <button class="close-modal" onclick="closeFormModal()">✕</button>
+                <button class="close-modal" onclick="closeFormModal(true)">✕</button>
             </div>
             
             <div class="tabs-container">
@@ -387,7 +386,7 @@
         <div class="modal-content modal-delete">
             <button class="close-modal" onclick="closeDeleteModal()">✕</button>
             <div class="modal-message-delete">
-                DESEJA REALMENTE EXCLUIR ESTE PREGÃO?
+                Deseja realmente excluir este pregão?
             </div>
             <div class="modal-actions modal-actions-no-border">
                 <button class="secondary" onclick="closeDeleteModal()">Cancelar</button>
