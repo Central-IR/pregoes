@@ -24,6 +24,7 @@
     --btn-view: #ff521d;
     --btn-save: #22C55E;
     --alert-color: #EF4444;
+    --certificate-color: #8B5CF6;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -640,11 +641,11 @@ h2 {
 }
 
 /* ============================================
-   TABLE
+   TABLE - VERSÃO CORRIGIDA COM PADDING E ALINHAMENTO
    ============================================ */
 table {
     width: 100%;
-    border-collapse: separate;
+    border-collapse: collapse;
     border-spacing: 0;
 }
 
@@ -653,48 +654,52 @@ thead {
 }
 
 th {
-    padding: 14px 16px;
+    padding: 12px 16px;
     font-weight: 600;
     color: var(--th-color);
     font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    border-bottom: 1px solid var(--th-border);
+    border: 1px solid var(--th-border);
+    white-space: nowrap;
 }
 
 /* Alinhamento específico para cabeçalhos */
 th {
+    text-align: center;
+}
+
+th:first-child {
+    text-align: center;
+}
+
+th:nth-child(2) { /* ITEM */
+    text-align: center;
+}
+
+th:nth-child(3) { /* DESCRIÇÃO */
     text-align: left;
 }
 
-th[style*="text-align: center"],
-th:contains("ITEM"),
-th:contains("QTD"),
-th:contains("UN"),
-th:contains("UNIDADE"),
-th:contains("MARCA"),
-th:contains("MODELO"),
-th:contains("✓") {
-    text-align: center !important;
+th:nth-child(4), th:nth-child(5) { /* QTD, UN */
+    text-align: center;
 }
 
-th:contains("DESCRIÇÃO") {
-    text-align: left !important;
+th:nth-child(6), th:nth-child(7) { /* MARCA, MODELO */
+    text-align: center;
 }
 
-th:contains("ESTIMADO"),
-th:contains("CUSTO"),
-th:contains("VENDA"),
-th:contains("COMPRA"),
-th[class*="valor"] {
-    text-align: right !important;
+th:nth-child(8), th:nth-child(9), th:nth-child(10),
+th:nth-child(11), th:nth-child(12), th:nth-child(13) { /* Valores */
+    text-align: right;
 }
 
 td {
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--border-color);
+    padding: 12px 16px;
+    border: 1px solid var(--border-color);
     font-size: 0.9rem;
     color: var(--text-primary);
+    vertical-align: middle;
 }
 
 /* Alinhamento padrão das células */
@@ -702,21 +707,59 @@ td {
     text-align: center;
 }
 
-/* Exceção para célula de descrição - sempre à esquerda */
+/* Primeira coluna (checkbox) */
+td:first-child {
+    text-align: center;
+    padding: 8px 12px;
+}
+
+/* Segunda coluna (ITEM) */
+td:nth-child(2) {
+    text-align: center;
+    font-weight: 600;
+}
+
+/* Terceira coluna (DESCRIÇÃO) - sempre à esquerda com padding generoso */
+td:nth-child(3),
 td.descricao-cell,
 td[class*="descricao"] {
     text-align: left !important;
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+    max-width: 400px;
+    word-wrap: break-word;
+    white-space: normal;
+    line-height: 1.4;
 }
 
-/* Alinhamento de valores monetários à direita */
+/* Colunas de quantidade e unidade */
+td:nth-child(4), td:nth-child(5) {
+    text-align: center;
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+/* Colunas de marca e modelo */
+td:nth-child(6), td:nth-child(7) {
+    text-align: center;
+    padding-left: 12px;
+    padding-right: 12px;
+    min-width: 100px;
+}
+
+/* Colunas de valores - alinhadas à direita com padding adequado */
+td:nth-child(8), td:nth-child(9), td:nth-child(10),
+td:nth-child(11), td:nth-child(12), td:nth-child(13),
 td.valor-monetario,
-td[class*="valor"],
-td:contains("R$"),
-td:nth-child(8), td:nth-child(9), td:nth-child(10), 
-td:nth-child(11), td:nth-child(12), td:nth-child(13) {
+td[class*="valor"] {
     text-align: right !important;
+    padding-left: 16px;
+    padding-right: 16px;
+    font-family: 'Courier New', monospace;
+    white-space: nowrap;
 }
 
+/* Linhas alternadas */
 tbody tr {
     background: var(--bg-card);
     transition: background 0.2s ease;
@@ -730,6 +773,7 @@ tbody tr:hover {
     background: var(--table-hover);
 }
 
+/* Linhas especiais */
 tbody tr.row-fechada {
     background: rgba(34, 197, 94, 0.12) !important;
     border-left: 3px solid #22C55E;
@@ -744,6 +788,9 @@ tbody tr.row-fechada:hover {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    position: relative;
+    width: 40px;
+    height: 40px;
 }
 
 .styled-checkbox {
@@ -752,6 +799,7 @@ tbody tr.row-fechada:hover {
     cursor: pointer;
     width: 40px;
     height: 40px;
+    z-index: 2;
 }
 
 .checkbox-label-styled {
@@ -765,6 +813,8 @@ tbody tr.row-fechada:hover {
     cursor: pointer;
     transition: all 0.2s ease;
     background: var(--input-bg);
+    position: relative;
+    z-index: 1;
 }
 
 .checkbox-label-styled:hover {
@@ -780,8 +830,12 @@ tbody tr.row-fechada:hover {
 .styled-checkbox:checked + .checkbox-label-styled::after {
     content: '✓';
     color: white;
-    font-size: 1rem;
+    font-size: 1.2rem;
     font-weight: 700;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 /* Badge de status */
@@ -1234,6 +1288,36 @@ button.small {
 }
 
 /* ============================================
+   BOTÃO DE COMPROVANTE (CERTIFICADO)
+   ============================================ */
+.btn-certificate {
+    background: var(--certificate-color) !important;
+    color: white !important;
+    border: none !important;
+    padding: 0.65rem 1.25rem !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3) !important;
+}
+
+.btn-certificate:hover {
+    background: #7C3AED !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(139, 92, 246, 0.4) !important;
+}
+
+.btn-certificate svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* ============================================
    RESPONSIVE
    ============================================ */
 @media (max-width: 768px) {
@@ -1295,7 +1379,14 @@ button.small {
     }
     
     th, td {
-        padding: 10px 8px;
+        padding: 8px 10px;
+    }
+    
+    /* Ajustes responsivos para tabela */
+    td:nth-child(3) { /* Descrição */
+        max-width: 200px;
+        padding-left: 10px !important;
+        padding-right: 10px !important;
     }
     
     button {
@@ -1367,11 +1458,15 @@ tr.item-ganho.row-won {
     color: white !important;
 }
 
-/* Botão Documentos - BRANCO com borda preta */
+/* Botão Documentos - AGORA É COMPROVANTE (ROXO) */
 .btn-docs {
-    background: white !important;
-    color: #1A1A1A !important;
-    border: 1px solid #1A1A1A !important;
+    background: var(--certificate-color) !important;
+    color: white !important;
+    border: none !important;
+}
+
+.btn-docs:hover {
+    background: #7C3AED !important;
 }
 
 /* Tela de Itens */
@@ -1525,10 +1620,13 @@ tr.item-ganho.row-won {
 }
 
 .descricao-cell {
-    max-width: 300px;
+    max-width: 400px;
     word-wrap: break-word;
     white-space: normal;
     text-align: left !important;
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+    line-height: 1.4;
 }
 
 /* Botões acima da tabela de itens */
@@ -1719,13 +1817,37 @@ tr.row-venda-alta:hover {
 }
 
 /* Alinhamento específico para tabelas de grupos */
+#gruposWrapper table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+#gruposWrapper table th,
+#gruposWrapper table td {
+    padding: 12px 16px;
+    border: 1px solid var(--border-color);
+}
+
+#gruposWrapper table th {
+    background: var(--th-bg);
+    color: var(--th-color);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}
+
 #gruposWrapper table td {
     text-align: center;
 }
 
 #gruposWrapper table td.descricao-cell,
-#gruposWrapper table td:contains("DESCRIÇÃO") {
+#gruposWrapper table td:nth-child(2) {
     text-align: left !important;
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+    max-width: 400px;
+    word-wrap: break-word;
+    white-space: normal;
 }
 
 #gruposWrapper table td:nth-child(7),
@@ -1733,4 +1855,17 @@ tr.row-venda-alta:hover {
 #gruposWrapper table td:nth-child(9),
 #gruposWrapper table td:nth-child(10) {
     text-align: right !important;
+    padding-left: 16px;
+    padding-right: 16px;
+    font-family: 'Courier New', monospace;
+    white-space: nowrap;
+}
+
+#gruposWrapper table td:nth-child(3),
+#gruposWrapper table td:nth-child(4),
+#gruposWrapper table td:nth-child(5),
+#gruposWrapper table td:nth-child(6) {
+    text-align: center;
+    padding-left: 12px;
+    padding-right: 12px;
 }
