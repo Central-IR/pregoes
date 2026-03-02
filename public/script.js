@@ -111,7 +111,7 @@ async function checkServerStatus() {
             }
             return false;
         }
-        consecutive401Count = 0; // reset on success
+        consecutive401Count = 0;
 
         const wasOffline = !isOnline;
         isOnline = response.ok;
@@ -183,7 +183,6 @@ async function loadPregoes() {
         const data = await response.json();
         pregoes = data;
         
-        // Atualizar status para OCORRIDO se a data já passou
         atualizarStatusOcorridos();
         
         const newHash = JSON.stringify(pregoes.map(p => p.id));
@@ -200,7 +199,6 @@ async function loadPregoes() {
     }
 }
 
-// Atualizar status para OCORRIDO
 function atualizarStatusOcorridos() {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
@@ -310,7 +308,6 @@ function updateStats() {
     document.getElementById('totalOcorridos').textContent = ocorridos;
 }
 
-// Popular filtro de meses
 function populateMonthFilter() {
     const select = document.getElementById('filterMes');
     const months = ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 
@@ -402,11 +399,10 @@ function displayPregoes(pregoesToDisplay) {
     }).join('');
 }
 
-// Toggle ganho
 async function toggleGanho(id, ganho) {
     if (!isOnline) {
         showToast('Sistema offline. Não foi possível atualizar.', 'error');
-        loadPregoes(); // Recarregar para reverter visualmente
+        loadPregoes();
         return;
     }
 
@@ -418,7 +414,6 @@ async function toggleGanho(id, ganho) {
         if (ganho) {
             pregao.status = 'GANHO';
         } else {
-            // Se desmarcar, volta para ABERTO ou OCORRIDO
             const hoje = new Date();
             hoje.setHours(0, 0, 0, 0);
             const dataPregao = new Date(pregao.data + 'T00:00:00');
@@ -471,11 +466,10 @@ async function toggleGanho(id, ganho) {
         } else {
             showToast('Erro ao atualizar status', 'error');
         }
-        loadPregoes(); // Recarregar dados em caso de erro
+        loadPregoes();
     }
 }
 
-// MODAL DE FORMULÁRIO
 function openFormModal() {
     editingId = null;
     document.getElementById('formTitle').textContent = 'Novo Pregão';
@@ -508,7 +502,6 @@ function resetForm() {
     document.getElementById('prazoPagamento').value = '';
     document.getElementById('banco').value = '';
     
-    // Reset telefones
     document.getElementById('telefonesContainer').innerHTML = `
         <div class="input-with-button">
             <input type="text" class="telefone-input" placeholder="TELEFONE">
@@ -516,7 +509,6 @@ function resetForm() {
         </div>
     `;
     
-    // Reset emails
     document.getElementById('emailsContainer').innerHTML = `
         <div class="input-with-button">
             <input type="email" class="email-input" placeholder="E-MAIL">
@@ -524,14 +516,12 @@ function resetForm() {
         </div>
     `;
     
-    // Reset detalhes
     detalhes = [];
     document.querySelectorAll('.detalhe-item').forEach(item => {
         item.classList.remove('selected');
     });
 }
 
-// Telefones
 function addTelefone() {
     const container = document.getElementById('telefonesContainer');
     const div = document.createElement('div');
@@ -555,7 +545,6 @@ function getTelefones() {
         .filter(value => value !== '');
 }
 
-// E-mails
 function addEmail() {
     const container = document.getElementById('emailsContainer');
     const div = document.createElement('div');
@@ -578,7 +567,6 @@ function getEmails() {
         .filter(value => value !== '');
 }
 
-// Detalhes
 function toggleDetalhe(element, nome) {
     element.classList.toggle('selected');
     const index = detalhes.indexOf(nome);
@@ -589,7 +577,6 @@ function toggleDetalhe(element, nome) {
     }
 }
 
-// Navegação de abas do formulário
 function switchTab(tabId) {
     tabs.forEach((tab, index) => {
         document.getElementById(tab).classList.remove('active');
@@ -610,18 +597,13 @@ function updateNavigationButtons() {
     const btnCancel = document.getElementById('btnCancel');
     const btnSave = document.getElementById('btnSave');
     
-    // Anterior: visível apenas se não for a primeira aba
     btnPrevious.style.display = currentTab === 0 ? 'none' : 'inline-block';
-    
-    // Cancelar: sempre visível
     btnCancel.style.display = 'inline-block';
     
     if (currentTab === tabs.length - 1) {
-        // Última aba: esconder Próximo, mostrar Salvar
         btnNext.style.display = 'none';
         btnSave.style.display = 'inline-block';
     } else {
-        // Outras abas: mostrar Próximo, esconder Salvar
         btnNext.style.display = 'inline-block';
         btnSave.style.display = 'none';
     }
@@ -641,7 +623,6 @@ function previousTab() {
     }
 }
 
-// Salvar pregão
 async function salvarPregao() {
     const dataPregao = document.getElementById('dataPregao').value;
     const numeroPregao = toUpperCase(document.getElementById('numeroPregao').value);
@@ -739,7 +720,6 @@ async function salvarPregao() {
     }
 }
 
-// Editar pregão
 async function editPregao(id) {
     editingId = id;
     const pregao = pregoes.find(p => p.id === id);
@@ -760,7 +740,6 @@ async function editPregao(id) {
     document.getElementById('prazoPagamento').value = pregao.prazo_pagamento || '';
     document.getElementById('banco').value = pregao.banco || '';
     
-    // Carregar telefones
     const telefonesContainer = document.getElementById('telefonesContainer');
     telefonesContainer.innerHTML = '';
     if (pregao.telefones && pregao.telefones.length > 0) {
@@ -782,7 +761,6 @@ async function editPregao(id) {
         `;
     }
     
-    // Carregar emails
     const emailsContainer = document.getElementById('emailsContainer');
     emailsContainer.innerHTML = '';
     if (pregao.emails && pregao.emails.length > 0) {
@@ -804,7 +782,6 @@ async function editPregao(id) {
         `;
     }
     
-    // Carregar detalhes
     detalhes = pregao.detalhes || [];
     document.querySelectorAll('.detalhe-item').forEach(item => {
         item.classList.remove('selected');
@@ -820,14 +797,12 @@ async function editPregao(id) {
     setupUpperCaseInputs();
 }
 
-// MODAL DE VISUALIZAÇÃO
 function viewPregao(id) {
     const pregao = pregoes.find(p => p.id === id);
     if (!pregao) return;
     
     document.getElementById('modalNumero').textContent = pregao.numero_pregao;
     
-    // Aba Geral
     document.getElementById('info-tab-geral').innerHTML = `
         <div class="info-section">
             <p><strong>Responsável:</strong> ${pregao.responsavel}</p>
@@ -837,7 +812,6 @@ function viewPregao(id) {
         </div>
     `;
     
-    // Aba Órgão
     document.getElementById('info-tab-orgao').innerHTML = `
         <div class="info-section">
             <p><strong>Nº Pregão:</strong> ${pregao.numero_pregao}</p>
@@ -848,7 +822,6 @@ function viewPregao(id) {
         </div>
     `;
     
-    // Aba Contato
     const telefonesHtml = pregao.telefones && pregao.telefones.length > 0 
         ? pregao.telefones.map(t => `<p>• ${t}</p>`).join('') 
         : '<p>-</p>';
@@ -867,7 +840,6 @@ function viewPregao(id) {
         </div>
     `;
     
-    // Aba Prazos
     document.getElementById('info-tab-prazos').innerHTML = `
         <div class="info-section">
             <p><strong>Validade da Proposta:</strong> ${pregao.validade_proposta || '-'}</p>
@@ -876,7 +848,6 @@ function viewPregao(id) {
         </div>
     `;
     
-    // Aba Detalhes
     const detalhesHtml = pregao.detalhes && pregao.detalhes.length > 0 
         ? pregao.detalhes.map(d => `<p>✓ ${d}</p>`).join('') 
         : '<p>Nenhum detalhe selecionado</p>';
@@ -901,7 +872,6 @@ function closeInfoModal() {
     document.getElementById('infoModal').classList.remove('show');
 }
 
-// Navegação de abas do modal de visualização
 function switchInfoTab(tabId) {
     infoTabs.forEach((tab, index) => {
         document.getElementById(tab).classList.remove('active');
@@ -940,7 +910,6 @@ function previousInfoTab() {
     }
 }
 
-// MODAL DE DELETE
 function openDeleteModal(id) {
     deleteId = id;
     document.getElementById('deleteModal').classList.add('show');
@@ -1003,7 +972,6 @@ async function confirmarExclusao() {
     }
 }
 
-// Abrir tela de itens
 async function openItems(id) {
     currentPregaoId = id;
     const pregao = pregoes.find(p => p.id === id);
@@ -1056,10 +1024,10 @@ function voltarPregoes() {
 // ============================================================
 // ESTADO DOS GRUPOS
 // ============================================================
-let grupos = [];  // [{tipo, numero, itens:[]}]
+let grupos = [];
 let editandoGrupoIdx = null;
 let editandoGrupoItemIdx = null;
-let modoNavegacaoGrupo = false; // true = navega em grupo, false = navega em itens
+let modoNavegacaoGrupo = false;
 
 // ============================================================
 // TELA DE GRUPOS
@@ -1161,7 +1129,6 @@ function criarTelaGrupos() {
             <div style="text-align:center;padding:3rem;color:var(--text-secondary);">Nenhum grupo cadastrado</div>
         </div>
 
-        <!-- Modal Novo Grupo -->
         <div class="modal-overlay" id="modalNovoGrupo">
             <div class="modal-content" style="max-width:520px;">
                 <div class="modal-header">
@@ -1192,7 +1159,6 @@ function criarTelaGrupos() {
             </div>
         </div>
 
-        <!-- Modal Excluir Grupo -->
         <div class="modal-overlay" id="modalExcluirGrupo">
             <div class="modal-content" style="max-width:520px;">
                 <div class="modal-header">
@@ -1221,7 +1187,6 @@ function criarTelaGrupos() {
             </div>
         </div>
 
-        <!-- Modal Assinatura PDF Grupos -->
         <div class="modal-overlay" id="modalAssinaturaGrupos">
             <div class="modal-content modal-delete">
                 <button class="close-modal" onclick="document.getElementById('modalAssinaturaGrupos').classList.remove('show')">✕</button>
@@ -1235,7 +1200,6 @@ function criarTelaGrupos() {
             </div>
         </div>
 
-        <!-- Modal + Intervalo de Grupos -->
         <div class="modal-overlay" id="modalIntervaloGrupos">
             <div class="modal-content" style="max-width:600px;">
                 <div class="modal-header">
@@ -1279,18 +1243,14 @@ function criarTelaGrupos() {
     return div;
 }
 
-// ============================================================
-// CRUD GRUPOS
-// ============================================================
 async function carregarGrupos() {
-    await carregarItens(currentPregaoId); // sempre busca do servidor
+    await carregarItens(currentPregaoId);
     reconstruirGruposDeItens();
     atualizarSelectsGrupos();
     renderGrupos();
 }
 
 function reconstruirERenderGrupos() {
-    // Re-render local sem ir ao servidor — usa itens já em memória
     reconstruirGruposDeItens();
     atualizarSelectsGrupos();
     renderGrupos();
@@ -1352,7 +1312,6 @@ function renderGrupos() {
         return;
     }
 
-    // Cada grupo é uma tabela separada — single-pass, formatadores globais
     const cards = [];
     for (const grupo of gruposRender) {
         let its = grupo.itens;
@@ -1373,24 +1332,21 @@ function renderGrupos() {
             totCu += item.custo_total || 0;
             totV  += item.venda_total || 0;
             const iid = item.id;
-            const rowBg = '';
-            const rowClass = grupoAllGanho ? 'row-won' : (vm ? 'row-venda-alta' : '');
+            const rowClass = grupoAllGanho ? 'item-ganho row-won' : (vm ? 'row-venda-alta' : '');
             rowParts[idx] =
                 '<tr class="' + rowClass + '" ondblclick="editarItemGrupoById(\'' + iid + '\')" oncontextmenu="showItemContextMenu(event,\'' + iid + '\')">' +
-                '<td><strong>' + item.numero + '</strong></td>' +
-                '<td class="descricao-cell">' + (item.descricao || '-') + '</td>' +
-                '<td>' + (item.qtd || 1) + '</td>' +
-                '<td>' + (item.unidade || 'UN') + '</td>' +
-                '<td>' + (item.marca || '-') + '</td>' +
-                '<td>' + (item.modelo || '-') + '</td>' +
-                '<td>' + fmtTotal(item.estimado_total || 0) + '</td>' +
-                '<td>' + fmtTotal(item.custo_total || 0) + '</td>' +
-                '<td>' + fmtUnt(item.venda_unt || 0) + '</td>' +
-                '<td>' + fmtTotal(item.venda_total || 0) + '</td>' +
+                '<td style="text-align:center;"><strong>' + item.numero + '</strong></td>' +
+                '<td class="descricao-cell" style="text-align:left;">' + (item.descricao || '-') + '</td>' +
+                '<td style="text-align:center;">' + (item.qtd || 1) + '</td>' +
+                '<td style="text-align:center;">' + (item.unidade || 'UN') + '</td>' +
+                '<td style="text-align:center;">' + (item.marca || '-') + '</td>' +
+                '<td style="text-align:center;">' + (item.modelo || '-') + '</td>' +
+                '<td style="text-align:right;">' + fmtTotal(item.estimado_total || 0) + '</td>' +
+                '<td style="text-align:right;">' + fmtTotal(item.custo_total || 0) + '</td>' +
+                '<td style="text-align:right;">' + fmtUnt(item.venda_unt || 0) + '</td>' +
+                '<td style="text-align:right;">' + fmtTotal(item.venda_total || 0) + '</td>' +
                 '</tr>';
         }
-        // totalRow removido — totais ficam soltos abaixo da tabela
-        // Checkbox ganho por grupo
         const grupoGanho = grupo.itens.length > 0 && grupo.itens.every(i => i.ganho);
         const grupoGanhoId = 'grp-ganho-' + grupo.tipo + '-' + grupo.numero;
         const grupoGanhoChk = grupoGanho ? ' checked' : '';
@@ -1408,11 +1364,16 @@ function renderGrupos() {
             '</div>' +
             '<div style="overflow-x:auto;"><table>' +
             '<thead><tr>' +
-            '<th style="width:55px;">ITEM</th><th style="min-width:220px;">DESCRIÇÃO</th>' +
-            '<th style="width:55px;">QTD</th><th style="width:50px;">UN</th>' +
-            '<th style="width:90px;">MARCA</th><th style="width:90px;">MODELO</th>' +
-            '<th style="width:105px;">COMPRA TOTAL</th><th style="width:100px;">CUSTO TOTAL</th>' +
-            '<th style="width:100px;">VENDA UNT</th><th style="width:105px;">VENDA TOTAL</th>' +
+            '<th style="width:55px;text-align:center;">ITEM</th>' +
+            '<th style="min-width:220px;text-align:left;">DESCRIÇÃO</th>' +
+            '<th style="width:55px;text-align:center;">QTD</th>' +
+            '<th style="width:50px;text-align:center;">UN</th>' +
+            '<th style="width:90px;text-align:center;">MARCA</th>' +
+            '<th style="width:90px;text-align:center;">MODELO</th>' +
+            '<th style="width:105px;text-align:right;">COMPRA TOTAL</th>' +
+            '<th style="width:100px;text-align:right;">CUSTO TOTAL</th>' +
+            '<th style="width:100px;text-align:right;">VENDA UNT</th>' +
+            '<th style="width:105px;text-align:right;">VENDA TOTAL</th>' +
             '</tr></thead>' +
             '<tbody>' + rowParts.join('') + '</tbody>' +
             '</table></div>' +
@@ -1426,9 +1387,6 @@ function renderGrupos() {
     wrapper.innerHTML = cards.join('');
 }
 
-// ============================================================
-// MODAL NOVO GRUPO
-// ============================================================
 function abrirModalNovoGrupo() {
     const maxN = grupos.reduce((m, g) => Math.max(m, g.numero), 0);
     document.getElementById('novoGrupoNumero').value = maxN + 1;
@@ -1454,20 +1412,19 @@ async function confirmarNovoGrupo() {
     for (const numItem of numeros) {
         const jaExiste = itens.find(i => i.grupo_tipo === tipo && i.grupo_numero === numero && i.numero === numItem);
         if (jaExiste) continue;
-        const novo = {
+        const novo = payloadItemSeguro({
             pregao_id: currentPregaoId,
             numero: numItem, descricao: '', qtd: 1, unidade: 'UN',
             marca: '', modelo: '',
             estimado_unt: 0, estimado_total: 0, custo_unt: 0, custo_total: 0,
             porcentagem: 149, venda_unt: 0, venda_total: 0, ganho: false,
             grupo_tipo: tipo, grupo_numero: numero
-        };
+        });
         try {
             const r = await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens`, { method:'POST', headers, body:JSON.stringify(novo) });
             if (r.ok) itens.push(await r.json());
         } catch(e) { console.error(e); }
     }
-    // Abrir modal de edição do primeiro item do grupo criado
     reconstruirGruposDeItens();
     atualizarSelectsGrupos();
     renderGrupos();
@@ -1478,12 +1435,10 @@ async function confirmarNovoGrupo() {
     }
 }
 
-// Abre o modal de item no contexto do grupo, com navegação Grupo/Lote N - Item N
 function abrirEdicaoGrupoItem(grupo, idxItem) {
     editandoGrupoIdx = grupos.indexOf(grupo);
     editandoGrupoItemIdx = idxItem;
     const item = grupo.itens[idxItem];
-    // Encontrar índice global no array itens
     editingItemIndex = itens.indexOf(item);
     mostrarModalItemGrupo(item, grupo, idxItem);
 }
@@ -1498,10 +1453,8 @@ function editarItemGrupoById(itemId) {
 }
 
 function mostrarModalItemGrupo(item, grupo, idxItem) {
-    // Reutiliza o mesmo modal de item mas com título e navegação especial
     let modal = document.getElementById('modalItem');
     if (!modal) { modal = criarModalItem(); document.body.appendChild(modal); }
-    // Preencher campos (mesmo que mostrarModalItem)
     document.getElementById('itemNumero').value = item.numero || '';
     document.getElementById('itemDescricao').value = item.descricao || '';
     document.getElementById('itemQtd').value = item.qtd || 1;
@@ -1515,7 +1468,6 @@ function mostrarModalItemGrupo(item, grupo, idxItem) {
     document.getElementById('itemPorcentagem').value = item.porcentagem ?? 149;
     document.getElementById('itemVendaUnt').value = item.venda_unt || '';
     document.getElementById('itemVendaTotal').value = item.venda_total || '';
-    // Título e navegação para grupo
     const tituloEl = document.getElementById('modalItemTitle');
     if (tituloEl) tituloEl.textContent = `Item ${item.numero}`;
     const btnPrev = document.getElementById('btnPrevPagItem');
@@ -1525,7 +1477,6 @@ function mostrarModalItemGrupo(item, grupo, idxItem) {
     if (btnPrev) btnPrev.style.visibility = temAnterior ? 'visible' : 'hidden';
     if (btnNext) btnNext.style.visibility = temProximo ? 'visible' : 'hidden';
     modoNavegacaoGrupo = true;
-    // Reset to first tab
     currentItemTab = 0;
     switchItemTab(itemTabs[0]);
     modal.classList.add('show');
@@ -1556,9 +1507,6 @@ async function navegarGrupoProximo() {
     mostrarModalItemGrupo(grupo.itens[ii], grupo, ii);
 }
 
-// ============================================================
-// MODAL EXCLUIR GRUPO
-// ============================================================
 function abrirModalExcluirGrupo() {
     const sel = document.getElementById('excluirGrupoSelect');
     if (!sel) return;
@@ -1592,9 +1540,6 @@ async function confirmarExcluirGrupo() {
     showToast('Item excluído', 'error');
 }
 
-// ============================================================
-// INTERVALO DE GRUPOS
-// ============================================================
 const intervaloTabs = ['intervalo-tab-config', 'intervalo-tab-itens'];
 let currentIntervaloTab = 0;
 
@@ -1716,13 +1661,9 @@ function syncGrupos() {
 }
 
 function abrirModalDeclaracoesGrupos() {
-    // Reutiliza o mesmo modal de declarações da tela de itens
     abrirModalDeclaracoes();
 }
 
-// ============================================================
-// PDF POR GRUPOS
-// ============================================================
 function perguntarAssinaturaPDFGrupos() {
     const temGanho = itens.some(i => i.ganho && i.grupo_tipo);
     if (!temGanho) { showToast('Marque ao menos um item (ganho) para gerar a proposta', 'error'); return; }
@@ -1740,7 +1681,6 @@ async function gerarPDFGruposComAssinatura(comAssinatura) {
         const r = await fetch(`${API_URL}/pregoes/${pregao.id}/dados-bancarios`, { headers: h });
         if (r.ok) { const d = await r.json(); dadosBancarios = d.dados_bancarios || null; }
     } catch(e) {}
-    // Monta estrutura: [{grupo, itens:[]}]
     const estrutura = grupos.map(g => ({ grupo: g, itens: g.itens.filter(i => i.ganho) })).filter(e => e.itens.length > 0);
     if (estrutura.length === 0) { showToast('Nenhum item ganho encontrado', 'error'); return; }
     if (typeof window.jspdf === 'undefined') { showToast('Biblioteca PDF não carregou. Recarregue (F5).', 'error'); return; }
@@ -1749,7 +1689,6 @@ async function gerarPDFGruposComAssinatura(comAssinatura) {
     const margin = 20, pageWidth = doc.internal.pageSize.width, pageHeight = doc.internal.pageSize.height;
     const lineHeight = 5, maxWidth = pageWidth - 2 * margin;
     let addTextWithWrap;
-    // Passa estrutura de grupos para o gerador
     const logo = new Image();
     logo.crossOrigin = 'anonymous';
     logo.src = 'I.R.-COMERCIO-E-MATERIAIS-ELETRICOS-LTDA-PDF.png';
@@ -1855,28 +1794,26 @@ function criarTelaItens() {
                             <th style="width: 40px; text-align: center;">
                                 <span style="font-size: 1.1rem;">✓</span>
                             </th>
-                            <th style="width: 60px;">ITEM</th>
-                            <th style="min-width: 300px;">DESCRIÇÃO</th>
-                            <th style="width: 80px;">QTD</th>
-                            <th style="width: 80px;">UNIDADE</th>
-                            <th style="width: 120px;">MARCA</th>
-                            <th style="width: 120px;">MODELO</th>
-                            <th style="width: 120px;">ESTIMADO UNT</th>
-                            <th style="width: 120px;">ESTIMADO TOTAL</th>
-                            <th style="width: 120px;">CUSTO UNT</th>
-                            <th style="width: 120px;">CUSTO TOTAL</th>
-                            <th style="width: 120px;">VENDA UNT</th>
-                            <th style="width: 120px;">VENDA TOTAL</th>
+                            <th style="width: 60px; text-align: center;">ITEM</th>
+                            <th style="min-width: 300px; text-align: left;">DESCRIÇÃO</th>
+                            <th style="width: 80px; text-align: center;">QTD</th>
+                            <th style="width: 80px; text-align: center;">UNIDADE</th>
+                            <th style="width: 120px; text-align: center;">MARCA</th>
+                            <th style="width: 120px; text-align: center;">MODELO</th>
+                            <th style="width: 120px; text-align: right;">ESTIMADO UNT</th>
+                            <th style="width: 120px; text-align: right;">ESTIMADO TOTAL</th>
+                            <th style="width: 120px; text-align: right;">CUSTO UNT</th>
+                            <th style="width: 120px; text-align: right;">CUSTO TOTAL</th>
+                            <th style="width: 120px; text-align: right;">VENDA UNT</th>
+                            <th style="width: 120px; text-align: right;">VENDA TOTAL</th>
                         </tr>
                     </thead>
                     <tbody id="itensContainer"></tbody>
                 </table>
             </div>
         </div>
-        <!-- Totais da tabela de itens -->
         <div id="itensTotaisBar" style="display:flex;gap:3rem;padding:0.75rem 1rem 0.25rem 1rem;font-size:10pt;color:var(--text-primary);"></div>
 
-        <!-- Modal + Intervalo -->
         <div class="modal-overlay" id="modalIntervalo">
             <div class="modal-content" style="max-width:520px;">
                 <div class="modal-header">
@@ -1896,7 +1833,6 @@ function criarTelaItens() {
             </div>
         </div>
 
-        <!-- Modal Excluir Itens -->
         <div class="modal-overlay" id="modalExcluirItens">
             <div class="modal-content" style="max-width:520px;">
                 <div class="modal-header">
@@ -1916,7 +1852,6 @@ function criarTelaItens() {
             </div>
         </div>
 
-        <!-- Modal Assinatura PDF -->
         <div class="modal-overlay" id="modalAssinatura">
             <div class="modal-content modal-delete">
                 <button class="close-modal" onclick="fecharModalAssinatura()">✕</button>
@@ -1941,7 +1876,6 @@ function obterSaudacao() {
     return 'Boa noite';
 }
 
-// ============ DECLARAÇÕES ============
 function abrirModalDeclaracoes() {
     let modal = document.getElementById('modalDeclaracoes');
     if (!modal) {
@@ -1999,7 +1933,6 @@ function perguntarAssinaturaDeclaracao() {
     
     fecharModalDeclaracoes();
     
-    // Modal de assinatura para declaração
     let modal = document.getElementById('modalAssinaturaDeclaracao');
     if (!modal) {
         modal = document.createElement('div');
@@ -2020,7 +1953,6 @@ function perguntarAssinaturaDeclaracao() {
         document.body.appendChild(modal);
     }
     
-    // Armazenar dados temporariamente
     modal._titulo = titulo;
     modal._texto = texto;
     modal.classList.add('show');
@@ -2056,13 +1988,11 @@ async function gerarPDFDeclaracao(comAssinatura) {
     const maxWidth = pageWidth - (2 * margin);
     let y = 3;
     
-    // Carregar logo e cabeçalho
     const logoImg = new Image();
     logoImg.crossOrigin = 'anonymous';
     logoImg.src = 'I.R.-COMERCIO-E-MATERIAIS-ELETRICOS-LTDA-PDF.png';
     
     const desenharDeclaracao = (logoCarregada) => {
-        // Cabeçalho
         if (logoCarregada) {
             const logoW = 40;
             const logoH = (logoImg.height / logoImg.width) * logoW;
@@ -2084,14 +2014,12 @@ async function gerarPDFDeclaracao(comAssinatura) {
             y = 25;
         }
         
-        // Título centralizado
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(0, 0, 0);
         doc.text(titulo.toUpperCase(), pageWidth / 2, y, { align: 'center' });
         y += 14;
         
-        // Corpo do texto — fonte Arial 12, centralizado
         doc.setFontSize(12);
         doc.setFont('helvetica', 'normal');
         
@@ -2116,7 +2044,6 @@ async function gerarPDFDeclaracao(comAssinatura) {
         
         if (y > pageHeight - 45) { doc.addPage(); y = 20; }
         
-        // Data
         const dataAtual = new Date();
         const dia = dataAtual.getDate();
         const meses = ['JANEIRO','FEVEREIRO','MARÇO','ABRIL','MAIO','JUNHO',
@@ -2129,7 +2056,6 @@ async function gerarPDFDeclaracao(comAssinatura) {
         doc.text(`SERRA/ES, ${dia} DE ${mes} DE ${ano}`, pageWidth / 2, y, { align: 'center' });
         y += 6;
         
-        // Nome do arquivo
         const uasgPart = pregao?.uasg ? `-${pregao.uasg}` : '';
         const numPart = pregao?.numero_pregao ? `-${pregao.numero_pregao}` : '';
         const nomeArquivo = `${titulo.toUpperCase().replace(/\s+/g, '-')}${numPart}${uasgPart}.pdf`;
@@ -2206,7 +2132,6 @@ async function carregarItens(pregaoId) {
 function atualizarMarcasItens() {
     const novas = new Set();
     for (const item of itens) { if (item.marca) novas.add(item.marca); }
-    // Só atualiza o DOM se mudou
     const antes = Array.from(marcasItens).sort().join('|');
     const depois = Array.from(novas).sort().join('|');
     marcasItens = novas;
@@ -2244,7 +2169,6 @@ function renderItens(itensToRender = itens) {
         return;
     }
 
-    // Single-pass: gera HTML e acumula totais ao mesmo tempo
     let totCompra = 0, totCusto = 0, totVenda = 0;
     const parts = new Array(itensToRender.length);
 
@@ -2270,24 +2194,23 @@ function renderItens(itensToRender = itens) {
             ' class="styled-checkbox' + (vm ? ' cb-venda-alta' : '') + '">' +
             '<label for="' + cbId + '" class="checkbox-label-styled' + (vm ? ' cb-label-venda-alta' : '') + '">' + (vm ? '✕' : '') + '</label>' +
             '</div></td>' +
-            '<td><strong>' + item.numero + '</strong></td>' +
-            '<td class="descricao-cell">' + (item.descricao || '-') + '</td>' +
-            '<td>' + (item.qtd || 1) + '</td>' +
-            '<td>' + (item.unidade || 'UN') + '</td>' +
-            '<td>' + (item.marca || '-') + '</td>' +
-            '<td>' + (item.modelo || '-') + '</td>' +
-            '<td>' + fmtUnt(compraUnt) + '</td>' +
-            '<td>' + fmtTotal(estTotal) + '</td>' +
-            '<td>' + fmtUnt(item.custo_unt || 0) + '</td>' +
-            '<td>' + fmtTotal(custoTotal) + '</td>' +
-            '<td>' + fmtUnt(vendaUnt) + '</td>' +
-            '<td>' + fmtTotal(vendaTotal) + '</td>' +
+            '<td style="text-align:center;"><strong>' + item.numero + '</strong></td>' +
+            '<td class="descricao-cell" style="text-align:left;">' + (item.descricao || '-') + '</td>' +
+            '<td style="text-align:center;">' + (item.qtd || 1) + '</td>' +
+            '<td style="text-align:center;">' + (item.unidade || 'UN') + '</td>' +
+            '<td style="text-align:center;">' + (item.marca || '-') + '</td>' +
+            '<td style="text-align:center;">' + (item.modelo || '-') + '</td>' +
+            '<td style="text-align:right;">' + fmtUnt(compraUnt) + '</td>' +
+            '<td style="text-align:right;">' + fmtTotal(estTotal) + '</td>' +
+            '<td style="text-align:right;">' + fmtUnt(item.custo_unt || 0) + '</td>' +
+            '<td style="text-align:right;">' + fmtTotal(custoTotal) + '</td>' +
+            '<td style="text-align:right;">' + fmtUnt(vendaUnt) + '</td>' +
+            '<td style="text-align:right;">' + fmtTotal(vendaTotal) + '</td>' +
             '</tr>';
     }
 
     container.innerHTML = parts.join('');
 
-    // Totais soltos abaixo da tabela
     const totaisContainer = document.getElementById('itensTotaisBar');
     if (totaisContainer) {
         totaisContainer.innerHTML =
@@ -2300,11 +2223,9 @@ function renderItens(itensToRender = itens) {
 function showItemContextMenu(event, itemId) {
     event.preventDefault();
     
-    // Remover menu existente se houver
     const existingMenu = document.getElementById('contextMenu');
     if (existingMenu) existingMenu.remove();
     
-    // Criar menu de contexto
     const menu = document.createElement('div');
     menu.id = 'contextMenu';
     menu.style.cssText = `
@@ -2340,7 +2261,6 @@ function showItemContextMenu(event, itemId) {
     
     document.body.appendChild(menu);
     
-    // Remover menu ao clicar fora
     const closeMenu = () => {
         menu.remove();
         document.removeEventListener('click', closeMenu);
@@ -2380,7 +2300,6 @@ async function toggleItemGanho(id, ganho) {
     if (!item) return;
     item.ganho = ganho;
 
-    // Atualizar DOM diretamente — sem re-renderizar a tabela inteira
     const cb = document.getElementById('ig-' + id) || document.getElementById('grp-' + id);
     if (cb) {
         cb.checked = ganho;
@@ -2422,20 +2341,16 @@ function toggleSelectAllItens() {
     renderItens();
 }
 
-
-// ── FORMATADORES GLOBAIS (criados uma vez, reutilizados sempre) ──────────────
 const _fmtBRL = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const _fmtBRL6 = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 6 });
 function fmtTotal(v) { return 'R$ ' + _fmtBRL.format(v || 0); }
 function fmtUnt(v) {
     const n = v || 0;
     if (n === 0) return 'R$ 0,00';
-    // Remove zeros trailing só quando necessário
     const s = _fmtBRL6.format(n);
     return 'R$ ' + s.replace(/,?0+$/, m => m === ',00' ? ',00' : m.replace(/0+$/, '') || ',00');
 }
 
-// Helper: payload seguro para criação de item (compatível com server antigo)
 function payloadItemSeguro(fields) {
     return {
         pregao_id: fields.pregao_id,
@@ -2525,7 +2440,6 @@ async function adicionarIntervalo(intervalo) {
         }
     }
     
-    // Verificar duplicatas - ignorar silenciosamente
     const numerosExistentes = new Set(itens.map(i => i.numero));
     const duplicatas = numeros.filter(n => numerosExistentes.has(n));
     if (duplicatas.length > 0) {
@@ -2715,7 +2629,6 @@ function mostrarModalItem(item) {
     
     modal.classList.add('show');
     configurarCalculosAutomaticos();
-    // Calcular valores imediatamente ao abrir
     setTimeout(calcularValoresItem, 50);
     setTimeout(setupUpperCaseInputs, 50);
 }
@@ -2800,7 +2713,6 @@ function criarModalItem() {
                     <button class="tab-btn" onclick="switchItemTab('item-tab-valores')">Valores</button>
                 </div>
                 
-                <!-- Aba Item -->
                 <div class="tab-content active" id="item-tab-item">
                     <input type="hidden" id="itemNumero">
                     <div class="form-grid">
@@ -2825,7 +2737,6 @@ function criarModalItem() {
                     </div>
                 </div>
                 
-                <!-- Aba Fornecedor -->
                 <div class="tab-content" id="item-tab-fornecedor">
                     <div class="form-grid">
                         <div class="form-group">
@@ -2839,10 +2750,8 @@ function criarModalItem() {
                     </div>
                 </div>
                 
-                <!-- Aba Valores -->
                 <div class="tab-content" id="item-tab-valores">
                     <div style="display: grid; grid-template-columns: 1fr; gap: 0.75rem; padding: 0.25rem 0;">
-                        <!-- Linha 1: Porcentagem sozinha -->
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
                             <div class="form-group" style="margin:0;">
                                 <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">Porcentagem (%)</label>
@@ -2852,7 +2761,6 @@ function criarModalItem() {
                             <div></div>
                             <div></div>
                         </div>
-                        <!-- Linha 2: Compra UNT | Custo UNT | Venda UNT -->
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
                             <div class="form-group" style="margin:0;">
                                 <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">Compra UNT</label>
@@ -2870,7 +2778,6 @@ function criarModalItem() {
                                        style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box;">
                             </div>
                         </div>
-                        <!-- Linha 3: Compra Total | Custo Total | Venda Total -->
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
                             <div class="form-group" style="margin:0;">
                                 <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">Compra Total</label>
@@ -2909,14 +2816,11 @@ function calcularValoresItem() {
     const cu = parseFloat(document.getElementById('itemCustoUnt')?.value) || 0;
     const perc = parseFloat(document.getElementById('itemPorcentagem')?.value) || 0;
     
-    // Calcular totais
     const estimadoTotal = q * eu;
     const custoTotal = q * cu;
-    
-    const vendaUnt = cu * (perc / 100);
+    const vendaUnt = cu * (1 + perc / 100);
     const vendaTotal = vendaUnt * q;
     
-    // Atualizar campos
     const etEl = document.getElementById('itemEstimadoTotal');
     const ctEl = document.getElementById('itemCustoTotal');
     const vuEl = document.getElementById('itemVendaUnt');
@@ -2925,7 +2829,6 @@ function calcularValoresItem() {
     if (etEl) etEl.value = estimadoTotal.toFixed(2);
     if (ctEl) ctEl.value = custoTotal.toFixed(2);
     if (vuEl) {
-        // Mostrar com até 4 casas decimais, sem zeros desnecessários
         vuEl.value = vendaUnt.toFixed(4).replace(/\.?0+$/, '');
     }
     if (vtEl) vtEl.value = vendaTotal.toFixed(2);
@@ -2935,7 +2838,6 @@ function configurarCalculosAutomaticos() {
     const modal = document.getElementById('modalItem');
     if (!modal) return;
     
-    // Remover listener anterior se existir
     if (modal._calcListener) {
         modal.removeEventListener('input', modal._calcListener);
     }
@@ -2943,7 +2845,6 @@ function configurarCalculosAutomaticos() {
     modal._calcListener = function(e) {
         const ids = ['itemQtd', 'itemEstimadoUnt', 'itemCustoUnt', 'itemPorcentagem'];
         if (ids.includes(e.target.id)) {
-            // Usar requestAnimationFrame para garantir que o cálculo ocorra após a atualização do valor
             requestAnimationFrame(() => {
                 calcularValoresItem();
             });
@@ -2952,7 +2853,6 @@ function configurarCalculosAutomaticos() {
     
     modal.addEventListener('input', modal._calcListener);
     
-    // Também calcular ao perder o foco dos campos (garantia)
     const inputs = ['itemQtd', 'itemEstimadoUnt', 'itemCustoUnt', 'itemPorcentagem'];
     inputs.forEach(id => {
         const el = document.getElementById(id);
@@ -3021,7 +2921,6 @@ async function salvarItemAtual(fechar = true) {
             const savedItem = await response.json();
             itens[editingItemIndex] = savedItem;
             if (fechar) {
-                // Ao fechar: re-render completo para refletir tudo
                 if (editandoGrupoIdx !== null) {
                     reconstruirGruposDeItens();
                     atualizarSelectsGrupos();
@@ -3033,8 +2932,6 @@ async function salvarItemAtual(fechar = true) {
                 showToast('Item salvo', 'success');
                 fecharModalItemContexto();
             }
-            // Ao navegar (fechar=false): não re-renderiza — o item foi atualizado no array
-            // e o próximo modal vai mostrar os dados corretos
         }
     } catch (error) {
         console.error('Erro:', error);
@@ -3079,11 +2976,9 @@ function fecharModalAssinatura() {
     if (modal) modal.classList.remove('show');
 }
 
-// ============ COTAÇÃO ============
 let fornecedoresDisponiveis = [];
 
 async function abrirModalCotacao() {
-    // Garantir que o modal existe no body (acessível de itens e grupos)
     let modal = document.getElementById('modalCotacao');
     if (!modal) {
         modal = document.createElement('div');
@@ -3141,7 +3036,6 @@ async function abrirModalCotacao() {
         document.body.appendChild(modal);
     }
 
-    // Fornecedores disponíveis = marcas preenchidas nos itens do pregão atual
     const marcasNosItens = [...new Set(itens.filter(i => i.marca).map(i => i.marca))].sort();
     const select = document.getElementById('cotacaoFornecedor');
     if (select) {
@@ -3242,7 +3136,6 @@ function enviarCotacao() {
         return;
     }
     
-    // Definir itens para cotação
     let itensCotacao = itens;
     if (intervaloStr) {
         const numeros = parsearIntervalo(intervaloStr);
@@ -3269,7 +3162,6 @@ function enviarCotacao() {
     mensagem = mensagem.trim();
     const msgEncoded = encodeURIComponent(mensagem);
     
-    // Determinar meio pelo fornecedor encontrado
     const fornecedor = fornecedoresDisponiveis.find(f =>
         (f.nome || f.razao_social || f.name || '').toUpperCase() === marca.toUpperCase()
     );
@@ -3286,6 +3178,89 @@ function enviarCotacao() {
     fecharModalCotacao();
 }
 
+// Função para converter número por extenso
+function numeroPorExtenso(valor) {
+    if (valor === 0) return 'ZERO REAIS';
+    
+    const unidades = ['', 'UM', 'DOIS', 'TRÊS', 'QUATRO', 'CINCO', 'SEIS', 'SETE', 'OITO', 'NOVE'];
+    const dezenas = ['', 'DEZ', 'VINTE', 'TRINTA', 'QUARENTA', 'CINQUENTA', 'SESSENTA', 'SETENTA', 'OITENTA', 'NOVENTA'];
+    const especiais = ['ONZE', 'DOZE', 'TREZE', 'CATORZE', 'QUINZE', 'DEZESSEIS', 'DEZESSETE', 'DEZOITO', 'DEZENOVE'];
+    const centenas = ['', 'CENTO', 'DUZENTOS', 'TREZENTOS', 'QUATROCENTOS', 'QUINHENTOS', 'SEISCENTOS', 'SETECENTOS', 'OITOCENTOS', 'NOVECENTOS'];
+    
+    let inteiro = Math.floor(valor);
+    let centavos = Math.round((valor - inteiro) * 100);
+    
+    function converterTresDigitos(num) {
+        if (num === 0) return '';
+        if (num === 100) return 'CEM';
+        
+        let resultado = [];
+        let centena = Math.floor(num / 100);
+        let resto = num % 100;
+        
+        if (centena > 0) {
+            resultado.push(centenas[centena]);
+        }
+        
+        if (resto > 0) {
+            if (resto < 10) {
+                resultado.push(unidades[resto]);
+            } else if (resto < 20) {
+                resultado.push(especiais[resto - 11]);
+            } else {
+                let dezena = Math.floor(resto / 10);
+                let unidade = resto % 10;
+                if (dezena > 0) {
+                    resultado.push(dezenas[dezena]);
+                }
+                if (unidade > 0) {
+                    resultado.push(unidades[unidade]);
+                }
+            }
+        }
+        
+        return resultado.join(' E ');
+    }
+    
+    let partes = [];
+    
+    if (inteiro > 0) {
+        let milhares = Math.floor(inteiro / 1000);
+        let restante = inteiro % 1000;
+        
+        if (milhares > 0) {
+            if (milhares === 1) {
+                partes.push('MIL');
+            } else {
+                let milharTexto = converterTresDigitos(milhares);
+                partes.push(milharTexto + (milharTexto.endsWith('O') ? ' MIL' : ' MIL'));
+            }
+        }
+        
+        if (restante > 0) {
+            partes.push(converterTresDigitos(restante));
+        }
+        
+        let textoInteiro = partes.join(' E ');
+        if (inteiro === 1) {
+            textoInteiro = 'UM REAL';
+        } else {
+            textoInteiro += ' REAIS';
+        }
+        partes = [textoInteiro];
+    }
+    
+    if (centavos > 0) {
+        if (centavos === 1) {
+            partes.push('UM CENTAVO');
+        } else {
+            partes.push(converterTresDigitos(centavos) + ' CENTAVOS');
+        }
+    }
+    
+    return partes.join(' E ');
+}
+
 async function gerarPDFsProposta(comAssinatura = true) {
     fecharModalAssinatura();
     if (!currentPregaoId) {
@@ -3299,7 +3274,6 @@ async function gerarPDFsProposta(comAssinatura = true) {
         return;
     }
     
-    // Usar itens marcados como ganho
     const itensSelecionados = itens.filter(item => item.ganho);
     if (itensSelecionados.length === 0) {
         showToast('Marque ao menos um item (ganho) para gerar a proposta', 'error');
@@ -3326,7 +3300,6 @@ async function gerarPDFsProposta(comAssinatura = true) {
 }
 
 async function gerarPDFPropostaInterno(pregao, comAssinatura = true) {
-    // Buscar dados bancários do backend (protegidos)
     let dadosBancarios = null;
     try {
         const headers = { 'Accept': 'application/json' };
@@ -3487,19 +3460,19 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
             return yStart + (lines.length * lineH);
         };
         
-        // Rodapé em todas as páginas (empresa)
         const footerLines = [
             'I.R. COMÉRCIO E MATERIAIS ELÉTRICOS LTDA  |  CNPJ: 33.149.502/0001-38  |  IE: 083.780.74-2',
             'RUA TADORNA Nº 472, SALA 2, NOVO HORIZONTE – SERRA/ES  |  CEP: 29.163-318',
             'TELEFAX: (27) 3209-4291  |  E-MAIL: COMERCIAL.IRCOMERCIO@GMAIL.COM'
         ];
-        const footerLineH = 5;   // espaçamento entre linhas do rodapé (mm), igual ao lineHeight das declarações
+        const footerLineH = 5;
         const footerH = footerLines.length * footerLineH + 4;
+        
         function addFooter(docRef) {
             const totalPags = docRef.internal.getNumberOfPages();
             for (let pg = 1; pg <= totalPags; pg++) {
                 docRef.setPage(pg);
-                docRef.setFontSize(10);           // igual ao tamanho das declarações
+                docRef.setFontSize(10);
                 docRef.setFont(undefined, 'normal');
                 docRef.setTextColor(150, 150, 150);
                 const fyBase = pageHeight - footerH + 2;
@@ -3510,10 +3483,8 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
             }
         }
 
-        // Margem reservada para o rodapé (limita conteúdo da página)
         const footerMargin = footerH + 4;
         
-        // Título
         doc.setFontSize(18);
         doc.setFont(undefined, 'bold');
         doc.setTextColor(0, 0, 0);
@@ -3529,7 +3500,6 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
         doc.setFontSize(fs);
         doc.setTextColor(0, 0, 0);
         
-        // Destinatário — só mostra campos preenchidos
         doc.text('AO', margin, y);
         y += lineHeight + 1;
         if (pregao.nome_orgao) {
@@ -3547,7 +3517,6 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
             y = addPageWithHeader();
         }
         
-        // Utilitários de formatação
         const fmtValorPdf = (v, decimals = 2) => {
             return 'R$ ' + (v || 0).toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
         };
@@ -3570,7 +3539,6 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
         };
         const itemRowHeight = 10;
 
-        // Função para desenhar cabeçalho da tabela
         function desenharCabecalhoTabela() {
             doc.setFillColor(108, 117, 125);
             doc.setDrawColor(180, 180, 180);
@@ -3579,11 +3547,16 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
             doc.setFontSize(7.5);
             doc.setFont(undefined, 'bold');
             let xp = margin;
-            [['ITEM', colWidths.item], ['DESCRIÇÃO', colWidths.descricao], ['QTD', colWidths.qtd],
-             ['UN', colWidths.unid], ['MARCA', colWidths.marca], ['MODELO', colWidths.modelo],
-             ['VD. UNT', colWidths.vunt], ['VD. TOTAL', colWidths.total]].forEach(([lbl, w]) => {
+            [['ITEM', colWidths.item, 'center'],
+             ['DESCRIÇÃO', colWidths.descricao, 'left'],
+             ['QTD', colWidths.qtd, 'center'],
+             ['UN', colWidths.unid, 'center'],
+             ['MARCA', colWidths.marca, 'center'],
+             ['MODELO', colWidths.modelo, 'center'],
+             ['VD. UNT', colWidths.vunt, 'right'],
+             ['VD. TOTAL', colWidths.total, 'right']].forEach(([lbl, w, align]) => {
                 doc.line(xp, y, xp, y + itemRowHeight);
-                doc.text(lbl, xp + w / 2, y + 6.5, { align: 'center' });
+                doc.text(lbl, xp + w / 2, y + 6.5, { align: align === 'center' ? 'center' : align === 'left' ? 'left' : 'right' });
                 xp += w;
             });
             doc.line(xp, y, xp, y + itemRowHeight);
@@ -3593,7 +3566,6 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
             doc.setFont(undefined, 'normal');
         }
 
-        // Função para desenhar uma linha de item
         function desenharLinhaItem(item, rowIndex) {
             const descricaoUpper = toUpperCase(item.descricao);
             const descLines = doc.splitTextToSize(descricaoUpper, colWidths.descricao - 4);
@@ -3624,11 +3596,9 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
             xp += colWidths.marca; doc.line(xp, y, xp, y + rowH);
             let ymo = y + 4; modeloWrap.forEach(ml => { doc.text(ml, xp + colWidths.modelo/2, ymo, { align:'center' }); ymo += 3.5; });
             xp += colWidths.modelo; doc.line(xp, y, xp, y + rowH);
-            const vlns = doc.splitTextToSize(fmtUntPdf(item.venda_unt), colWidths.vunt - 2);
-            let yvu = y + 4; vlns.forEach(vl => { doc.text(vl, xp + colWidths.vunt/2, yvu, { align:'center' }); yvu += 3.5; });
+            doc.text(fmtUntPdf(item.venda_unt), xp + colWidths.vunt/2, cy, { align: 'center' });
             xp += colWidths.vunt; doc.line(xp, y, xp, y + rowH);
-            const vtlns = doc.splitTextToSize(fmtValorPdf(item.venda_total), colWidths.total - 2);
-            let yvt = y + 4; vtlns.forEach(vl => { doc.text(vl, xp + colWidths.total/2, yvt, { align:'center' }); yvt += 3.5; });
+            doc.text(fmtValorPdf(item.venda_total), xp + colWidths.total/2, cy, { align: 'center' });
             xp += colWidths.total; doc.line(xp, y, xp, y + rowH);
             y += rowH;
         }
@@ -3643,7 +3613,6 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
             y += 8;
         }
 
-        // MODO GRUPOS: uma tabela por grupo
         let totalFinalProposta = 0;
         if (gruposEstrutura) {
             doc.setFontSize(11); doc.setFont(undefined, 'bold');
@@ -3652,7 +3621,6 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
             let totalGeralGlobal = 0;
             gruposEstrutura.forEach(({ grupo, itens: iGrupo }) => {
                 if (paginaCheia(y, 30)) y = addPageWithHeader();
-                // Título do grupo
                 doc.setFontSize(10); doc.setFont(undefined, 'bold');
                 doc.text(`${grupo.tipo} ${grupo.numero}`, margin, y);
                 y += 6;
@@ -3663,7 +3631,6 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
                 desenharRodapeTabela(totalGrupo);
                 y += 6;
             });
-            // Total global final
             if (gruposEstrutura.length > 1) {
                 doc.setFillColor(80, 80, 80); doc.setFont(undefined, 'bold');
                 doc.setTextColor(255,255,255);
@@ -3675,7 +3642,6 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
             }
             totalFinalProposta = totalGeralGlobal;
         } else {
-            // MODO ITEM: tabela única
             doc.setFontSize(11); doc.setFont(undefined, 'bold');
             doc.text('ITENS DA PROPOSTA', margin, y);
             y += 6;
@@ -3683,7 +3649,6 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
             const itensSelecionados = itens.filter(item => item.ganho);
             itensSelecionados.forEach((item, index) => desenharLinhaItem(item, index));
             const totalGeral = itensSelecionados.reduce((acc, item) => acc + (item.venda_total || 0), 0);
-            // Rodapé de total removido da tabela — aparece só em VALOR TOTAL DA PROPOSTA
             totalFinalProposta = totalGeral;
         }
 
@@ -3693,7 +3658,6 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
             y = addPageWithHeader();
         }
         
-        // Condições — somente campos preenchidos
         doc.setFontSize(10);
         
         function addCampoCondicao(label, valor) {
@@ -3709,10 +3673,11 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
                 doc.text(linhas[i], margin, y);
                 y += lineHeight;
             }
+            y += 3; // Espaçamento extra entre campos
         }
 
-        // VALOR TOTAL — logo acima de VALIDADE DA PROPOSTA
-        addCampoCondicao('VALOR TOTAL DA PROPOSTA', fmtValorPdf(totalFinalProposta));
+        const valorExtenso = numeroPorExtenso(totalFinalProposta);
+        addCampoCondicao('VALOR TOTAL DA PROPOSTA', `${fmtValorPdf(totalFinalProposta)} (${valorExtenso})`);
 
         addCampoCondicao('VALIDADE DA PROPOSTA', pregao.validade_proposta);
         addCampoCondicao('PRAZO DE ENTREGA', pregao.prazo_entrega);
@@ -3728,7 +3693,6 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
             y = addPageWithHeader();
         }
         
-        // Declarações — uppercase, centralizadas, cada uma em linha separada
         doc.setFontSize(10);
         doc.setFont(undefined, 'normal');
         const declaracoes = [
@@ -3753,7 +3717,6 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
             y = addPageWithHeader();
         }
         
-        // Data atual
         const dataAtual = new Date();
         const dia = dataAtual.getDate();
         const meses = ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 
@@ -3768,7 +3731,6 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
         y += 5;
         
         if (comAssinatura) {
-            // Carregar e adicionar imagem da assinatura
             const assinatura = new Image();
             assinatura.crossOrigin = 'anonymous';
             assinatura.src = 'assinatura.png';
@@ -3815,7 +3777,6 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
         }
         
         function gerarPDFSemAssinatura() {
-            // Espaço em branco para assinatura manual/digital
             y += 20;
             doc.setDrawColor(0, 0, 0);
             doc.line(pageWidth / 2 - 40, y, pageWidth / 2 + 40, y);
