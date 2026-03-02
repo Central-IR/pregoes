@@ -654,7 +654,6 @@ thead {
 
 th {
     padding: 14px 16px;
-    text-align: left;
     font-weight: 600;
     color: var(--th-color);
     font-size: 0.8rem;
@@ -663,11 +662,59 @@ th {
     border-bottom: 1px solid var(--th-border);
 }
 
+/* Alinhamento específico para cabeçalhos */
+th {
+    text-align: left;
+}
+
+th[style*="text-align: center"],
+th:contains("ITEM"),
+th:contains("QTD"),
+th:contains("UN"),
+th:contains("UNIDADE"),
+th:contains("MARCA"),
+th:contains("MODELO"),
+th:contains("✓") {
+    text-align: center !important;
+}
+
+th:contains("DESCRIÇÃO") {
+    text-align: left !important;
+}
+
+th:contains("ESTIMADO"),
+th:contains("CUSTO"),
+th:contains("VENDA"),
+th:contains("COMPRA"),
+th[class*="valor"] {
+    text-align: right !important;
+}
+
 td {
     padding: 14px 16px;
     border-bottom: 1px solid var(--border-color);
     font-size: 0.9rem;
     color: var(--text-primary);
+}
+
+/* Alinhamento padrão das células */
+td {
+    text-align: center;
+}
+
+/* Exceção para célula de descrição - sempre à esquerda */
+td.descricao-cell,
+td[class*="descricao"] {
+    text-align: left !important;
+}
+
+/* Alinhamento de valores monetários à direita */
+td.valor-monetario,
+td[class*="valor"],
+td:contains("R$"),
+td:nth-child(8), td:nth-child(9), td:nth-child(10), 
+td:nth-child(11), td:nth-child(12), td:nth-child(13) {
+    text-align: right !important;
 }
 
 tbody tr {
@@ -1300,6 +1347,20 @@ tr.row-won:hover {
     background: rgba(34, 197, 94, 0.28) !important;
 }
 
+/* Item ganho - mesma cor dos pregões ganhos */
+tr.item-ganho {
+    background: rgba(34, 197, 94, 0.22) !important;
+}
+
+tr.item-ganho:hover {
+    background: rgba(34, 197, 94, 0.28) !important;
+}
+
+/* Garantir que a classe row-won também seja aplicada */
+tr.item-ganho.row-won {
+    background: rgba(34, 197, 94, 0.22) !important;
+}
+
 /* Botão Itens - VERDE */
 .btn-items {
     background: #22C55E !important;
@@ -1467,18 +1528,7 @@ tr.row-won:hover {
     max-width: 300px;
     word-wrap: break-word;
     white-space: normal;
-}
-
-tr.item-ganho {
-    background: rgba(34, 197, 94, 0.22) !important;
-}
-
-tr.item-ganho:hover {
-    background: rgba(34, 197, 94, 0.28) !important;
-}
-
-tr.item-ganho.row-won {
-    background: rgba(34, 197, 94, 0.22) !important;
+    text-align: left !important;
 }
 
 /* Botões acima da tabela de itens */
@@ -1645,12 +1695,6 @@ tr.item-ganho.row-won {
     color: #111;
     border: 1px solid rgba(30, 30, 30, 0.2);
 }
-/* SUSPENSO */
-.status-badge.suspended, .status-badge-suspended {
-    background: rgba(107, 114, 128, 0.12);
-    color: #4b5563;
-    border: 1px solid rgba(107, 114, 128, 0.3);
-}
 /* DEFAULT */
 .status-badge.default, .status-badge-default {
     background: rgba(107, 114, 128, 0.08);
@@ -1672,4 +1716,21 @@ tr.row-venda-alta {
 }
 tr.row-venda-alta:hover {
     background: rgba(239, 68, 68, 0.14) !important;
+}
+
+/* Alinhamento específico para tabelas de grupos */
+#gruposWrapper table td {
+    text-align: center;
+}
+
+#gruposWrapper table td.descricao-cell,
+#gruposWrapper table td:contains("DESCRIÇÃO") {
+    text-align: left !important;
+}
+
+#gruposWrapper table td:nth-child(7),
+#gruposWrapper table td:nth-child(8),
+#gruposWrapper table td:nth-child(9),
+#gruposWrapper table td:nth-child(10) {
+    text-align: right !important;
 }
