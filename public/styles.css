@@ -1470,11 +1470,11 @@ tr.row-won:hover {
 }
 
 tr.item-ganho {
-    background: rgba(34, 197, 94, 0.08) !important;
+    background: rgba(34, 197, 94, 0.22) !important;
 }
 
 tr.item-ganho:hover {
-    background: rgba(34, 197, 94, 0.12) !important;
+    background: rgba(34, 197, 94, 0.28) !important;
 }
 
 /* Botões acima da tabela de itens */
