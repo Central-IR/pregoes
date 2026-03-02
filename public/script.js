@@ -95,7 +95,7 @@ async function checkServerStatus() {
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
         const response = await fetch(`${API_URL}/pregoes`, {
-            method: 'GET',
+            method: 'HEAD',
             headers: headers,
             mode: 'cors',
             signal: controller.signal
@@ -363,8 +363,7 @@ function displayPregoes(pregoesToDisplay) {
     container.innerHTML = pregoesToDisplay.map(pregao => {
         const statusClass = pregao.status === 'GANHO' ? 'success' : 
                            pregao.status === 'ABERTO' ? 'warning' :
-                           pregao.status === 'OCORRIDO' ? 'danger' :
-                           pregao.status === 'SUSPENSO' ? 'suspended' : 'default';
+                           pregao.status === 'OCORRIDO' ? 'danger' : 'default';
         
         const rowClass = pregao.ganho ? 'row-won' : '';
         const checked = pregao.ganho ? 'checked' : '';
@@ -461,7 +460,10 @@ async function toggleGanho(id, ganho) {
         if (!response.ok) throw new Error('Erro ao atualizar');
         
         updateDisplay();
-        showToast(ganho ? 'Pregão marcado como ganho' : 'Marcação removida', 'success');
+        const mensagem = ganho 
+            ? `Pregão ${pregao.numero_pregao} ganho` 
+            : 'Marcação removida';
+        showToast(mensagem, ganho ? 'success' : 'error');
     } catch (error) {
         console.error('Erro:', error);
         if (error.name === 'AbortError') {
@@ -484,11 +486,12 @@ function openFormModal() {
     setupUpperCaseInputs();
 }
 
-function closeFormModal() {
-    const wasEditing = !!editingId;
+function closeFormModal(showCancelMessage = true) {
     document.getElementById('formModal').classList.remove('show');
     resetForm();
-    showToast('Registro cancelado', 'error');
+    if (showCancelMessage) {
+        showToast('Registro cancelado', 'error');
+    }
 }
 
 function resetForm() {
@@ -504,8 +507,6 @@ function resetForm() {
     document.getElementById('prazoEntrega').value = '';
     document.getElementById('prazoPagamento').value = '';
     document.getElementById('banco').value = '';
-    const dpEl = document.getElementById('disputaPor');
-    if (dpEl) dpEl.value = 'ITEM';
     
     // Reset telefones
     document.getElementById('telefonesContainer').innerHTML = `
@@ -668,14 +669,13 @@ async function salvarPregao() {
         prazo_pagamento: toUpperCase(document.getElementById('prazoPagamento').value) || null,
         detalhes: detalhes,
         banco: document.getElementById('banco').value || null,
-        disputa_por: (document.getElementById('disputaPor')?.value || 'ITEM'),
         status: 'ABERTO',
         ganho: false
     };
     
     if (!isOnline) {
         showToast('Sistema offline', 'error');
-        closeFormModal();
+        closeFormModal(false);
         return;
     }
     
@@ -722,8 +722,12 @@ async function salvarPregao() {
             throw new Error(errorMessage);
         }
 
-        showToast('Pregão salvo com sucesso', 'success');
-        closeFormModal();
+        const savedPregao = await response.json();
+        const mensagem = editingId 
+            ? `Pregão ${savedPregao.numero_pregao} atualizado` 
+            : `Pregão ${savedPregao.numero_pregao} registrado`;
+        showToast(mensagem, 'success');
+        closeFormModal(false);
         await loadPregoes();
     } catch (error) {
         console.error('Erro completo:', error);
@@ -755,8 +759,6 @@ async function editPregao(id) {
     document.getElementById('prazoEntrega').value = pregao.prazo_entrega || '';
     document.getElementById('prazoPagamento').value = pregao.prazo_pagamento || '';
     document.getElementById('banco').value = pregao.banco || '';
-    const dpEl2 = document.getElementById('disputaPor');
-    if (dpEl2) dpEl2.value = pregao.disputa_por || 'ITEM';
     
     // Carregar telefones
     const telefonesContainer = document.getElementById('telefonesContainer');
@@ -831,7 +833,6 @@ function viewPregao(id) {
             <p><strong>Responsável:</strong> ${pregao.responsavel}</p>
             <p><strong>Data:</strong> ${pregao.data ? new Date(pregao.data + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</p>
             <p><strong>Hora:</strong> ${pregao.hora || '-'}</p>
-            <p><strong>Disputa por:</strong> ${pregao.disputa_por || 'ITEM'}</p>
             <p><strong>Status:</strong> <span class="status-badge ${pregao.status === 'GANHO' ? 'success' : pregao.status === 'ABERTO' ? 'warning' : pregao.status === 'OCORRIDO' ? 'danger' : 'default'}">${pregao.status}</span></p>
         </div>
     `;
@@ -970,17 +971,6 @@ async function confirmarExclusao() {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-        // Primeiro excluir os itens do pregão
-        try {
-            await fetch(`${API_URL}/pregoes/${deleteId}/itens/delete-all`, {
-                method: 'DELETE',
-                headers: headers,
-                mode: 'cors'
-            });
-        } catch(e) {
-            // Se não houver rota delete-all, continua mesmo assim (ON DELETE CASCADE no DB)
-        }
-
         const response = await fetch(`${API_URL}/pregoes/${deleteId}`, {
             method: 'DELETE',
             headers: headers,
@@ -998,10 +988,11 @@ async function confirmarExclusao() {
 
         if (!response.ok) throw new Error('Erro ao deletar');
 
+        const pregaoExcluido = pregoes.find(p => p.id === deleteId);
         pregoes = pregoes.filter(p => p.id !== deleteId);
         lastDataHash = JSON.stringify(pregoes.map(p => p.id));
         updateDisplay();
-        showToast('Item excluído', 'error');
+        showToast(`Pregão ${pregaoExcluido?.numero_pregao} excluído`, 'error');
     } catch (error) {
         console.error('Erro ao deletar:', error);
         if (error.name === 'AbortError') {
@@ -1025,7 +1016,6 @@ async function openItems(id) {
         await carregarItens(id);
     }
 }
-
 
 // ============================================
 // GESTÃO DE ITENS DO PREGÃO
@@ -1062,10 +1052,6 @@ function voltarPregoes() {
     currentPregaoId = null;
     itens = [];
 }
-
-// ============================================
-// GESTÃO DE GRUPOS DO PREGÃO (Disputa por Grupo)
-// ============================================
 
 // ============================================================
 // ESTADO DOS GRUPOS
@@ -2189,8 +2175,6 @@ async function gerarPDFDeclaracao(comAssinatura) {
     logoImg.onerror = () => desenharDeclaracao(false);
 }
 
-// switchItemsView removido (botões Proposta/Exequibilidade removidos)
-
 async function carregarItens(pregaoId) {
     if (!isOnline) return;
     
@@ -2473,6 +2457,7 @@ function payloadItemSeguro(fields) {
         ...(fields.grupo_numero !== undefined ? { grupo_numero: fields.grupo_numero } : {})
     };
 }
+
 async function adicionarItem() {
     const numero = itens.length > 0 ? Math.max(...itens.map(i => i.numero)) + 1 : 1;
     const novoItem = payloadItemSeguro({
@@ -2517,7 +2502,7 @@ function confirmarAdicionarIntervalo() {
 }
 
 async function adicionarIntervalo(intervalo) {
-    const numeros = [];
+    let numeros = [];
     const partes = intervalo.split(',').map(p => p.trim());
     
     for (const parte of partes) {
@@ -2660,8 +2645,6 @@ async function excluirItensSelecionados() {
         showToast('Selecione itens para excluir', 'error');
         return;
     }
-    
-    // sem confirmação — exclusão direta
     
     try {
         const headers = {
@@ -2883,26 +2866,26 @@ function criarModalItem() {
                             </div>
                             <div class="form-group" style="margin:0;">
                                 <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">Venda UNT</label>
-                                <input type="number" id="itemVendaUnt" step="any" min="0" readonly
-                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box; opacity:0.75;">
+                                <input type="number" id="itemVendaUnt" step="any" min="0"
+                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box;">
                             </div>
                         </div>
                         <!-- Linha 3: Compra Total | Custo Total | Venda Total -->
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
                             <div class="form-group" style="margin:0;">
                                 <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">Compra Total</label>
-                                <input type="number" id="itemEstimadoTotal" step="any" min="0" readonly
-                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box; opacity:0.75;">
+                                <input type="number" id="itemEstimadoTotal" step="any" min="0"
+                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box;">
                             </div>
                             <div class="form-group" style="margin:0;">
                                 <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">Custo Total</label>
-                                <input type="number" id="itemCustoTotal" step="any" min="0" readonly
-                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box; opacity:0.75;">
+                                <input type="number" id="itemCustoTotal" step="any" min="0"
+                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box;">
                             </div>
                             <div class="form-group" style="margin:0;">
                                 <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">Venda Total</label>
-                                <input type="number" id="itemVendaTotal" step="any" min="0" readonly
-                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box; opacity:0.75;">
+                                <input type="number" id="itemVendaTotal" step="any" min="0"
+                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box;">
                             </div>
                         </div>
                     </div>
@@ -2921,33 +2904,40 @@ function criarModalItem() {
 }
 
 function calcularValoresItem() {
-    const q = parseFloat(document.getElementById('itemQtd')?.value || 0);
-    const eu = parseFloat(document.getElementById('itemEstimadoUnt')?.value || 0);
-    const cu = parseFloat(document.getElementById('itemCustoUnt')?.value || 0);
-    const perc = parseFloat(document.getElementById('itemPorcentagem')?.value || 0);
+    const q = parseFloat(document.getElementById('itemQtd')?.value) || 0;
+    const eu = parseFloat(document.getElementById('itemEstimadoUnt')?.value) || 0;
+    const cu = parseFloat(document.getElementById('itemCustoUnt')?.value) || 0;
+    const perc = parseFloat(document.getElementById('itemPorcentagem')?.value) || 0;
     
+    // Calcular totais
+    const estimadoTotal = q * eu;
+    const custoTotal = q * cu;
+    
+    // CORREÇÃO: venda_unt = custo_unt * (1 + porcentagem/100)
+    // Se porcentagem = 149% (1.49), então venda_unt = cu * 2.49
+    const vendaUnt = cu * (1 + perc / 100);
+    const vendaTotal = vendaUnt * q;
+    
+    // Atualizar campos
     const etEl = document.getElementById('itemEstimadoTotal');
     const ctEl = document.getElementById('itemCustoTotal');
     const vuEl = document.getElementById('itemVendaUnt');
     const vtEl = document.getElementById('itemVendaTotal');
     
-    if (etEl) etEl.value = (q * eu).toFixed(2);
-    if (ctEl) ctEl.value = (q * cu).toFixed(2);
-    const vu = cu * (1 + perc / 100);
-    // UNT: mostrar até 6 casas decimais sem zeros trailing
+    if (etEl) etEl.value = estimadoTotal.toFixed(2);
+    if (ctEl) ctEl.value = custoTotal.toFixed(2);
     if (vuEl) {
-        const vuStr = vu.toFixed(6).replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
-        vuEl.value = vuStr || '0';
+        // Mostrar com até 4 casas decimais, sem zeros desnecessários
+        vuEl.value = vendaUnt.toFixed(4).replace(/\.?0+$/, '');
     }
-    if (vtEl) vtEl.value = (vu * q).toFixed(2);
+    if (vtEl) vtEl.value = vendaTotal.toFixed(2);
 }
 
 function configurarCalculosAutomaticos() {
-    // Usar delegação de eventos no modal — sem clonar elementos
     const modal = document.getElementById('modalItem');
     if (!modal) return;
     
-    // Remove listener anterior se existir
+    // Remover listener anterior se existir
     if (modal._calcListener) {
         modal.removeEventListener('input', modal._calcListener);
     }
@@ -2955,11 +2945,24 @@ function configurarCalculosAutomaticos() {
     modal._calcListener = function(e) {
         const ids = ['itemQtd', 'itemEstimadoUnt', 'itemCustoUnt', 'itemPorcentagem'];
         if (ids.includes(e.target.id)) {
-            calcularValoresItem();
+            // Usar requestAnimationFrame para garantir que o cálculo ocorra após a atualização do valor
+            requestAnimationFrame(() => {
+                calcularValoresItem();
+            });
         }
     };
     
     modal.addEventListener('input', modal._calcListener);
+    
+    // Também calcular ao perder o foco dos campos (garantia)
+    const inputs = ['itemQtd', 'itemEstimadoUnt', 'itemCustoUnt', 'itemPorcentagem'];
+    inputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.removeEventListener('blur', calcularValoresItem);
+            el.addEventListener('blur', calcularValoresItem);
+        }
+    });
 }
     
 function navegarItemAnterior() {
@@ -3229,8 +3232,6 @@ async function selecionarFornecedorCotacao() {
         showToast('Fornecedor não encontrado', 'error');
     }
 }
-
-// atualizarPreviewCotacao e parsearIntervaloNumerosLista removidos (sem preview no modal de cotação)
 
 function enviarCotacao() {
     const marca = document.getElementById('cotacaoFornecedor').value;
