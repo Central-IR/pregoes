@@ -395,6 +395,12 @@ function displayPregoes(pregoesToDisplay) {
                     <button class="action-btn view" onclick="viewPregao('${pregao.id}')" title="Visualizar">Ver</button>
                     <button class="action-btn edit" onclick="editPregao('${pregao.id}')" title="Editar">Editar</button>
                     <button class="action-btn btn-items" onclick="openItems('${pregao.id}')" title="${pregao.disputa_por === 'GRUPO' ? 'Grupos' : 'Itens'}">${pregao.disputa_por === 'GRUPO' ? 'Grupos' : 'Itens'}</button>
+                    <button class="action-btn btn-certificate" onclick="abrirModalExequibilidade('${pregao.id}')" title="Comprovante de Exequibilidade">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                        </svg>
+                        Comprovante
+                    </button>
                     <button class="action-btn delete" onclick="openDeleteModal('${pregao.id}')" title="Excluir">Excluir</button>
                 </td>
             </tr>
@@ -406,7 +412,7 @@ function displayPregoes(pregoesToDisplay) {
 async function toggleGanho(id, ganho) {
     if (!isOnline) {
         showToast('Sistema offline. Não foi possível atualizar.', 'error');
-        loadPregoes(); // Recarregar para reverter visualmente
+        loadPregoes();
         return;
     }
 
@@ -418,7 +424,6 @@ async function toggleGanho(id, ganho) {
         if (ganho) {
             pregao.status = 'GANHO';
         } else {
-            // Se desmarcar, volta para ABERTO ou OCORRIDO
             const hoje = new Date();
             hoje.setHours(0, 0, 0, 0);
             const dataPregao = new Date(pregao.data + 'T00:00:00');
@@ -471,7 +476,7 @@ async function toggleGanho(id, ganho) {
         } else {
             showToast('Erro ao atualizar status', 'error');
         }
-        loadPregoes(); // Recarregar dados em caso de erro
+        loadPregoes();
     }
 }
 
@@ -509,7 +514,6 @@ function resetForm() {
     document.getElementById('banco').value = '';
     document.getElementById('disputaPor').value = 'ITEM';
     
-    // Reset telefones
     document.getElementById('telefonesContainer').innerHTML = `
         <div class="input-with-button">
             <input type="text" class="telefone-input" placeholder="TELEFONE">
@@ -517,7 +521,6 @@ function resetForm() {
         </div>
     `;
     
-    // Reset emails
     document.getElementById('emailsContainer').innerHTML = `
         <div class="input-with-button">
             <input type="email" class="email-input" placeholder="E-MAIL">
@@ -525,14 +528,12 @@ function resetForm() {
         </div>
     `;
     
-    // Reset detalhes
     detalhes = [];
     document.querySelectorAll('.detalhe-item').forEach(item => {
         item.classList.remove('selected');
     });
 }
 
-// Telefones
 function addTelefone() {
     const container = document.getElementById('telefonesContainer');
     const div = document.createElement('div');
@@ -556,7 +557,6 @@ function getTelefones() {
         .filter(value => value !== '');
 }
 
-// E-mails
 function addEmail() {
     const container = document.getElementById('emailsContainer');
     const div = document.createElement('div');
@@ -579,7 +579,6 @@ function getEmails() {
         .filter(value => value !== '');
 }
 
-// Detalhes
 function toggleDetalhe(element, nome) {
     element.classList.toggle('selected');
     const index = detalhes.indexOf(nome);
@@ -590,7 +589,6 @@ function toggleDetalhe(element, nome) {
     }
 }
 
-// Navegação de abas do formulário
 function switchTab(tabId) {
     tabs.forEach((tab, index) => {
         document.getElementById(tab).classList.remove('active');
@@ -611,18 +609,13 @@ function updateNavigationButtons() {
     const btnCancel = document.getElementById('btnCancel');
     const btnSave = document.getElementById('btnSave');
     
-    // Anterior: visível apenas se não for a primeira aba
     btnPrevious.style.display = currentTab === 0 ? 'none' : 'inline-block';
-    
-    // Cancelar: sempre visível
     btnCancel.style.display = 'inline-block';
     
     if (currentTab === tabs.length - 1) {
-        // Última aba: esconder Próximo, mostrar Salvar
         btnNext.style.display = 'none';
         btnSave.style.display = 'inline-block';
     } else {
-        // Outras abas: mostrar Próximo, esconder Salvar
         btnNext.style.display = 'inline-block';
         btnSave.style.display = 'none';
     }
@@ -642,7 +635,6 @@ function previousTab() {
     }
 }
 
-// Salvar pregão
 async function salvarPregao() {
     const dataPregao = document.getElementById('dataPregao').value;
     const numeroPregao = toUpperCase(document.getElementById('numeroPregao').value);
@@ -741,7 +733,6 @@ async function salvarPregao() {
     }
 }
 
-// Editar pregão
 async function editPregao(id) {
     editingId = id;
     const pregao = pregoes.find(p => p.id === id);
@@ -763,7 +754,6 @@ async function editPregao(id) {
     document.getElementById('banco').value = pregao.banco || '';
     document.getElementById('disputaPor').value = pregao.disputa_por || 'ITEM';
     
-    // Carregar telefones
     const telefonesContainer = document.getElementById('telefonesContainer');
     telefonesContainer.innerHTML = '';
     if (pregao.telefones && pregao.telefones.length > 0) {
@@ -785,7 +775,6 @@ async function editPregao(id) {
         `;
     }
     
-    // Carregar emails
     const emailsContainer = document.getElementById('emailsContainer');
     emailsContainer.innerHTML = '';
     if (pregao.emails && pregao.emails.length > 0) {
@@ -807,7 +796,6 @@ async function editPregao(id) {
         `;
     }
     
-    // Carregar detalhes
     detalhes = pregao.detalhes || [];
     document.querySelectorAll('.detalhe-item').forEach(item => {
         item.classList.remove('selected');
@@ -823,14 +811,12 @@ async function editPregao(id) {
     setupUpperCaseInputs();
 }
 
-// MODAL DE VISUALIZAÇÃO
 function viewPregao(id) {
     const pregao = pregoes.find(p => p.id === id);
     if (!pregao) return;
     
     document.getElementById('modalNumero').textContent = pregao.numero_pregao;
     
-    // Aba Geral
     document.getElementById('info-tab-geral').innerHTML = `
         <div class="info-section">
             <p><strong>Responsável:</strong> ${pregao.responsavel}</p>
@@ -841,7 +827,6 @@ function viewPregao(id) {
         </div>
     `;
     
-    // Aba Órgão
     document.getElementById('info-tab-orgao').innerHTML = `
         <div class="info-section">
             <p><strong>Nº Pregão:</strong> ${pregao.numero_pregao}</p>
@@ -852,7 +837,6 @@ function viewPregao(id) {
         </div>
     `;
     
-    // Aba Contato
     const telefonesHtml = pregao.telefones && pregao.telefones.length > 0 
         ? pregao.telefones.map(t => `<p>• ${t}</p>`).join('') 
         : '<p>-</p>';
@@ -871,7 +855,6 @@ function viewPregao(id) {
         </div>
     `;
     
-    // Aba Prazos
     document.getElementById('info-tab-prazos').innerHTML = `
         <div class="info-section">
             <p><strong>Validade da Proposta:</strong> ${pregao.validade_proposta || '-'}</p>
@@ -880,7 +863,6 @@ function viewPregao(id) {
         </div>
     `;
     
-    // Aba Detalhes
     const detalhesHtml = pregao.detalhes && pregao.detalhes.length > 0 
         ? pregao.detalhes.map(d => `<p>✓ ${d}</p>`).join('') 
         : '<p>Nenhum detalhe selecionado</p>';
@@ -905,7 +887,6 @@ function closeInfoModal() {
     document.getElementById('infoModal').classList.remove('show');
 }
 
-// Navegação de abas do modal de visualização
 function switchInfoTab(tabId) {
     infoTabs.forEach((tab, index) => {
         document.getElementById(tab).classList.remove('active');
@@ -944,7 +925,6 @@ function previousInfoTab() {
     }
 }
 
-// MODAL DE DELETE
 function openDeleteModal(id) {
     deleteId = id;
     document.getElementById('deleteModal').classList.add('show');
@@ -1007,7 +987,6 @@ async function confirmarExclusao() {
     }
 }
 
-// Abrir tela de itens
 async function openItems(id) {
     currentPregaoId = id;
     const pregao = pregoes.find(p => p.id === id);
@@ -1015,10 +994,494 @@ async function openItems(id) {
     
     if (disputa === 'GRUPO') {
         mostrarTelaGrupos();
+        await carregarGrupos();
     } else {
         mostrarTelaItens();
         await carregarItens(id);
     }
+}
+
+// ============================================
+// COMPROVANTE DE EXEQUIBILIDADE
+// ============================================
+
+let exequibilidadeData = {
+    intervalo: '',
+    impostoFederal: 9.7,
+    freteVenda: 5,
+    freteCompra: 0
+};
+
+function abrirModalExequibilidade(pregaoId) {
+    currentPregaoId = pregaoId;
+    
+    let modal = document.getElementById('modalExequibilidade');
+    if (!modal) {
+        modal = criarModalExequibilidade();
+        document.body.appendChild(modal);
+    }
+    
+    // Resetar valores padrão
+    document.getElementById('exeIntervalo').value = '';
+    document.getElementById('exeImpostoFederal').value = '9.7';
+    document.getElementById('exeFreteVenda').value = '5';
+    document.getElementById('exeFreteCompra').value = '0';
+    
+    modal.classList.add('show');
+}
+
+function fecharModalExequibilidade() {
+    const modal = document.getElementById('modalExequibilidade');
+    if (modal) modal.classList.remove('show');
+}
+
+function criarModalExequibilidade() {
+    const modal = document.createElement('div');
+    modal.id = 'modalExequibilidade';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Comprovante de Exequibilidade</h3>
+                <button class="close-modal" onclick="fecharModalExequibilidade()">✕</button>
+            </div>
+            
+            <div class="tabs-container">
+                <div class="tabs-nav">
+                    <button class="tab-btn active" onclick="switchExeTab('exe-tab-geral')">Geral</button>
+                    <button class="tab-btn" onclick="switchExeTab('exe-tab-valores')">Valores</button>
+                </div>
+                
+                <div class="tab-content active" id="exe-tab-geral">
+                    <div class="form-grid">
+                        <div class="form-group" style="grid-column: 1/-1;">
+                            <label>Intervalo de Itens <span style="color:var(--text-secondary);font-weight:400;">(ex: 1-5, 10, 15-20 ou deixe vazio para todos)</span></label>
+                            <input type="text" id="exeIntervalo" placeholder="Ex: 1-5, 10, 15-20">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="exe-tab-valores">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Imposto Federal (%)</label>
+                            <input type="number" id="exeImpostoFederal" step="0.1" min="0" max="100" value="9.7">
+                        </div>
+                        <div class="form-group">
+                            <label>Frete Venda (%)</label>
+                            <input type="number" id="exeFreteVenda" step="0.1" min="0" max="100" value="5">
+                        </div>
+                        <div class="form-group">
+                            <label>Frete Compra (R$)</label>
+                            <input type="number" id="exeFreteCompra" step="0.01" min="0" value="0">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" id="btnExePrev" class="secondary" style="display: none;" onclick="prevExeTab()">Anterior</button>
+                <button type="button" id="btnExeNext" class="secondary" onclick="nextExeTab()">Próximo</button>
+                <button type="button" id="btnExeGerar" class="success" style="display: none;" onclick="gerarComprovanteExequibilidade()">Gerar Comprovante</button>
+                <button type="button" class="danger" onclick="fecharModalExequibilidade()">Cancelar</button>
+            </div>
+        </div>
+    `;
+    return modal;
+}
+
+const exeTabs = ['exe-tab-geral', 'exe-tab-valores'];
+let currentExeTab = 0;
+
+function switchExeTab(tabId) {
+    const allTabs = document.querySelectorAll('#modalExequibilidade .tab-content');
+    const allBtns = document.querySelectorAll('#modalExequibilidade .tab-btn');
+    allTabs.forEach(t => t.classList.remove('active'));
+    allBtns.forEach(b => b.classList.remove('active'));
+    const active = document.getElementById(tabId);
+    if (active) active.classList.add('active');
+    currentExeTab = exeTabs.indexOf(tabId);
+    const idx = currentExeTab;
+    if (allBtns[idx]) allBtns[idx].classList.add('active');
+    const isLast = idx === exeTabs.length - 1;
+    const prev = document.getElementById('btnExePrev');
+    const next = document.getElementById('btnExeNext');
+    const gerar = document.getElementById('btnExeGerar');
+    if (prev) prev.style.display = idx === 0 ? 'none' : 'inline-block';
+    if (next) next.style.display = isLast ? 'none' : 'inline-block';
+    if (gerar) gerar.style.display = isLast ? 'inline-block' : 'none';
+}
+
+function nextExeTab() {
+    if (currentExeTab < exeTabs.length - 1) {
+        currentExeTab++;
+        switchExeTab(exeTabs[currentExeTab]);
+    }
+}
+
+function prevExeTab() {
+    if (currentExeTab > 0) {
+        currentExeTab--;
+        switchExeTab(exeTabs[currentExeTab]);
+    }
+}
+
+async function gerarComprovanteExequibilidade() {
+    const intervalo = document.getElementById('exeIntervalo').value.trim();
+    const impostoFederal = parseFloat(document.getElementById('exeImpostoFederal').value) || 9.7;
+    const freteVenda = parseFloat(document.getElementById('exeFreteVenda').value) || 5;
+    const freteCompra = parseFloat(document.getElementById('exeFreteCompra').value) || 0;
+    
+    fecharModalExequibilidade();
+    
+    const pregao = pregoes.find(p => p.id === currentPregaoId);
+    if (!pregao) {
+        showToast('Erro: Pregão não encontrado', 'error');
+        return;
+    }
+    
+    // Filtrar itens pelo intervalo
+    let itensFiltrados = [...itens];
+    if (intervalo) {
+        const numeros = parsearIntervalo(intervalo);
+        if (numeros) {
+            itensFiltrados = itens.filter(item => numeros.includes(item.numero));
+        }
+    }
+    
+    if (itensFiltrados.length === 0) {
+        showToast('Nenhum item encontrado no intervalo informado', 'error');
+        return;
+    }
+    
+    // Buscar dados bancários
+    let dadosBancarios = null;
+    try {
+        const headers = { 'Accept': 'application/json' };
+        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        const response = await fetch(`${API_URL}/pregoes/${currentPregaoId}/dados-bancarios`, {
+            method: 'GET',
+            headers: headers
+        });
+        if (response.ok) {
+            const data = await response.json();
+            dadosBancarios = data.dados_bancarios;
+        }
+    } catch (error) {
+        console.error('Erro ao buscar dados bancários:', error);
+    }
+    
+    if (typeof window.jspdf === 'undefined') {
+        showToast('Erro: Biblioteca PDF não carregou. Recarregue a página (F5).', 'error');
+        return;
+    }
+    
+    gerarPDFExequibilidade(pregao, itensFiltrados, dadosBancarios, impostoFederal, freteVenda, freteCompra);
+}
+
+function gerarPDFExequibilidade(pregao, itensExe, dadosBancarios, impostoFederal, freteVenda, freteCompra) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    let y = 3;
+    const margin = 15;
+    const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
+    const lineHeight = 5;
+    const maxWidth = pageWidth - (2 * margin);
+    const footerMargin = 30;
+    
+    // Função para adicionar cabeçalho com logo
+    function adicionarCabecalho() {
+        const logoHeaderImg = new Image();
+        logoHeaderImg.crossOrigin = 'anonymous';
+        logoHeaderImg.src = 'I.R.-COMERCIO-E-MATERIAIS-ELETRICOS-LTDA-PDF.png';
+        
+        try {
+            const logoWidth = 40;
+            const logoHeight = 15;
+            const logoX = 5;
+            const headerY = 3;
+            
+            doc.setGState(new doc.GState({ opacity: 0.3 }));
+            doc.addImage(logoHeaderImg, 'PNG', logoX, headerY, logoWidth, logoHeight);
+            doc.setGState(new doc.GState({ opacity: 1.0 }));
+            
+            doc.setFontSize(8);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(150, 150, 150);
+            const textX = logoX + logoWidth + 1.2;
+            doc.text('I.R COMÉRCIO E', textX, headerY + 5);
+            doc.text('MATERIAIS ELÉTRICOS LTDA', textX, headerY + 10);
+            doc.setTextColor(0, 0, 0);
+            
+            return headerY + logoHeight + 8;
+        } catch (e) {
+            return 20;
+        }
+    }
+    
+    function addPageWithHeader() {
+        doc.addPage();
+        return adicionarCabecalho();
+    }
+    
+    function paginaCheia(yAtual, espaco = 40) {
+        return yAtual > pageHeight - footerMargin - espaco;
+    }
+    
+    // Rodapé
+    const footerLines = [
+        'I.R. COMÉRCIO E MATERIAIS ELÉTRICOS LTDA  |  CNPJ: 33.149.502/0001-38  |  IE: 083.780.74-2',
+        'RUA TADORNA Nº 472, SALA 2, NOVO HORIZONTE – SERRA/ES  |  CEP: 29.163-318',
+        'TELEFAX: (27) 3209-4291  |  E-MAIL: COMERCIAL.IRCOMERCIO@GMAIL.COM'
+    ];
+    const footerLineH = 5;
+    const footerH = footerLines.length * footerLineH + 4;
+    
+    function addFooter(docRef) {
+        const totalPags = docRef.internal.getNumberOfPages();
+        for (let pg = 1; pg <= totalPags; pg++) {
+            docRef.setPage(pg);
+            docRef.setFontSize(8);
+            docRef.setFont(undefined, 'normal');
+            docRef.setTextColor(150, 150, 150);
+            const fyBase = pageHeight - footerH + 2;
+            footerLines.forEach((line, i) => {
+                docRef.text(line, pageWidth / 2, fyBase + (i * footerLineH), { align: 'center' });
+            });
+            docRef.setTextColor(0, 0, 0);
+        }
+    }
+    
+    // Título
+    y = adicionarCabecalho();
+    y += 5;
+    
+    doc.setFontSize(16);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(0, 0, 0);
+    doc.text('TABELA DE CUSTOS E FORMAÇÃO DE PREÇOS', pageWidth / 2, y, { align: 'center' });
+    
+    y += 8;
+    doc.setFontSize(12);
+    doc.text(`${pregao.numero_pregao}${pregao.uasg ? ' - ' + pregao.uasg : ''}`, pageWidth / 2, y, { align: 'center' });
+    
+    y += 12;
+    
+    // DADOS 1 - Informações do Processo
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'bold');
+    doc.text('INFORMAÇÕES DO PROCESSO', margin, y);
+    y += 6;
+    doc.setFont(undefined, 'normal');
+    doc.text(`PREGÃO: ${pregao.numero_pregao}`, margin, y);
+    y += 5;
+    doc.text(`ÓRGÃO: ${pregao.nome_orgao || 'NÃO INFORMADO'} - ${pregao.uasg || ''}`, margin, y);
+    y += 5;
+    doc.text(`${pregao.municipio || ''} - ${pregao.uf || ''}`, margin, y);
+    y += 10;
+    
+    // DADOS 2 - Informações da Empresa
+    doc.setFont(undefined, 'bold');
+    doc.text('INFORMAÇÕES DA EMPRESA', margin, y);
+    y += 6;
+    doc.setFont(undefined, 'normal');
+    doc.text('FORNECEDOR: I.R. COMÉRCIO E MATERIAIS ELÉTRICOS LTDA', margin, y);
+    doc.text('TEL: (27) 3209-4291', pageWidth - margin - 50, y, { align: 'right' });
+    y += 5;
+    doc.text('CNPJ/CPF: 33.149.502/0001-38', margin, y);
+    y += 5;
+    doc.text('ENDEREÇO: RUA TADORNA, Nº 472, SALA 2', margin, y);
+    y += 5;
+    doc.text('BAIRRO: NOVO HORIZONTE', margin, y);
+    y += 5;
+    doc.text(`CIDADE: SERRA      UF: ES`, margin, y);
+    doc.text(`CEP: 29.163-318`, pageWidth - margin - 30, y, { align: 'right' });
+    y += 5;
+    if (dadosBancarios) {
+        doc.text(`DADOS BANCÁRIOS: ${dadosBancarios}`, margin, y);
+        y += 5;
+    }
+    y += 5;
+    
+    if (paginaCheia(y, 80)) y = addPageWithHeader() + 20;
+    
+    // DADOS 3 - Tabela de Itens
+    doc.setFont(undefined, 'bold');
+    doc.text('COMPOSIÇÃO DE CUSTOS', margin, y);
+    y += 8;
+    
+    // Cabeçalho da tabela
+    const colWidths = {
+        item: 15,
+        descricao: 50,
+        qtd: 12,
+        un: 10,
+        marca: 20,
+        modelo: 20,
+        custoUnt: 20,
+        freteCompra: 20,
+        impFed: 20,
+        freteVenda: 20,
+        vendaUnt: 20,
+        lucroReal: 20,
+        percLucro: 15
+    };
+    
+    const tableWidth = Object.values(colWidths).reduce((a, b) => a + b, 0);
+    const startX = (pageWidth - tableWidth) / 2;
+    
+    doc.setFillColor(108, 117, 125);
+    doc.setDrawColor(180, 180, 180);
+    doc.rect(startX, y, tableWidth, 10, 'FD');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(6);
+    doc.setFont(undefined, 'bold');
+    
+    let xp = startX;
+    const headers = [
+        ['ITEM', colWidths.item, 'center'],
+        ['DESCRIÇÃO', colWidths.descricao, 'left'],
+        ['QTD', colWidths.qtd, 'center'],
+        ['UN', colWidths.un, 'center'],
+        ['MARCA', colWidths.marca, 'center'],
+        ['MODELO', colWidths.modelo, 'center'],
+        ['CUSTO\nUNT', colWidths.custoUnt, 'right'],
+        ['FRETE\nCOMPRA', colWidths.freteCompra, 'right'],
+        ['IMP\nFED', colWidths.impFed, 'right'],
+        ['FRETE\nVENDA', colWidths.freteVenda, 'right'],
+        ['VENDA\nUNT', colWidths.vendaUnt, 'right'],
+        ['LUCRO\nREAL', colWidths.lucroReal, 'right'],
+        ['% LUCRO', colWidths.percLucro, 'right']
+    ];
+    
+    headers.forEach(([lbl, w, align]) => {
+        doc.line(xp, y, xp, y + 10);
+        const lines = lbl.split('\n');
+        lines.forEach((line, i) => {
+            doc.text(line, xp + w / 2, y + 4 + (i * 3), { align: 'center' });
+        });
+        xp += w;
+    });
+    doc.line(xp, y, xp, y + 10);
+    
+    y += 10;
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(6);
+    doc.setFont(undefined, 'normal');
+    
+    // Linhas de itens
+    let totalGeralVenda = 0;
+    itensExe.forEach((item, idx) => {
+        if (paginaCheia(y, 50)) {
+            y = addPageWithHeader() + 20;
+            doc.setFillColor(108, 117, 125);
+            doc.setDrawColor(180, 180, 180);
+            doc.rect(startX, y, tableWidth, 10, 'FD');
+            doc.setTextColor(255, 255, 255);
+            doc.setFont(undefined, 'bold');
+            xp = startX;
+            headers.forEach(([lbl, w]) => {
+                doc.line(xp, y, xp, y + 10);
+                const lines = lbl.split('\n');
+                lines.forEach((line, i) => {
+                    doc.text(line, xp + w / 2, y + 4 + (i * 3), { align: 'center' });
+                });
+                xp += w;
+            });
+            doc.line(xp, y, xp, y + 10);
+            y += 10;
+            doc.setTextColor(0, 0, 0);
+            doc.setFont(undefined, 'normal');
+        }
+        
+        const vendaUnt = item.venda_unt || 0;
+        const custoUnt = item.custo_unt || 0;
+        const impostoFederalValor = vendaUnt * (impostoFederal / 100);
+        const freteVendaValor = vendaUnt * (freteVenda / 100);
+        const lucroReal = vendaUnt - freteVendaValor - impostoFederalValor - freteCompra - custoUnt;
+        const percLucro = vendaUnt > 0 ? (lucroReal / vendaUnt) * 100 : 0;
+        
+        totalGeralVenda += vendaUnt * (item.qtd || 1);
+        
+        const rowBg = idx % 2 === 0 ? [255,255,255] : [247,248,250];
+        doc.setFillColor(...rowBg);
+        doc.setDrawColor(180, 180, 180);
+        doc.rect(startX, y, tableWidth, 8, 'FD');
+        
+        xp = startX;
+        const values = [
+            [String(item.numero || ''), 'center'],
+            [item.descricao || '', 'left'],
+            [String(item.qtd || 1), 'center'],
+            [item.unidade || 'UN', 'center'],
+            [item.marca || '-', 'center'],
+            [item.modelo || '-', 'center'],
+            ['R$ ' + custoUnt.toFixed(2), 'right'],
+            ['R$ ' + freteCompra.toFixed(2), 'right'],
+            ['R$ ' + impostoFederalValor.toFixed(2), 'right'],
+            ['R$ ' + freteVendaValor.toFixed(2), 'right'],
+            ['R$ ' + vendaUnt.toFixed(2), 'right'],
+            ['R$ ' + lucroReal.toFixed(2), 'right'],
+            [percLucro.toFixed(1) + '%', 'right']
+        ];
+        
+        values.forEach(([val, align], i) => {
+            doc.line(xp, y, xp, y + 8);
+            const w = Object.values(colWidths)[i];
+            const textX = align === 'left' ? xp + 2 : (align === 'right' ? xp + w - 2 : xp + w / 2);
+            doc.text(val, textX, y + 5, { align: align });
+            xp += w;
+        });
+        doc.line(xp, y, xp, y + 8);
+        y += 8;
+    });
+    
+    y += 5;
+    
+    // DADOS 4 - Data e Assinatura
+    if (paginaCheia(y, 40)) y = addPageWithHeader() + 20;
+    
+    const dataAtual = new Date();
+    const dia = dataAtual.getDate();
+    const meses = ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 
+                   'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO'];
+    const mes = meses[dataAtual.getMonth()];
+    const ano = dataAtual.getFullYear();
+    
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.text(`SERRA/ES, ${dia} DE ${mes} DE ${ano}`, pageWidth / 2, y, { align: 'center' });
+    y += 15;
+    
+    // Assinatura
+    const assinatura = new Image();
+    assinatura.crossOrigin = 'anonymous';
+    assinatura.src = 'assinatura.png';
+    
+    try {
+        const imgWidth = 50;
+        const imgHeight = 15;
+        doc.addImage(assinatura, 'PNG', (pageWidth / 2) - (imgWidth / 2), y - 5, imgWidth, imgHeight);
+    } catch (e) {
+        doc.line(pageWidth / 2 - 40, y, pageWidth / 2 + 40, y);
+    }
+    
+    y += 10;
+    doc.setFont(undefined, 'bold');
+    doc.text('ROSEMEIRE BICALHO DE LIMA GRAVINO', pageWidth / 2, y, { align: 'center' });
+    y += 5;
+    doc.setFont(undefined, 'normal');
+    doc.text('MG-10.078.568 / CPF: 045.160.616-78', pageWidth / 2, y, { align: 'center' });
+    y += 5;
+    doc.text('DIRETORA', pageWidth / 2, y, { align: 'center' });
+    
+    addFooter(doc);
+    
+    const nomeArquivo = `COMPROVANTE-EXEQUIBILIDADE-${pregao.numero_pregao}${pregao.uasg ? '-' + pregao.uasg : ''}.pdf`;
+    doc.save(nomeArquivo);
+    showToast('Comprovante gerado com sucesso!', 'success');
 }
 
 // ============================================
@@ -1143,8 +1606,10 @@ function criarTelaGrupos() {
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline>
                     </svg>
                 </button>
-                <button onclick="abrirModalDeclaracoesGrupos()" style="background:transparent;border:none;color:var(--text-secondary);cursor:pointer;padding:0.5rem;display:flex;align-items:center;" title="Declarações / Comprovante">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z"/><path d="M14 8H8"/><path d="M16 12H8"/><path d="M13 16H8"/></svg>
+                <button onclick="abrirModalExequibilidade(currentPregaoId)" style="background:transparent;border:none;color:var(--certificate-color);cursor:pointer;padding:0.5rem;display:flex;align-items:center;" title="Comprovante de Exequibilidade">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
                 </button>
                 <button onclick="syncGrupos()" style="background:transparent;border:none;color:var(--text-secondary);cursor:pointer;padding:0.5rem;display:flex;align-items:center;" title="Sincronizar">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1696,10 +2161,6 @@ function syncGrupos() {
     showToast('Dados sincronizados', 'success');
 }
 
-function abrirModalDeclaracoesGrupos() {
-    abrirModalDeclaracoes();
-}
-
 function perguntarAssinaturaPDFGrupos() {
     const temGanho = itens.some(i => i.ganho && i.grupo_tipo);
     if (!temGanho) { showToast('Marque ao menos um item (ganho) para gerar a proposta', 'error'); return; }
@@ -1801,8 +2262,11 @@ function criarTelaItens() {
                         <polyline points="14 2 14 8 20 8"></polyline>
                     </svg>
                 </button>
-                <button onclick="abrirModalDeclaracoes()" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; display: flex; align-items: center;" title="Declarações / Comprovante">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z"/><path d="M14 8H8"/><path d="M16 12H8"/><path d="M13 16H8"/></svg>
+                
+                <button onclick="abrirModalExequibilidade(currentPregaoId)" style="background: transparent; border: none; color: var(--certificate-color); cursor: pointer; padding: 0.5rem; display: flex; align-items: center;" title="Comprovante de Exequibilidade">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
                 </button>
                 
                 <button onclick="syncItens()" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; display: flex; align-items: center;" title="Sincronizar">
@@ -1910,231 +2374,6 @@ function obterSaudacao() {
     if (hora >= 5 && hora < 12) return 'Bom dia';
     if (hora >= 12 && hora < 18) return 'Boa tarde';
     return 'Boa noite';
-}
-
-function abrirModalDeclaracoes() {
-    let modal = document.getElementById('modalDeclaracoes');
-    if (!modal) {
-        modal = criarModalDeclaracoes();
-        document.body.appendChild(modal);
-    }
-    document.getElementById('declaracaoTitulo').value = '';
-    document.getElementById('declaracaoTexto').value = '';
-    modal.classList.add('show');
-    setTimeout(setupUpperCaseInputs, 50);
-}
-
-function fecharModalDeclaracoes() {
-    const modal = document.getElementById('modalDeclaracoes');
-    if (modal) modal.classList.remove('show');
-}
-
-function criarModalDeclaracoes() {
-    const modal = document.createElement('div');
-    modal.id = 'modalDeclaracoes';
-    modal.className = 'modal-overlay';
-    modal.innerHTML = `
-        <div class="modal-content" style="max-width: 640px; width: 90vw;">
-            <div class="modal-header">
-                <h3 class="modal-title">Declarações</h3>
-                <button class="close-modal" onclick="fecharModalDeclaracoes()">✕</button>
-            </div>
-            <div style="padding: 0.25rem 0 0.5rem 0;">
-                <div class="form-group" style="margin-bottom: 1rem;">
-                    <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-secondary);">Título</label>
-                    <input type="text" id="declaracaoTitulo" placeholder="Título do documento e nome do arquivo"
-                           style="width: 100%; padding: 0.65rem 0.875rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); font-size: 0.9rem; box-sizing: border-box;">
-                </div>
-                <div class="form-group">
-                    <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-secondary);">Texto da Declaração</label>
-                    <textarea id="declaracaoTexto" rows="10" placeholder="Digite o texto da declaração..."
-                              style="width: 100%; padding: 0.75rem 0.875rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); font-size: 0.9rem; box-sizing: border-box; resize: vertical; line-height: 1.6;"></textarea>
-                </div>
-            </div>
-            <div class="modal-actions">
-                <button class="secondary" onclick="fecharModalDeclaracoes()">Cancelar</button>
-                <button class="success" onclick="perguntarAssinaturaDeclaracao()">Gerar Declaração</button>
-            </div>
-        </div>
-    `;
-    return modal;
-}
-
-function perguntarAssinaturaDeclaracao() {
-    const titulo = document.getElementById('declaracaoTitulo').value.trim();
-    const texto = document.getElementById('declaracaoTexto').value.trim();
-    
-    if (!titulo) { showToast('Informe o título da declaração', 'error'); return; }
-    if (!texto) { showToast('Digite o texto da declaração', 'error'); return; }
-    
-    fecharModalDeclaracoes();
-    
-    let modal = document.getElementById('modalAssinaturaDeclaracao');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'modalAssinaturaDeclaracao';
-        modal.className = 'modal-overlay';
-        modal.innerHTML = `
-            <div class="modal-content modal-delete">
-                <button class="close-modal" onclick="fecharModalAssinaturaDeclaracao()">✕</button>
-                <div class="modal-message-delete">
-                    Deseja incluir a assinatura padrão na declaração?
-                </div>
-                <div class="modal-actions modal-actions-no-border">
-                    <button class="success" onclick="gerarPDFDeclaracao(true)">Sim</button>
-                    <button class="danger" onclick="gerarPDFDeclaracao(false)">Não</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-    }
-    
-    modal._titulo = titulo;
-    modal._texto = texto;
-    modal.classList.add('show');
-}
-
-function fecharModalAssinaturaDeclaracao() {
-    const modal = document.getElementById('modalAssinaturaDeclaracao');
-    if (modal) modal.classList.remove('show');
-}
-
-async function gerarPDFDeclaracao(comAssinatura) {
-    fecharModalAssinaturaDeclaracao();
-    
-    const modal = document.getElementById('modalAssinaturaDeclaracao');
-    const titulo = modal?._titulo || '';
-    const texto = modal?._texto || '';
-    
-    if (!titulo || !texto) { showToast('Dados da declaração não encontrados', 'error'); return; }
-    
-    const pregao = pregoes.find(p => p.id === currentPregaoId);
-    
-    if (typeof window.jspdf === 'undefined') {
-        showToast('Erro: Biblioteca PDF não carregou. Recarregue a página (F5).', 'error');
-        return;
-    }
-    
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    
-    const margin = 20;
-    const pageWidth = doc.internal.pageSize.width;
-    const pageHeight = doc.internal.pageSize.height;
-    const maxWidth = pageWidth - (2 * margin);
-    let y = 3;
-    
-    const logoImg = new Image();
-    logoImg.crossOrigin = 'anonymous';
-    logoImg.src = 'I.R.-COMERCIO-E-MATERIAIS-ELETRICOS-LTDA-PDF.png';
-    
-    const desenharDeclaracao = (logoCarregada) => {
-        if (logoCarregada) {
-            const logoW = 40;
-            const logoH = (logoImg.height / logoImg.width) * logoW;
-            const logoX = 5;
-            doc.setGState(new doc.GState({ opacity: 0.3 }));
-            doc.addImage(logoImg, 'PNG', logoX, y, logoW, logoH);
-            doc.setGState(new doc.GState({ opacity: 1.0 }));
-            
-            const fs = logoH * 0.5;
-            doc.setFontSize(fs);
-            doc.setFont(undefined, 'bold');
-            doc.setTextColor(150, 150, 150);
-            const tx = logoX + logoW + 1.2;
-            doc.text('I.R COMÉRCIO E', tx, y + fs * 0.85);
-            doc.text('MATERIAIS ELÉTRICOS LTDA', tx, y + fs * 0.85 + fs * 0.5);
-            doc.setTextColor(0, 0, 0);
-            y += logoH + 10;
-        } else {
-            y = 25;
-        }
-        
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(0, 0, 0);
-        doc.text(titulo.toUpperCase(), pageWidth / 2, y, { align: 'center' });
-        y += 14;
-        
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'normal');
-        
-        const paragrafos = texto.split('\n');
-        paragrafos.forEach(para => {
-            if (para.trim() === '') {
-                y += 6;
-                return;
-            }
-            const linhas = doc.splitTextToSize(para.trim(), maxWidth);
-            linhas.forEach(linha => {
-                if (y > pageHeight - 50) {
-                    doc.addPage();
-                    y = 20;
-                }
-                doc.text(linha, pageWidth / 2, y, { align: 'center' });
-                y += 7;
-            });
-        });
-        
-        y += 12;
-        
-        if (y > pageHeight - 45) { doc.addPage(); y = 20; }
-        
-        const dataAtual = new Date();
-        const dia = dataAtual.getDate();
-        const meses = ['JANEIRO','FEVEREIRO','MARÇO','ABRIL','MAIO','JUNHO',
-                       'JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'];
-        const mes = meses[dataAtual.getMonth()];
-        const ano = dataAtual.getFullYear();
-        
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`SERRA/ES, ${dia} DE ${mes} DE ${ano}`, pageWidth / 2, y, { align: 'center' });
-        y += 6;
-        
-        const uasgPart = pregao?.uasg ? `-${pregao.uasg}` : '';
-        const numPart = pregao?.numero_pregao ? `-${pregao.numero_pregao}` : '';
-        const nomeArquivo = `${titulo.toUpperCase().replace(/\s+/g, '-')}${numPart}${uasgPart}.pdf`;
-        
-        if (comAssinatura) {
-            const assin = new Image();
-            assin.crossOrigin = 'anonymous';
-            assin.src = 'assinatura.png';
-            assin.onload = () => {
-                try {
-                    const aw = 50, ah = (assin.height / assin.width) * aw;
-                    doc.addImage(assin, 'PNG', (pageWidth / 2) - (aw / 2), y + 2, aw, ah);
-                    let yf = y + ah + 8;
-                    doc.setFont('helvetica', 'bold');
-                    doc.text('ROSEMEIRE BICALHO DE LIMA GRAVINO', pageWidth / 2, yf, { align: 'center' });
-                    yf += 5; doc.setFont('helvetica', 'normal');
-                    doc.text('MG-10.078.568 / CPF: 045.160.616-78', pageWidth / 2, yf, { align: 'center' });
-                    yf += 5; doc.text('DIRETORA', pageWidth / 2, yf, { align: 'center' });
-                    doc.save(nomeArquivo);
-                    showToast('Declaração gerada com sucesso!', 'success');
-                } catch(e) { semAssinatura(); }
-            };
-            assin.onerror = semAssinatura;
-        } else {
-            semAssinatura();
-        }
-        
-        function semAssinatura() {
-            y += 20;
-            doc.setDrawColor(0,0,0);
-            doc.line(pageWidth/2 - 40, y, pageWidth/2 + 40, y);
-            y += 5; doc.setFont('helvetica', 'bold');
-            doc.text('ROSEMEIRE BICALHO DE LIMA GRAVINO', pageWidth/2, y, { align: 'center' });
-            y += 5; doc.setFont('helvetica', 'normal');
-            doc.text('MG-10.078.568 / CPF: 045.160.616-78', pageWidth/2, y, { align: 'center' });
-            y += 5; doc.text('DIRETORA', pageWidth/2, y, { align: 'center' });
-            doc.save(nomeArquivo);
-            showToast('Declaração gerada!', 'success');
-        }
-    };
-    
-    logoImg.onload = () => desenharDeclaracao(true);
-    logoImg.onerror = () => desenharDeclaracao(false);
 }
 
 async function carregarItens(pregaoId) {
@@ -2854,7 +3093,7 @@ function calcularValoresItem() {
     
     const estimadoTotal = q * eu;
     const custoTotal = q * cu;
-    const vendaUnt = cu * (perc / 100);
+    const vendaUnt = cu * (1 + perc / 100);
     const vendaTotal = vendaUnt * q;
     
     const etEl = document.getElementById('itemEstimadoTotal');
@@ -3021,51 +3260,33 @@ async function abrirModalCotacao() {
         modal.id = 'modalCotacao';
         modal.className = 'modal-overlay';
         modal.innerHTML = `
-            <div class="modal-content">
+            <div class="modal-content" style="max-width: 500px;">
                 <div class="modal-header">
                     <h3 class="modal-title">Enviar Cotação</h3>
                     <button class="close-modal" onclick="fecharModalCotacao()">✕</button>
                 </div>
-                <div class="tabs-container">
-                    <div class="tabs-nav">
-                        <button class="tab-btn active" onclick="switchCotacaoTab('cotacao-tab-fornecedor')">Fornecedor</button>
-                        <button class="tab-btn" onclick="switchCotacaoTab('cotacao-tab-envio')">Envio</button>
+                <div class="form-grid">
+                    <div class="form-group" style="grid-column:1/-1;">
+                        <label>Fornecedor</label>
+                        <select id="cotacaoFornecedor" onchange="selecionarFornecedorCotacao()">
+                            <option value="">Selecione...</option>
+                        </select>
                     </div>
-                    <div class="tab-content active" id="cotacao-tab-fornecedor">
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label>Fornecedor</label>
-                                <select id="cotacaoFornecedor" onchange="selecionarFornecedorCotacao()">
-                                    <option value="">Selecione...</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Contato</label>
-                                <input type="text" id="cotacaoContato" readonly placeholder="Preenchido ao selecionar fornecedor">
-                            </div>
-                        </div>
+                    <div class="form-group" style="grid-column:1/-1;">
+                        <label>Contato / Meio de Envio</label>
+                        <input type="text" id="cotacaoContato" readonly placeholder="Preenchido ao selecionar fornecedor">
                     </div>
-                    <div class="tab-content" id="cotacao-tab-envio">
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label>Tipo de Envio</label>
-                                <select id="cotacaoTipo">
-                                    <option value="descricao">Descrição</option>
-                                    <option value="modelo">Modelo</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Intervalo de Itens</label>
-                                <input type="text" id="cotacaoIntervalo" placeholder="Ex: 1-5, 10">
-                            </div>
-                        </div>
+                    <div class="form-group" style="grid-column:1/-1;">
+                        <label>Tipo de Envio</label>
+                        <select id="cotacaoTipo">
+                            <option value="descricao">Enviar por Descrição</option>
+                            <option value="modelo">Enviar por Modelo</option>
+                        </select>
                     </div>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" id="btnCotacaoPrev" class="secondary" style="display:none;" onclick="prevCotacaoTab()">Anterior</button>
-                    <button type="button" id="btnCotacaoNext" class="secondary" onclick="nextCotacaoTab()">Próximo</button>
-                    <button type="button" id="btnCotacaoEnviar" class="success" style="display:none;" onclick="enviarCotacao()">Enviar</button>
-                    <button type="button" class="danger" onclick="fecharModalCotacao()">Cancelar</button>
+                    <button class="success" onclick="enviarCotacao()">Enviar</button>
+                    <button class="danger" onclick="fecharModalCotacao()">Cancelar</button>
                 </div>
             </div>
         `;
@@ -3079,51 +3300,13 @@ async function abrirModalCotacao() {
             marcasNosItens.map(m => `<option value="${m}">${m}</option>`).join('');
     }
     document.getElementById('cotacaoContato').value = '';
-    document.getElementById('cotacaoIntervalo').value = '';
     document.getElementById('cotacaoTipo').value = 'descricao';
-    switchCotacaoTab('cotacao-tab-fornecedor');
     modal.classList.add('show');
 }
 
 function fecharModalCotacao() {
     const modal = document.getElementById('modalCotacao');
     if (modal) modal.classList.remove('show');
-}
-
-const cotacaoTabs = ['cotacao-tab-fornecedor', 'cotacao-tab-envio'];
-let currentCotacaoTab = 0;
-
-function switchCotacaoTab(tabId) {
-    const allTabs = document.querySelectorAll('#modalCotacao .tab-content');
-    const allBtns = document.querySelectorAll('#modalCotacao .tab-btn');
-    allTabs.forEach(t => t.classList.remove('active'));
-    allBtns.forEach(b => b.classList.remove('active'));
-    const active = document.getElementById(tabId);
-    if (active) active.classList.add('active');
-    currentCotacaoTab = cotacaoTabs.indexOf(tabId);
-    const idx = currentCotacaoTab;
-    if (allBtns[idx]) allBtns[idx].classList.add('active');
-    const isLast = idx === cotacaoTabs.length - 1;
-    const prev = document.getElementById('btnCotacaoPrev');
-    const next = document.getElementById('btnCotacaoNext');
-    const enviar = document.getElementById('btnCotacaoEnviar');
-    if (prev) prev.style.display = idx === 0 ? 'none' : 'inline-block';
-    if (next) next.style.display = isLast ? 'none' : 'inline-block';
-    if (enviar) enviar.style.display = isLast ? 'inline-block' : 'none';
-}
-
-function nextCotacaoTab() {
-    if (currentCotacaoTab < cotacaoTabs.length - 1) {
-        currentCotacaoTab++;
-        switchCotacaoTab(cotacaoTabs[currentCotacaoTab]);
-    }
-}
-
-function prevCotacaoTab() {
-    if (currentCotacaoTab > 0) {
-        currentCotacaoTab--;
-        switchCotacaoTab(cotacaoTabs[currentCotacaoTab]);
-    }
 }
 
 async function selecionarFornecedorCotacao() {
@@ -3164,7 +3347,6 @@ async function selecionarFornecedorCotacao() {
 function enviarCotacao() {
     const marca = document.getElementById('cotacaoFornecedor').value;
     const tipo = document.getElementById('cotacaoTipo').value;
-    const intervaloStr = document.getElementById('cotacaoIntervalo').value.trim();
     const contato = document.getElementById('cotacaoContato').value;
     
     if (!marca) {
@@ -3172,14 +3354,10 @@ function enviarCotacao() {
         return;
     }
     
-    let itensCotacao = itens;
-    if (intervaloStr) {
-        const numeros = parsearIntervalo(intervaloStr);
-        if (numeros) itensCotacao = itens.filter(item => numeros.includes(item.numero));
-    }
+    const itensCotacao = itens.filter(item => item.marca === marca);
     
     if (itensCotacao.length === 0) {
-        showToast('Nenhum item no intervalo informado', 'error');
+        showToast('Nenhum item encontrado para este fornecedor', 'error');
         return;
     }
     
@@ -3507,7 +3685,7 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
             const totalPags = docRef.internal.getNumberOfPages();
             for (let pg = 1; pg <= totalPags; pg++) {
                 docRef.setPage(pg);
-                docRef.setFontSize(10);
+                docRef.setFontSize(8);
                 docRef.setFont(undefined, 'normal');
                 docRef.setTextColor(150, 150, 150);
                 const fyBase = pageHeight - footerH + 2;
