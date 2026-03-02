@@ -183,6 +183,7 @@ async function loadPregoes() {
         const data = await response.json();
         pregoes = data;
         
+        // Atualizar status para OCORRIDO se a data já passou
         atualizarStatusOcorridos();
         
         const newHash = JSON.stringify(pregoes.map(p => p.id));
@@ -199,6 +200,7 @@ async function loadPregoes() {
     }
 }
 
+// Atualizar status para OCORRIDO
 function atualizarStatusOcorridos() {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
@@ -308,6 +310,7 @@ function updateStats() {
     document.getElementById('totalOcorridos').textContent = ocorridos;
 }
 
+// Popular filtro de meses
 function populateMonthFilter() {
     const select = document.getElementById('filterMes');
     const months = ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 
@@ -399,10 +402,11 @@ function displayPregoes(pregoesToDisplay) {
     }).join('');
 }
 
+// Toggle ganho
 async function toggleGanho(id, ganho) {
     if (!isOnline) {
         showToast('Sistema offline. Não foi possível atualizar.', 'error');
-        loadPregoes();
+        loadPregoes(); // Recarregar para reverter visualmente
         return;
     }
 
@@ -414,6 +418,7 @@ async function toggleGanho(id, ganho) {
         if (ganho) {
             pregao.status = 'GANHO';
         } else {
+            // Se desmarcar, volta para ABERTO ou OCORRIDO
             const hoje = new Date();
             hoje.setHours(0, 0, 0, 0);
             const dataPregao = new Date(pregao.data + 'T00:00:00');
@@ -466,10 +471,11 @@ async function toggleGanho(id, ganho) {
         } else {
             showToast('Erro ao atualizar status', 'error');
         }
-        loadPregoes();
+        loadPregoes(); // Recarregar dados em caso de erro
     }
 }
 
+// MODAL DE FORMULÁRIO
 function openFormModal() {
     editingId = null;
     document.getElementById('formTitle').textContent = 'Novo Pregão';
@@ -501,7 +507,9 @@ function resetForm() {
     document.getElementById('prazoEntrega').value = '';
     document.getElementById('prazoPagamento').value = '';
     document.getElementById('banco').value = '';
+    document.getElementById('disputaPor').value = 'ITEM';
     
+    // Reset telefones
     document.getElementById('telefonesContainer').innerHTML = `
         <div class="input-with-button">
             <input type="text" class="telefone-input" placeholder="TELEFONE">
@@ -509,6 +517,7 @@ function resetForm() {
         </div>
     `;
     
+    // Reset emails
     document.getElementById('emailsContainer').innerHTML = `
         <div class="input-with-button">
             <input type="email" class="email-input" placeholder="E-MAIL">
@@ -516,12 +525,14 @@ function resetForm() {
         </div>
     `;
     
+    // Reset detalhes
     detalhes = [];
     document.querySelectorAll('.detalhe-item').forEach(item => {
         item.classList.remove('selected');
     });
 }
 
+// Telefones
 function addTelefone() {
     const container = document.getElementById('telefonesContainer');
     const div = document.createElement('div');
@@ -545,6 +556,7 @@ function getTelefones() {
         .filter(value => value !== '');
 }
 
+// E-mails
 function addEmail() {
     const container = document.getElementById('emailsContainer');
     const div = document.createElement('div');
@@ -567,6 +579,7 @@ function getEmails() {
         .filter(value => value !== '');
 }
 
+// Detalhes
 function toggleDetalhe(element, nome) {
     element.classList.toggle('selected');
     const index = detalhes.indexOf(nome);
@@ -577,6 +590,7 @@ function toggleDetalhe(element, nome) {
     }
 }
 
+// Navegação de abas do formulário
 function switchTab(tabId) {
     tabs.forEach((tab, index) => {
         document.getElementById(tab).classList.remove('active');
@@ -597,13 +611,18 @@ function updateNavigationButtons() {
     const btnCancel = document.getElementById('btnCancel');
     const btnSave = document.getElementById('btnSave');
     
+    // Anterior: visível apenas se não for a primeira aba
     btnPrevious.style.display = currentTab === 0 ? 'none' : 'inline-block';
+    
+    // Cancelar: sempre visível
     btnCancel.style.display = 'inline-block';
     
     if (currentTab === tabs.length - 1) {
+        // Última aba: esconder Próximo, mostrar Salvar
         btnNext.style.display = 'none';
         btnSave.style.display = 'inline-block';
     } else {
+        // Outras abas: mostrar Próximo, esconder Salvar
         btnNext.style.display = 'inline-block';
         btnSave.style.display = 'none';
     }
@@ -623,6 +642,7 @@ function previousTab() {
     }
 }
 
+// Salvar pregão
 async function salvarPregao() {
     const dataPregao = document.getElementById('dataPregao').value;
     const numeroPregao = toUpperCase(document.getElementById('numeroPregao').value);
@@ -650,6 +670,7 @@ async function salvarPregao() {
         prazo_pagamento: toUpperCase(document.getElementById('prazoPagamento').value) || null,
         detalhes: detalhes,
         banco: document.getElementById('banco').value || null,
+        disputa_por: document.getElementById('disputaPor').value || 'ITEM',
         status: 'ABERTO',
         ganho: false
     };
@@ -720,6 +741,7 @@ async function salvarPregao() {
     }
 }
 
+// Editar pregão
 async function editPregao(id) {
     editingId = id;
     const pregao = pregoes.find(p => p.id === id);
@@ -739,7 +761,9 @@ async function editPregao(id) {
     document.getElementById('prazoEntrega').value = pregao.prazo_entrega || '';
     document.getElementById('prazoPagamento').value = pregao.prazo_pagamento || '';
     document.getElementById('banco').value = pregao.banco || '';
+    document.getElementById('disputaPor').value = pregao.disputa_por || 'ITEM';
     
+    // Carregar telefones
     const telefonesContainer = document.getElementById('telefonesContainer');
     telefonesContainer.innerHTML = '';
     if (pregao.telefones && pregao.telefones.length > 0) {
@@ -761,6 +785,7 @@ async function editPregao(id) {
         `;
     }
     
+    // Carregar emails
     const emailsContainer = document.getElementById('emailsContainer');
     emailsContainer.innerHTML = '';
     if (pregao.emails && pregao.emails.length > 0) {
@@ -782,6 +807,7 @@ async function editPregao(id) {
         `;
     }
     
+    // Carregar detalhes
     detalhes = pregao.detalhes || [];
     document.querySelectorAll('.detalhe-item').forEach(item => {
         item.classList.remove('selected');
@@ -797,21 +823,25 @@ async function editPregao(id) {
     setupUpperCaseInputs();
 }
 
+// MODAL DE VISUALIZAÇÃO
 function viewPregao(id) {
     const pregao = pregoes.find(p => p.id === id);
     if (!pregao) return;
     
     document.getElementById('modalNumero').textContent = pregao.numero_pregao;
     
+    // Aba Geral
     document.getElementById('info-tab-geral').innerHTML = `
         <div class="info-section">
             <p><strong>Responsável:</strong> ${pregao.responsavel}</p>
             <p><strong>Data:</strong> ${pregao.data ? new Date(pregao.data + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</p>
             <p><strong>Hora:</strong> ${pregao.hora || '-'}</p>
+            <p><strong>Disputa por:</strong> ${pregao.disputa_por || 'ITEM'}</p>
             <p><strong>Status:</strong> <span class="status-badge ${pregao.status === 'GANHO' ? 'success' : pregao.status === 'ABERTO' ? 'warning' : pregao.status === 'OCORRIDO' ? 'danger' : 'default'}">${pregao.status}</span></p>
         </div>
     `;
     
+    // Aba Órgão
     document.getElementById('info-tab-orgao').innerHTML = `
         <div class="info-section">
             <p><strong>Nº Pregão:</strong> ${pregao.numero_pregao}</p>
@@ -822,6 +852,7 @@ function viewPregao(id) {
         </div>
     `;
     
+    // Aba Contato
     const telefonesHtml = pregao.telefones && pregao.telefones.length > 0 
         ? pregao.telefones.map(t => `<p>• ${t}</p>`).join('') 
         : '<p>-</p>';
@@ -840,6 +871,7 @@ function viewPregao(id) {
         </div>
     `;
     
+    // Aba Prazos
     document.getElementById('info-tab-prazos').innerHTML = `
         <div class="info-section">
             <p><strong>Validade da Proposta:</strong> ${pregao.validade_proposta || '-'}</p>
@@ -848,6 +880,7 @@ function viewPregao(id) {
         </div>
     `;
     
+    // Aba Detalhes
     const detalhesHtml = pregao.detalhes && pregao.detalhes.length > 0 
         ? pregao.detalhes.map(d => `<p>✓ ${d}</p>`).join('') 
         : '<p>Nenhum detalhe selecionado</p>';
@@ -872,6 +905,7 @@ function closeInfoModal() {
     document.getElementById('infoModal').classList.remove('show');
 }
 
+// Navegação de abas do modal de visualização
 function switchInfoTab(tabId) {
     infoTabs.forEach((tab, index) => {
         document.getElementById(tab).classList.remove('active');
@@ -910,6 +944,7 @@ function previousInfoTab() {
     }
 }
 
+// MODAL DE DELETE
 function openDeleteModal(id) {
     deleteId = id;
     document.getElementById('deleteModal').classList.add('show');
@@ -972,6 +1007,7 @@ async function confirmarExclusao() {
     }
 }
 
+// Abrir tela de itens
 async function openItems(id) {
     currentPregaoId = id;
     const pregao = pregoes.find(p => p.id === id);
@@ -1341,10 +1377,10 @@ function renderGrupos() {
                 '<td style="text-align:center;">' + (item.unidade || 'UN') + '</td>' +
                 '<td style="text-align:center;">' + (item.marca || '-') + '</td>' +
                 '<td style="text-align:center;">' + (item.modelo || '-') + '</td>' +
-                '<td style="text-align:right;">' + fmtTotal(item.estimado_total || 0) + '</td>' +
-                '<td style="text-align:right;">' + fmtTotal(item.custo_total || 0) + '</td>' +
+                '<td style="text-align:right;">' + fmtTot(item.estimado_total || 0) + '</td>' +
+                '<td style="text-align:right;">' + fmtTot(item.custo_total || 0) + '</td>' +
                 '<td style="text-align:right;">' + fmtUnt(item.venda_unt || 0) + '</td>' +
-                '<td style="text-align:right;">' + fmtTotal(item.venda_total || 0) + '</td>' +
+                '<td style="text-align:right;">' + fmtTot(item.venda_total || 0) + '</td>' +
                 '</tr>';
         }
         const grupoGanho = grupo.itens.length > 0 && grupo.itens.every(i => i.ganho);
@@ -3178,7 +3214,6 @@ function enviarCotacao() {
     fecharModalCotacao();
 }
 
-// Função para converter número por extenso
 function numeroPorExtenso(valor) {
     if (valor === 0) return 'ZERO REAIS';
     
@@ -3673,7 +3708,7 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
                 doc.text(linhas[i], margin, y);
                 y += lineHeight;
             }
-            y += 3; // Espaçamento extra entre campos
+            y += 3;
         }
 
         const valorExtenso = numeroPorExtenso(totalFinalProposta);
