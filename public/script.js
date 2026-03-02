@@ -2913,9 +2913,7 @@ function calcularValoresItem() {
     const estimadoTotal = q * eu;
     const custoTotal = q * cu;
     
-    // CORREÇÃO: venda_unt = custo_unt * (1 + porcentagem/100)
-    // Se porcentagem = 149% (1.49), então venda_unt = cu * 2.49
-    const vendaUnt = cu * (1 + perc / 100);
+    const vendaUnt = cu * (perc / 100);
     const vendaTotal = vendaUnt * q;
     
     // Atualizar campos
