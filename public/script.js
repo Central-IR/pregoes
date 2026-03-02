@@ -2854,7 +2854,7 @@ function calcularValoresItem() {
     
     const estimadoTotal = q * eu;
     const custoTotal = q * cu;
-    const vendaUnt = cu * (1 + perc / 100);
+    const vendaUnt = cu * (perc / 100);
     const vendaTotal = vendaUnt * q;
     
     const etEl = document.getElementById('itemEstimadoTotal');
