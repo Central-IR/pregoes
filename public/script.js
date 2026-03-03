@@ -15,24 +15,18 @@ const MAX_401_BEFORE_LOGOUT = 3;
 let lastDataHash = '';
 let deleteId = null;
 let detalhes = [];
-let currentPregaoId = null;
-let itens = [];
-let editingItemIndex = null;
-let selectedItens = new Set();
-let marcasItens = new Set();
-let grupos = [];
 
 const tabs = ['tab-geral', 'tab-orgao', 'tab-contato', 'tab-prazos', 'tab-detalhes'];
 const infoTabs = ['info-tab-geral', 'info-tab-orgao', 'info-tab-contato', 'info-tab-prazos', 'info-tab-detalhes'];
-const exeTabs = ['exe-tab-geral', 'exe-tab-valores'];
-let currentExeTab = 0;
-let currentItemTab = 0;
-const itemTabs = ['item-tab-item', 'item-tab-fornecedor', 'item-tab-valores'];
+
+console.log('🚀 Pregões iniciada');
+console.log('📍 API URL:', API_URL);
 
 function toUpperCase(value) {
     return value ? String(value).toUpperCase() : '';
 }
 
+// Converter input para maiúsculo automaticamente
 function setupUpperCaseInputs() {
     const textInputs = document.querySelectorAll('input[type="text"]:not([readonly]), textarea');
     textInputs.forEach(input => {
@@ -89,8 +83,13 @@ function inicializarApp() {
 
 async function checkServerStatus() {
     try {
-        const headers = { 'Accept': 'application/json' };
-        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        const headers = {
+            'Accept': 'application/json'
+        };
+        
+        if (sessionToken) {
+            headers['X-Session-Token'] = sessionToken;
+        }
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -118,12 +117,14 @@ async function checkServerStatus() {
         isOnline = response.ok;
         
         if (wasOffline && isOnline) {
+            console.log('✅ SERVIDOR ONLINE');
             await loadPregoes();
         }
         
         updateConnectionStatus();
         return isOnline;
     } catch (error) {
+        console.error('❌ Erro ao verificar servidor:', error.message);
         isOnline = false;
         updateConnectionStatus();
         return false;
@@ -148,8 +149,13 @@ async function loadPregoes() {
     if (!isOnline) return;
 
     try {
-        const headers = { 'Accept': 'application/json' };
-        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        const headers = {
+            'Accept': 'application/json'
+        };
+        
+        if (sessionToken) {
+            headers['X-Session-Token'] = sessionToken;
+        }
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -169,10 +175,15 @@ async function loadPregoes() {
             return;
         }
 
-        if (!response.ok) return;
+        if (!response.ok) {
+            console.error('❌ Erro ao carregar pregões:', response.status);
+            return;
+        }
 
         const data = await response.json();
         pregoes = data;
+        
+        // Atualizar status para OCORRIDO se a data já passou
         atualizarStatusOcorridos();
         
         const newHash = JSON.stringify(pregoes.map(p => p.id));
@@ -180,9 +191,16 @@ async function loadPregoes() {
             lastDataHash = newHash;
             updateDisplay();
         }
-    } catch (error) {}
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            console.error('❌ Timeout ao carregar pregões');
+        } else {
+            console.error('❌ Erro ao carregar:', error);
+        }
+    }
 }
 
+// Atualizar status para OCORRIDO
 function atualizarStatusOcorridos() {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
@@ -198,14 +216,22 @@ function atualizarStatusOcorridos() {
 }
 
 async function syncData() {
+    console.log('🔄 Iniciando sincronização...');
+    
     if (!isOnline) {
         showToast('Erro ao sincronizar', 'error');
+        console.log('❌ Sincronização cancelada: servidor offline');
         return;
     }
 
     try {
-        const headers = { 'Accept': 'application/json' };
-        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        const headers = {
+            'Accept': 'application/json'
+        };
+        
+        if (sessionToken) {
+            headers['X-Session-Token'] = sessionToken;
+        }
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -226,18 +252,26 @@ async function syncData() {
             return;
         }
 
-        if (!response.ok) throw new Error(`Erro ao sincronizar: ${response.status}`);
+        if (!response.ok) {
+            throw new Error(`Erro ao sincronizar: ${response.status}`);
+        }
 
         const data = await response.json();
         pregoes = data;
+        
         atualizarStatusOcorridos();
+        
         lastDataHash = JSON.stringify(pregoes.map(p => p.id));
         updateDisplay();
+        
+        console.log(`✅ Sincronização concluída: ${pregoes.length} pregões carregados`);
         showToast('Dados sincronizados', 'success');
     } catch (error) {
         if (error.name === 'AbortError') {
+            console.error('❌ Timeout na sincronização');
             showToast('Timeout: Operação demorou muito', 'error');
         } else {
+            console.error('❌ Erro na sincronização:', error.message);
             showToast('Erro ao sincronizar', 'error');
         }
     }
@@ -276,6 +310,7 @@ function updateStats() {
     document.getElementById('totalOcorridos').textContent = ocorridos;
 }
 
+// Popular filtro de meses
 function populateMonthFilter() {
     const select = document.getElementById('filterMes');
     const months = ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 
@@ -338,9 +373,15 @@ function displayPregoes(pregoesToDisplay) {
         
         return `
             <tr class="${rowClass}">
-                <td style="text-align: center;">
+                <td style="text-align: center; padding: 8px;">
                     <div class="checkbox-wrapper">
-                        <input type="checkbox" id="check-${pregao.id}" ${checked} onchange="toggleGanho('${pregao.id}', this.checked)" class="styled-checkbox">
+                        <input 
+                            type="checkbox" 
+                            id="check-${pregao.id}"
+                            ${checked}
+                            onchange="toggleGanho('${pregao.id}', this.checked)"
+                            class="styled-checkbox"
+                        >
                         <label for="check-${pregao.id}" class="checkbox-label-styled"></label>
                     </div>
                 </td>
@@ -351,16 +392,23 @@ function displayPregoes(pregoesToDisplay) {
                 <td>${pregao.uasg || '-'}</td>
                 <td><span class="status-badge status-badge-${statusClass}">${pregao.status}</span></td>
                 <td class="actions-cell">
-                    <button class="action-btn view" onclick="viewPregao('${pregao.id}')">Ver</button>
-                    <button class="action-btn edit" onclick="editPregao('${pregao.id}')">Editar</button>
-                    <button class="action-btn btn-items" onclick="openItems('${pregao.id}')">${pregao.disputa_por === 'GRUPO' ? 'Grupos' : 'Itens'}</button>
-                    <button class="action-btn delete" onclick="openDeleteModal('${pregao.id}')">Excluir</button>
+                    <button class="action-btn view" onclick="viewPregao('${pregao.id}')" title="Visualizar">Ver</button>
+                    <button class="action-btn edit" onclick="editPregao('${pregao.id}')" title="Editar">Editar</button>
+                    <button class="action-btn btn-items" onclick="openItems('${pregao.id}')" title="${pregao.disputa_por === 'GRUPO' ? 'Grupos' : 'Itens'}">${pregao.disputa_por === 'GRUPO' ? 'Grupos' : 'Itens'}</button>
+                    <button class="action-btn btn-certificate" onclick="abrirModalExequibilidade('${pregao.id}')" title="Comprovante de Exequibilidade">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                        </svg>
+                        Comprovante
+                    </button>
+                    <button class="action-btn delete" onclick="openDeleteModal('${pregao.id}')" title="Excluir">Excluir</button>
                 </td>
             </tr>
         `;
     }).join('');
 }
 
+// Toggle ganho
 async function toggleGanho(id, ganho) {
     if (!isOnline) {
         showToast('Sistema offline. Não foi possível atualizar.', 'error');
@@ -382,8 +430,14 @@ async function toggleGanho(id, ganho) {
             pregao.status = dataPregao < hoje ? 'OCORRIDO' : 'ABERTO';
         }
         
-        const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
-        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        const headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        };
+        
+        if (sessionToken) {
+            headers['X-Session-Token'] = sessionToken;
+        }
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -391,7 +445,11 @@ async function toggleGanho(id, ganho) {
         const response = await fetch(`${API_URL}/pregoes/${id}`, {
             method: 'PUT',
             headers: headers,
-            body: JSON.stringify({ ...pregao, ganho: pregao.ganho, status: pregao.status }),
+            body: JSON.stringify({
+                ...pregao,
+                ganho: pregao.ganho,
+                status: pregao.status
+            }),
             mode: 'cors',
             signal: controller.signal
         });
@@ -407,8 +465,12 @@ async function toggleGanho(id, ganho) {
         if (!response.ok) throw new Error('Erro ao atualizar');
         
         updateDisplay();
-        showToast(ganho ? `Pregão ${pregao.numero_pregao} ganho` : 'Marcação removida', ganho ? 'success' : 'error');
+        const mensagem = ganho 
+            ? `Pregão ${pregao.numero_pregao} ganho` 
+            : 'Marcação removida';
+        showToast(mensagem, ganho ? 'success' : 'error');
     } catch (error) {
+        console.error('Erro:', error);
         if (error.name === 'AbortError') {
             showToast('Timeout: Operação demorou muito', 'error');
         } else {
@@ -418,6 +480,7 @@ async function toggleGanho(id, ganho) {
     }
 }
 
+// MODAL DE FORMULÁRIO
 function openFormModal() {
     editingId = null;
     document.getElementById('formTitle').textContent = 'Novo Pregão';
@@ -431,7 +494,9 @@ function openFormModal() {
 function closeFormModal(showCancelMessage = true) {
     document.getElementById('formModal').classList.remove('show');
     resetForm();
-    if (showCancelMessage) showToast('Registro cancelado', 'error');
+    if (showCancelMessage) {
+        showToast('Registro cancelado', 'error');
+    }
 }
 
 function resetForm() {
@@ -487,7 +552,9 @@ function removeTelefone(btn) {
 
 function getTelefones() {
     const inputs = document.querySelectorAll('.telefone-input');
-    return Array.from(inputs).map(input => input.value.trim()).filter(v => v !== '');
+    return Array.from(inputs)
+        .map(input => input.value.trim())
+        .filter(value => value !== '');
 }
 
 function addEmail() {
@@ -507,14 +574,19 @@ function removeEmail(btn) {
 
 function getEmails() {
     const inputs = document.querySelectorAll('.email-input');
-    return Array.from(inputs).map(input => input.value.trim().toUpperCase()).filter(v => v !== '');
+    return Array.from(inputs)
+        .map(input => input.value.trim().toUpperCase())
+        .filter(value => value !== '');
 }
 
 function toggleDetalhe(element, nome) {
     element.classList.toggle('selected');
     const index = detalhes.indexOf(nome);
-    if (index > -1) detalhes.splice(index, 1);
-    else detalhes.push(nome);
+    if (index > -1) {
+        detalhes.splice(index, 1);
+    } else {
+        detalhes.push(nome);
+    }
 }
 
 function switchTab(tabId) {
@@ -527,6 +599,7 @@ function switchTab(tabId) {
     const tabIndex = tabs.indexOf(tabId);
     document.querySelectorAll('.tabs-nav .tab-btn')[tabIndex].classList.add('active');
     currentTab = tabIndex;
+    
     updateNavigationButtons();
 }
 
@@ -571,8 +644,10 @@ async function salvarPregao() {
         return;
     }
     
+    const responsavel = document.getElementById('responsavel').value;
+    
     const pregao = {
-        responsavel: document.getElementById('responsavel').value || null,
+        responsavel: responsavel || null,
         data: dataPregao,
         hora: document.getElementById('horaPregao').value || null,
         numero_pregao: numeroPregao,
@@ -602,8 +677,14 @@ async function salvarPregao() {
         const url = editingId ? `${API_URL}/pregoes/${editingId}` : `${API_URL}/pregoes`;
         const method = editingId ? 'PUT' : 'POST';
 
-        const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
-        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        const headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        };
+        
+        if (sessionToken) {
+            headers['X-Session-Token'] = sessionToken;
+        }
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000);
@@ -636,10 +717,14 @@ async function salvarPregao() {
         }
 
         const savedPregao = await response.json();
-        showToast(editingId ? `Pregão ${savedPregao.numero_pregao} atualizado` : `Pregão ${savedPregao.numero_pregao} registrado`, 'success');
+        const mensagem = editingId 
+            ? `Pregão ${savedPregao.numero_pregao} atualizado` 
+            : `Pregão ${savedPregao.numero_pregao} registrado`;
+        showToast(mensagem, 'success');
         closeFormModal(false);
         await loadPregoes();
     } catch (error) {
+        console.error('Erro completo:', error);
         if (error.name === 'AbortError') {
             showToast('Timeout: Operação demorou muito', 'error');
         } else {
@@ -715,7 +800,9 @@ async function editPregao(id) {
     document.querySelectorAll('.detalhe-item').forEach(item => {
         item.classList.remove('selected');
         const nome = item.querySelector('span').textContent;
-        if (detalhes.includes(nome)) item.classList.add('selected');
+        if (detalhes.includes(nome)) {
+            item.classList.add('selected');
+        }
     });
     
     document.getElementById('formModal').classList.add('show');
@@ -750,12 +837,22 @@ function viewPregao(id) {
         </div>
     `;
     
-    const telefonesHtml = pregao.telefones && pregao.telefones.length > 0 ? pregao.telefones.map(t => `<p>• ${t}</p>`).join('') : '<p>-</p>';
-    const emailsHtml = pregao.emails && pregao.emails.length > 0 ? pregao.emails.map(e => `<p>• ${e}</p>`).join('') : '<p>-</p>';
+    const telefonesHtml = pregao.telefones && pregao.telefones.length > 0 
+        ? pregao.telefones.map(t => `<p>• ${t}</p>`).join('') 
+        : '<p>-</p>';
+    const emailsHtml = pregao.emails && pregao.emails.length > 0 
+        ? pregao.emails.map(e => `<p>• ${e}</p>`).join('') 
+        : '<p>-</p>';
     
     document.getElementById('info-tab-contato').innerHTML = `
-        <div class="info-section"><h4>Telefones</h4>${telefonesHtml}</div>
-        <div class="info-section"><h4>E-mails</h4>${emailsHtml}</div>
+        <div class="info-section">
+            <h4 style="color: #111; font-weight: 700;">Telefones</h4>
+            ${telefonesHtml}
+        </div>
+        <div class="info-section">
+            <h4 style="color: #111; font-weight: 700;">E-mails</h4>
+            ${emailsHtml}
+        </div>
     `;
     
     document.getElementById('info-tab-prazos').innerHTML = `
@@ -766,11 +863,19 @@ function viewPregao(id) {
         </div>
     `;
     
-    const detalhesHtml = pregao.detalhes && pregao.detalhes.length > 0 ? pregao.detalhes.map(d => `<p>✓ ${d}</p>`).join('') : '<p>Nenhum detalhe selecionado</p>';
+    const detalhesHtml = pregao.detalhes && pregao.detalhes.length > 0 
+        ? pregao.detalhes.map(d => `<p>✓ ${d}</p>`).join('') 
+        : '<p>Nenhum detalhe selecionado</p>';
     
     document.getElementById('info-tab-detalhes').innerHTML = `
-        <div class="info-section"><h4>Detalhes Selecionados</h4>${detalhesHtml}</div>
-        <div class="info-section"><p><strong>Banco:</strong> ${pregao.banco || '-'}</p></div>
+        <div class="info-section">
+            <h4 style="color: #111; font-weight: 700;">Detalhes Selecionados</h4>
+            ${detalhesHtml}
+        </div>
+        <div class="info-section">
+            <p><strong>Banco:</strong> ${pregao.banco || '-'}</p>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; font-style: italic;">* Dados bancários completos serão incluídos no PDF da proposta</p>
+        </div>
     `;
     
     document.getElementById('infoModal').classList.add('show');
@@ -792,6 +897,7 @@ function switchInfoTab(tabId) {
     const tabIndex = infoTabs.indexOf(tabId);
     document.querySelectorAll('#infoModal .tabs-nav .tab-btn')[tabIndex].classList.add('active');
     currentInfoTab = tabIndex;
+    
     updateInfoNavigationButtons();
 }
 
@@ -838,8 +944,13 @@ async function confirmarExclusao() {
     }
 
     try {
-        const headers = { 'Accept': 'application/json' };
-        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        const headers = {
+            'Accept': 'application/json'
+        };
+        
+        if (sessionToken) {
+            headers['X-Session-Token'] = sessionToken;
+        }
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -867,6 +978,7 @@ async function confirmarExclusao() {
         updateDisplay();
         showToast(`Pregão ${pregaoExcluido?.numero_pregao} excluído`, 'error');
     } catch (error) {
+        console.error('Erro ao deletar:', error);
         if (error.name === 'AbortError') {
             showToast('Timeout: Operação demorou muito', 'error');
         } else {
@@ -890,27 +1002,15 @@ async function openItems(id) {
 }
 
 // ============================================
-// MODAL ASSINATURA EXEQUIBILIDADE
-// ============================================
-
-function perguntarAssinaturaExequibilidade(callback) {
-    const modal = document.getElementById('modalAssinaturaExe');
-    window.callbackExeAssinatura = callback;
-    modal.classList.add('show');
-}
-
-function fecharModalAssinaturaExe() {
-    document.getElementById('modalAssinaturaExe').classList.remove('show');
-}
-
-function confirmarAssinaturaExe(comAssinatura) {
-    fecharModalAssinaturaExe();
-    if (window.callbackExeAssinatura) window.callbackExeAssinatura(comAssinatura);
-}
-
-// ============================================
 // COMPROVANTE DE EXEQUIBILIDADE
 // ============================================
+
+let exequibilidadeData = {
+    intervalo: '',
+    impostoFederal: 9.7,
+    freteVenda: 5,
+    freteCompra: 0
+};
 
 function abrirModalExequibilidade(pregaoId) {
     currentPregaoId = pregaoId;
@@ -921,6 +1021,7 @@ function abrirModalExequibilidade(pregaoId) {
         document.body.appendChild(modal);
     }
     
+    // Resetar valores padrão
     document.getElementById('exeIntervalo').value = '';
     document.getElementById('exeImpostoFederal').value = '9.7';
     document.getElementById('exeFreteVenda').value = '5';
@@ -930,7 +1031,8 @@ function abrirModalExequibilidade(pregaoId) {
 }
 
 function fecharModalExequibilidade() {
-    document.getElementById('modalExequibilidade').classList.remove('show');
+    const modal = document.getElementById('modalExequibilidade');
+    if (modal) modal.classList.remove('show');
 }
 
 function criarModalExequibilidade() {
@@ -951,9 +1053,11 @@ function criarModalExequibilidade() {
                 </div>
                 
                 <div class="tab-content active" id="exe-tab-geral">
-                    <div class="form-group">
-                        <label>Intervalo de Itens <span style="color:var(--text-secondary);font-weight:400;">(ex: 1-5, 10, 15-20)</span></label>
-                        <input type="text" id="exeIntervalo" placeholder="Ex: 1-5, 10, 15-20">
+                    <div class="form-grid">
+                        <div class="form-group" style="grid-column: 1/-1;">
+                            <label>Intervalo de Itens <span style="color:var(--text-secondary);font-weight:400;">(ex: 1-5, 10, 15-20 ou deixe vazio para todos)</span></label>
+                            <input type="text" id="exeIntervalo" placeholder="Ex: 1-5, 10, 15-20">
+                        </div>
                     </div>
                 </div>
                 
@@ -978,7 +1082,7 @@ function criarModalExequibilidade() {
             <div class="modal-actions">
                 <button type="button" id="btnExePrev" class="secondary" style="display: none;" onclick="prevExeTab()">Anterior</button>
                 <button type="button" id="btnExeNext" class="secondary" onclick="nextExeTab()">Próximo</button>
-                <button type="button" id="btnExeGerar" class="success" style="display: none;" onclick="iniciarGeracaoComprovante()">Gerar Comprovante</button>
+                <button type="button" id="btnExeGerar" class="success" style="display: none;" onclick="gerarComprovanteExequibilidade()">Gerar Comprovante</button>
                 <button type="button" class="danger" onclick="fecharModalExequibilidade()">Cancelar</button>
             </div>
         </div>
@@ -986,52 +1090,26 @@ function criarModalExequibilidade() {
     return modal;
 }
 
-function iniciarGeracaoComprovante() {
-    fecharModalExequibilidade();
-    perguntarAssinaturaExequibilidade(comAssinatura => {
-        gerarComprovanteExequibilidade(comAssinatura);
-    });
-}
-
-function parsearIntervalo(intervalo) {
-    if (!intervalo || intervalo.trim() === '') return null;
-    
-    const numeros = [];
-    const partes = intervalo.split(',').map(p => p.trim());
-    
-    for (const parte of partes) {
-        if (parte.includes('-')) {
-            const [inicio, fim] = parte.split('-').map(n => parseInt(n.trim()));
-            if (isNaN(inicio) || isNaN(fim) || inicio > fim) {
-                showToast('Intervalo inválido', 'error');
-                return null;
-            }
-            for (let i = inicio; i <= fim; i++) numeros.push(i);
-        } else {
-            const num = parseInt(parte);
-            if (isNaN(num)) {
-                showToast('Número inválido', 'error');
-                return null;
-            }
-            numeros.push(num);
-        }
-    }
-    return numeros;
-}
+const exeTabs = ['exe-tab-geral', 'exe-tab-valores'];
+let currentExeTab = 0;
 
 function switchExeTab(tabId) {
     const allTabs = document.querySelectorAll('#modalExequibilidade .tab-content');
     const allBtns = document.querySelectorAll('#modalExequibilidade .tab-btn');
     allTabs.forEach(t => t.classList.remove('active'));
     allBtns.forEach(b => b.classList.remove('active'));
-    document.getElementById(tabId).classList.add('active');
+    const active = document.getElementById(tabId);
+    if (active) active.classList.add('active');
     currentExeTab = exeTabs.indexOf(tabId);
-    if (allBtns[currentExeTab]) allBtns[currentExeTab].classList.add('active');
-    
-    const isLast = currentExeTab === exeTabs.length - 1;
-    document.getElementById('btnExePrev').style.display = currentExeTab === 0 ? 'none' : 'inline-block';
-    document.getElementById('btnExeNext').style.display = isLast ? 'none' : 'inline-block';
-    document.getElementById('btnExeGerar').style.display = isLast ? 'inline-block' : 'none';
+    const idx = currentExeTab;
+    if (allBtns[idx]) allBtns[idx].classList.add('active');
+    const isLast = idx === exeTabs.length - 1;
+    const prev = document.getElementById('btnExePrev');
+    const next = document.getElementById('btnExeNext');
+    const gerar = document.getElementById('btnExeGerar');
+    if (prev) prev.style.display = idx === 0 ? 'none' : 'inline-block';
+    if (next) next.style.display = isLast ? 'none' : 'inline-block';
+    if (gerar) gerar.style.display = isLast ? 'inline-block' : 'none';
 }
 
 function nextExeTab() {
@@ -1048,21 +1126,13 @@ function prevExeTab() {
     }
 }
 
-function formatarValorBR(valor) {
-    if (valor === 0 || valor === null || valor === undefined) return 'R$ 0,00';
-    return 'R$ ' + valor.toFixed(2).replace('.', ',');
-}
-
-function formatarValorPDF(valor) {
-    if (valor === 0 || valor === null || valor === undefined) return 'R$ 0,00';
-    return 'R$ ' + valor.toFixed(2).replace('.', ',');
-}
-
-function gerarComprovanteExequibilidade(comAssinatura = true) {
+async function gerarComprovanteExequibilidade() {
     const intervalo = document.getElementById('exeIntervalo').value.trim();
     const impostoFederal = parseFloat(document.getElementById('exeImpostoFederal').value) || 9.7;
     const freteVenda = parseFloat(document.getElementById('exeFreteVenda').value) || 5;
     const freteCompra = parseFloat(document.getElementById('exeFreteCompra').value) || 0;
+    
+    fecharModalExequibilidade();
     
     const pregao = pregoes.find(p => p.id === currentPregaoId);
     if (!pregao) {
@@ -1070,6 +1140,7 @@ function gerarComprovanteExequibilidade(comAssinatura = true) {
         return;
     }
     
+    // Filtrar itens pelo intervalo
     let itensFiltrados = [...itens];
     if (intervalo) {
         const numeros = parsearIntervalo(intervalo);
@@ -1083,256 +1154,346 @@ function gerarComprovanteExequibilidade(comAssinatura = true) {
         return;
     }
     
+    // Buscar dados bancários
+    let dadosBancarios = null;
+    try {
+        const headers = { 'Accept': 'application/json' };
+        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        const response = await fetch(`${API_URL}/pregoes/${currentPregaoId}/dados-bancarios`, {
+            method: 'GET',
+            headers: headers
+        });
+        if (response.ok) {
+            const data = await response.json();
+            dadosBancarios = data.dados_bancarios;
+        }
+    } catch (error) {
+        console.error('Erro ao buscar dados bancários:', error);
+    }
+    
     if (typeof window.jspdf === 'undefined') {
         showToast('Erro: Biblioteca PDF não carregou. Recarregue a página (F5).', 'error');
         return;
     }
     
+    gerarPDFExequibilidade(pregao, itensFiltrados, dadosBancarios, impostoFederal, freteVenda, freteCompra);
+}
+
+function gerarPDFExequibilidade(pregao, itensExe, dadosBancarios, impostoFederal, freteVenda, freteCompra) {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const doc = new jsPDF();
     
-    let y = 15;
+    let y = 3;
     const margin = 15;
     const pageWidth = doc.internal.pageSize.width;
     const pageHeight = doc.internal.pageSize.height;
-    const contentWidth = pageWidth - (2 * margin);
+    const lineHeight = 5;
+    const maxWidth = pageWidth - (2 * margin);
+    const footerMargin = 30;
     
-    function checkPageBreak(requiredSpace) {
-        if (y > pageHeight - 30 - requiredSpace) {
-            doc.addPage();
-            y = 15;
-            return true;
+    // Função para adicionar cabeçalho com logo
+    function adicionarCabecalho() {
+        const logoHeaderImg = new Image();
+        logoHeaderImg.crossOrigin = 'anonymous';
+        logoHeaderImg.src = 'I.R.-COMERCIO-E-MATERIAIS-ELETRICOS-LTDA-PDF.png';
+        
+        try {
+            const logoWidth = 40;
+            const logoHeight = 15;
+            const logoX = 5;
+            const headerY = 3;
+            
+            doc.setGState(new doc.GState({ opacity: 0.3 }));
+            doc.addImage(logoHeaderImg, 'PNG', logoX, headerY, logoWidth, logoHeight);
+            doc.setGState(new doc.GState({ opacity: 1.0 }));
+            
+            doc.setFontSize(8);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(150, 150, 150);
+            const textX = logoX + logoWidth + 1.2;
+            doc.text('I.R COMÉRCIO E', textX, headerY + 5);
+            doc.text('MATERIAIS ELÉTRICOS LTDA', textX, headerY + 10);
+            doc.setTextColor(0, 0, 0);
+            
+            return headerY + logoHeight + 8;
+        } catch (e) {
+            return 20;
         }
-        return false;
     }
     
-    // TÍTULO
+    function addPageWithHeader() {
+        doc.addPage();
+        return adicionarCabecalho();
+    }
+    
+    function paginaCheia(yAtual, espaco = 40) {
+        return yAtual > pageHeight - footerMargin - espaco;
+    }
+    
+    // Rodapé
+    const footerLines = [
+        'I.R. COMÉRCIO E MATERIAIS ELÉTRICOS LTDA  |  CNPJ: 33.149.502/0001-38  |  IE: 083.780.74-2',
+        'RUA TADORNA Nº 472, SALA 2, NOVO HORIZONTE – SERRA/ES  |  CEP: 29.163-318',
+        'TELEFAX: (27) 3209-4291  |  E-MAIL: COMERCIAL.IRCOMERCIO@GMAIL.COM'
+    ];
+    const footerLineH = 5;
+    const footerH = footerLines.length * footerLineH + 4;
+    
+    function addFooter(docRef) {
+        const totalPags = docRef.internal.getNumberOfPages();
+        for (let pg = 1; pg <= totalPags; pg++) {
+            docRef.setPage(pg);
+            docRef.setFontSize(8);
+            docRef.setFont(undefined, 'normal');
+            docRef.setTextColor(150, 150, 150);
+            const fyBase = pageHeight - footerH + 2;
+            footerLines.forEach((line, i) => {
+                docRef.text(line, pageWidth / 2, fyBase + (i * footerLineH), { align: 'center' });
+            });
+            docRef.setTextColor(0, 0, 0);
+        }
+    }
+    
+    // Título
+    y = adicionarCabecalho();
+    y += 5;
+    
     doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text('DECLARAÇÃO DE CUSTOS', pageWidth / 2, y, { align: 'center' });
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(0, 0, 0);
+    doc.text('TABELA DE CUSTOS E FORMAÇÃO DE PREÇOS', pageWidth / 2, y, { align: 'center' });
     
     y += 8;
     doc.setFontSize(12);
     doc.text(`${pregao.numero_pregao}${pregao.uasg ? ' - ' + pregao.uasg : ''}`, pageWidth / 2, y, { align: 'center' });
+    
     y += 12;
     
-    // DADOS DO PROCESSO
+    // DADOS 1 - Informações do Processo
     doc.setFontSize(10);
-    
-    doc.setFont('helvetica', 'bold');
-    doc.text('PREGÃO:', margin, y);
-    doc.setFont('helvetica', 'normal');
-    doc.text(` ${pregao.numero_pregao}`, margin + 20, y);
+    doc.setFont(undefined, 'bold');
+    doc.text('INFORMAÇÕES DO PROCESSO', margin, y);
+    y += 6;
+    doc.setFont(undefined, 'normal');
+    doc.text(`PREGÃO: ${pregao.numero_pregao}`, margin, y);
     y += 5;
-    
-    doc.setFont('helvetica', 'bold');
-    doc.text('ÓRGÃO:', margin, y);
-    doc.setFont('helvetica', 'normal');
-    const orgaoText = ` ${pregao.nome_orgao || 'NÃO INFORMADO'} - ${pregao.uasg || ''}`;
-    const orgaoLines = doc.splitTextToSize(orgaoText, contentWidth - 25);
-    doc.text(orgaoLines[0], margin + 20, y);
+    doc.text(`ÓRGÃO: ${pregao.nome_orgao || 'NÃO INFORMADO'} - ${pregao.uasg || ''}`, margin, y);
     y += 5;
-    for (let i = 1; i < orgaoLines.length; i++) {
-        doc.text(orgaoLines[i], margin + 20, y);
+    doc.text(`${pregao.municipio || ''} - ${pregao.uf || ''}`, margin, y);
+    y += 10;
+    
+    // DADOS 2 - Informações da Empresa
+    doc.setFont(undefined, 'bold');
+    doc.text('INFORMAÇÕES DA EMPRESA', margin, y);
+    y += 6;
+    doc.setFont(undefined, 'normal');
+    doc.text('FORNECEDOR: I.R. COMÉRCIO E MATERIAIS ELÉTRICOS LTDA', margin, y);
+    doc.text('TEL: (27) 3209-4291', pageWidth - margin - 50, y, { align: 'right' });
+    y += 5;
+    doc.text('CNPJ/CPF: 33.149.502/0001-38', margin, y);
+    y += 5;
+    doc.text('ENDEREÇO: RUA TADORNA, Nº 472, SALA 2', margin, y);
+    y += 5;
+    doc.text('BAIRRO: NOVO HORIZONTE', margin, y);
+    y += 5;
+    doc.text(`CIDADE: SERRA      UF: ES`, margin, y);
+    doc.text(`CEP: 29.163-318`, pageWidth - margin - 30, y, { align: 'right' });
+    y += 5;
+    if (dadosBancarios) {
+        doc.text(`DADOS BANCÁRIOS: ${dadosBancarios}`, margin, y);
         y += 5;
     }
+    y += 5;
     
-    doc.setFont('helvetica', 'bold');
-    doc.text('CIDADE:', margin, y);
-    doc.setFont('helvetica', 'normal');
-    doc.text(` ${pregao.municipio || ''} - ${pregao.uf || ''}`, margin + 22, y);
+    if (paginaCheia(y, 80)) y = addPageWithHeader() + 20;
+    
+    // DADOS 3 - Tabela de Itens
+    doc.setFont(undefined, 'bold');
+    doc.text('COMPOSIÇÃO DE CUSTOS', margin, y);
     y += 8;
     
-    // DADOS DA EMPRESA
-    doc.setFont('helvetica', 'bold');
-    doc.text('FORNECEDOR:', margin, y);
-    doc.setFont('helvetica', 'normal');
-    doc.text(' I.R. COMÉRCIO E MATERIAIS ELÉTRICOS LTDA', margin + 28, y);
-    doc.setFont('helvetica', 'bold');
-    doc.text('TEL:', pageWidth - 60, y);
-    doc.setFont('helvetica', 'normal');
-    doc.text('(27) 3209-4291', pageWidth - 45, y);
-    y += 5;
-    
-    doc.setFont('helvetica', 'bold');
-    doc.text('CNPJ:', margin, y);
-    doc.setFont('helvetica', 'normal');
-    doc.text(' 33.149.502/0001-38', margin + 18, y);
-    y += 5;
-    
-    doc.setFont('helvetica', 'bold');
-    doc.text('ENDEREÇO:', margin, y);
-    doc.setFont('helvetica', 'normal');
-    doc.text(' RUA TADORNA, Nº 472, SALA 2', margin + 25, y);
-    y += 5;
-    
-    doc.setFont('helvetica', 'bold');
-    doc.text('BAIRRO:', margin, y);
-    doc.setFont('helvetica', 'normal');
-    doc.text(' NOVO HORIZONTE', margin + 20, y);
-    y += 5;
-    
-    doc.setFont('helvetica', 'bold');
-    doc.text('CIDADE:', margin, y);
-    doc.setFont('helvetica', 'normal');
-    doc.text(' SERRA', margin + 20, y);
-    doc.setFont('helvetica', 'bold');
-    doc.text('UF:', margin + 50, y);
-    doc.setFont('helvetica', 'normal');
-    doc.text('ES', margin + 65, y);
-    doc.setFont('helvetica', 'bold');
-    doc.text('CEP:', pageWidth - 50, y);
-    doc.setFont('helvetica', 'normal');
-    doc.text('29.163-318', pageWidth - 35, y);
-    y += 8;
-    
-    checkPageBreak(50);
-    
-    // TABELA
-    const startX = margin;
-    const tableWidth = contentWidth;
-    
+    // Cabeçalho da tabela
     const colWidths = {
-        descricao: 50, qtd: 8, un: 7, marca: 15, modelo: 15,
-        custoUnt: 16, freteCompra: 16, impFed: 16, freteVenda: 16,
-        vendaUnt: 16, lucroReal: 16, percLucro: 12
+        item: 15,
+        descricao: 50,
+        qtd: 12,
+        un: 10,
+        marca: 20,
+        modelo: 20,
+        custoUnt: 20,
+        freteCompra: 20,
+        impFed: 20,
+        freteVenda: 20,
+        vendaUnt: 20,
+        lucroReal: 20,
+        percLucro: 15
     };
     
-    // CABEÇALHO
+    const tableWidth = Object.values(colWidths).reduce((a, b) => a + b, 0);
+    const startX = (pageWidth - tableWidth) / 2;
+    
     doc.setFillColor(108, 117, 125);
     doc.setDrawColor(180, 180, 180);
-    doc.rect(startX, y - 4, tableWidth, 8, 'F');
+    doc.rect(startX, y, tableWidth, 10, 'FD');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(6);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(undefined, 'bold');
     
     let xp = startX;
     const headers = [
-        ['DESCRIÇÃO', 'left'], ['QTD', 'center'], ['UN', 'center'], ['MARCA', 'center'],
-        ['MODELO', 'center'], ['CUSTO\nUNT', 'right'], ['FRETE\nCOMPRA', 'right'],
-        ['IMP\nFEDERAL', 'right'], ['FRETE\nVENDA', 'right'], ['VENDA\nUNT', 'right'],
-        ['LUCRO\nREAL', 'right'], ['%\nLUCRO', 'right']
+        ['ITEM', colWidths.item, 'center'],
+        ['DESCRIÇÃO', colWidths.descricao, 'left'],
+        ['QTD', colWidths.qtd, 'center'],
+        ['UN', colWidths.un, 'center'],
+        ['MARCA', colWidths.marca, 'center'],
+        ['MODELO', colWidths.modelo, 'center'],
+        ['CUSTO\nUNT', colWidths.custoUnt, 'right'],
+        ['FRETE\nCOMPRA', colWidths.freteCompra, 'right'],
+        ['IMP\nFED', colWidths.impFed, 'right'],
+        ['FRETE\nVENDA', colWidths.freteVenda, 'right'],
+        ['VENDA\nUNT', colWidths.vendaUnt, 'right'],
+        ['LUCRO\nREAL', colWidths.lucroReal, 'right'],
+        ['% LUCRO', colWidths.percLucro, 'right']
     ];
     
-    headers.forEach(([text, align], i) => {
-        const width = Object.values(colWidths)[i];
-        doc.line(xp, y - 4, xp, y + 4);
-        const lines = text.split('\n');
-        lines.forEach((line, idx) => {
-            const yPos = y - 4 + 3 + (idx * 3);
-            if (align === 'left') doc.text(line, xp + 1, yPos);
-            else if (align === 'right') doc.text(line, xp + width - 1, yPos, { align: 'right' });
-            else doc.text(line, xp + width / 2, yPos, { align: 'center' });
+    headers.forEach(([lbl, w, align]) => {
+        doc.line(xp, y, xp, y + 10);
+        const lines = lbl.split('\n');
+        lines.forEach((line, i) => {
+            doc.text(line, xp + w / 2, y + 4 + (i * 3), { align: 'center' });
         });
-        xp += width;
+        xp += w;
     });
-    doc.line(xp, y - 4, xp, y + 4);
+    doc.line(xp, y, xp, y + 10);
     
-    y += 4;
+    y += 10;
     doc.setTextColor(0, 0, 0);
-    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6);
+    doc.setFont(undefined, 'normal');
     
-    // LINHAS
-    itensFiltrados.forEach((item, idx) => {
-        checkPageBreak(8);
+    // Linhas de itens
+    let totalGeralVenda = 0;
+    itensExe.forEach((item, idx) => {
+        if (paginaCheia(y, 50)) {
+            y = addPageWithHeader() + 20;
+            doc.setFillColor(108, 117, 125);
+            doc.setDrawColor(180, 180, 180);
+            doc.rect(startX, y, tableWidth, 10, 'FD');
+            doc.setTextColor(255, 255, 255);
+            doc.setFont(undefined, 'bold');
+            xp = startX;
+            headers.forEach(([lbl, w]) => {
+                doc.line(xp, y, xp, y + 10);
+                const lines = lbl.split('\n');
+                lines.forEach((line, i) => {
+                    doc.text(line, xp + w / 2, y + 4 + (i * 3), { align: 'center' });
+                });
+                xp += w;
+            });
+            doc.line(xp, y, xp, y + 10);
+            y += 10;
+            doc.setTextColor(0, 0, 0);
+            doc.setFont(undefined, 'normal');
+        }
         
         const vendaUnt = item.venda_unt || 0;
         const custoUnt = item.custo_unt || 0;
         const impostoFederalValor = vendaUnt * (impostoFederal / 100);
         const freteVendaValor = vendaUnt * (freteVenda / 100);
-        const freteCompraPorItem = freteCompra / itensFiltrados.length;
-        const lucroReal = vendaUnt - freteVendaValor - impostoFederalValor - freteCompraPorItem - custoUnt;
+        const lucroReal = vendaUnt - freteVendaValor - impostoFederalValor - freteCompra - custoUnt;
         const percLucro = vendaUnt > 0 ? (lucroReal / vendaUnt) * 100 : 0;
         
-        const rowBg = idx % 2 === 0 ? [255, 255, 255] : [247, 248, 250];
+        totalGeralVenda += vendaUnt * (item.qtd || 1);
+        
+        const rowBg = idx % 2 === 0 ? [255,255,255] : [247,248,250];
         doc.setFillColor(...rowBg);
         doc.setDrawColor(180, 180, 180);
-        
-        let descricao = item.descricao || '-';
-        const descLines = doc.splitTextToSize(descricao, colWidths.descricao - 2);
-        const lineHeight = 3;
-        const rowHeight = Math.max(8, descLines.length * lineHeight + 2);
-        
-        doc.rect(startX, y - 4, tableWidth, rowHeight, 'FD');
+        doc.rect(startX, y, tableWidth, 8, 'FD');
         
         xp = startX;
-        
-        descLines.forEach((line, i) => doc.text(line, xp + 1, y - 4 + 3 + (i * lineHeight)));
-        xp += colWidths.descricao;
-        doc.line(xp, y - 4, xp, y - 4 + rowHeight);
-        
-        doc.text(String(item.qtd || 1), xp + colWidths.qtd / 2, y - 4 + rowHeight/2 + 1, { align: 'center' });
-        xp += colWidths.qtd;
-        doc.line(xp, y - 4, xp, y - 4 + rowHeight);
-        
-        doc.text(item.unidade || 'UN', xp + colWidths.un / 2, y - 4 + rowHeight/2 + 1, { align: 'center' });
-        xp += colWidths.un;
-        doc.line(xp, y - 4, xp, y - 4 + rowHeight);
-        
-        const marcaLines = doc.splitTextToSize(item.marca || '-', colWidths.marca - 2);
-        marcaLines.forEach((line, i) => doc.text(line, xp + colWidths.marca / 2, y - 4 + 3 + (i * lineHeight), { align: 'center' }));
-        xp += colWidths.marca;
-        doc.line(xp, y - 4, xp, y - 4 + rowHeight);
-        
-        const modeloLines = doc.splitTextToSize(item.modelo || '-', colWidths.modelo - 2);
-        modeloLines.forEach((line, i) => doc.text(line, xp + colWidths.modelo / 2, y - 4 + 3 + (i * lineHeight), { align: 'center' }));
-        xp += colWidths.modelo;
-        doc.line(xp, y - 4, xp, y - 4 + rowHeight);
-        
-        const valores = [
-            formatarValorPDF(custoUnt), formatarValorPDF(freteCompraPorItem),
-            formatarValorPDF(impostoFederalValor), formatarValorPDF(freteVendaValor),
-            formatarValorPDF(vendaUnt), formatarValorPDF(lucroReal),
-            percLucro.toFixed(1).replace('.', ',') + '%'
+        const values = [
+            [String(item.numero || ''), 'center'],
+            [item.descricao || '', 'left'],
+            [String(item.qtd || 1), 'center'],
+            [item.unidade || 'UN', 'center'],
+            [item.marca || '-', 'center'],
+            [item.modelo || '-', 'center'],
+            ['R$ ' + custoUnt.toFixed(2), 'right'],
+            ['R$ ' + freteCompra.toFixed(2), 'right'],
+            ['R$ ' + impostoFederalValor.toFixed(2), 'right'],
+            ['R$ ' + freteVendaValor.toFixed(2), 'right'],
+            ['R$ ' + vendaUnt.toFixed(2), 'right'],
+            ['R$ ' + lucroReal.toFixed(2), 'right'],
+            [percLucro.toFixed(1) + '%', 'right']
         ];
         
-        const colKeys = ['custoUnt', 'freteCompra', 'impFed', 'freteVenda', 'vendaUnt', 'lucroReal', 'percLucro'];
-        
-        colKeys.forEach((key, i) => {
-            const width = colWidths[key];
-            doc.text(valores[i], xp + width - 1, y - 4 + rowHeight/2 + 1, { align: 'right' });
-            xp += width;
-            doc.line(xp, y - 4, xp, y - 4 + rowHeight);
+        values.forEach(([val, align], i) => {
+            doc.line(xp, y, xp, y + 8);
+            const w = Object.values(colWidths)[i];
+            const textX = align === 'left' ? xp + 2 : (align === 'right' ? xp + w - 2 : xp + w / 2);
+            doc.text(val, textX, y + 5, { align: align });
+            xp += w;
         });
-        
-        y += rowHeight;
+        doc.line(xp, y, xp, y + 8);
+        y += 8;
     });
     
-    doc.line(startX, y - 4, startX + tableWidth, y - 4);
-    y += 8;
+    y += 5;
     
-    checkPageBreak(30);
+    // DADOS 4 - Data e Assinatura
+    if (paginaCheia(y, 40)) y = addPageWithHeader() + 20;
     
-    // DATA
     const dataAtual = new Date();
+    const dia = dataAtual.getDate();
     const meses = ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 
                    'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO'];
+    const mes = meses[dataAtual.getMonth()];
+    const ano = dataAtual.getFullYear();
     
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`SERRA/ES, ${dataAtual.getDate()} DE ${meses[dataAtual.getMonth()]} DE ${dataAtual.getFullYear()}`, pageWidth / 2, y, { align: 'center' });
+    doc.setFont(undefined, 'normal');
+    doc.text(`SERRA/ES, ${dia} DE ${mes} DE ${ano}`, pageWidth / 2, y, { align: 'center' });
     y += 15;
     
-    // ASSINATURA
-    if (comAssinatura) {
+    // Assinatura
+    const assinatura = new Image();
+    assinatura.crossOrigin = 'anonymous';
+    assinatura.src = 'assinatura.png';
+    
+    try {
+        const imgWidth = 50;
+        const imgHeight = 15;
+        doc.addImage(assinatura, 'PNG', (pageWidth / 2) - (imgWidth / 2), y - 5, imgWidth, imgHeight);
+    } catch (e) {
         doc.line(pageWidth / 2 - 40, y, pageWidth / 2 + 40, y);
-        y += 6;
-        doc.setFont('helvetica', 'bold');
-        doc.text('ROSEMEIRE BICALHO DE LIMA GRAVINO', pageWidth / 2, y, { align: 'center' });
-        y += 5;
-        doc.setFont('helvetica', 'normal');
-        doc.text('MG-10.078.568 / CPF: 045.160.616-78', pageWidth / 2, y, { align: 'center' });
-        y += 5;
-        doc.text('DIRETORA', pageWidth / 2, y, { align: 'center' });
     }
     
-    doc.save(`COMPROVANTE-EXEQUIBILIDADE-${pregao.numero_pregao}${pregao.uasg ? '-' + pregao.uasg : ''}.pdf`);
+    y += 10;
+    doc.setFont(undefined, 'bold');
+    doc.text('ROSEMEIRE BICALHO DE LIMA GRAVINO', pageWidth / 2, y, { align: 'center' });
+    y += 5;
+    doc.setFont(undefined, 'normal');
+    doc.text('MG-10.078.568 / CPF: 045.160.616-78', pageWidth / 2, y, { align: 'center' });
+    y += 5;
+    doc.text('DIRETORA', pageWidth / 2, y, { align: 'center' });
+    
+    addFooter(doc);
+    
+    const nomeArquivo = `COMPROVANTE-EXEQUIBILIDADE-${pregao.numero_pregao}${pregao.uasg ? '-' + pregao.uasg : ''}.pdf`;
+    doc.save(nomeArquivo);
     showToast('Comprovante gerado com sucesso!', 'success');
 }
 
 // ============================================
-// TELA DE ITENS
+// GESTÃO DE ITENS DO PREGÃO
 // ============================================
+
+let currentPregaoId = null;
+let itens = [];
+let editingItemIndex = null;
+let selectedItens = new Set();
+let currentItemsView = 'proposta';
+let marcasItens = new Set();
 
 function mostrarTelaItens() {
     document.querySelector('.container').style.display = 'none';
@@ -1344,7 +1505,11 @@ function mostrarTelaItens() {
     telaItens.style.display = 'block';
     const pregao = pregoes.find(p => p.id === currentPregaoId);
     if (pregao) {
-        document.getElementById('tituloItens').textContent = `Pregão ${pregao.numero_pregao}${pregao.uasg ? ' — UASG ' + pregao.uasg : ''}`;
+        const tituloEl = document.getElementById('tituloItens');
+        if (tituloEl) {
+            const uasgPart = pregao.uasg ? ` — UASG ${pregao.uasg}` : '';
+            tituloEl.textContent = `Pregão ${pregao.numero_pregao}${uasgPart}`;
+        }
     }
 }
 
@@ -1355,112 +1520,17 @@ function voltarPregoes() {
     itens = [];
 }
 
-function criarTelaItens() {
-    const div = document.createElement('div');
-    div.id = 'telaItens';
-    div.className = 'container';
-    div.innerHTML = `
-        <div class="header">
-            <div class="header-left">
-                <div>
-                    <h1>Itens do Pregão</h1>
-                    <p id="tituloItens" class="pregao-info"></p>
-                </div>
-            </div>
-            <div class="actions-buttons">
-                <button onclick="adicionarItem()" class="btn-add-item">+ Item</button>
-                <button onclick="abrirModalIntervalo()" class="btn-add-interval">+ Intervalo</button>
-                <button onclick="abrirModalExcluirItens()" class="btn-delete-selected">Excluir</button>
-            </div>
-        </div>
+// ============================================================
+// ESTADO DOS GRUPOS
+// ============================================================
+let grupos = [];
+let editandoGrupoIdx = null;
+let editandoGrupoItemIdx = null;
+let modoNavegacaoGrupo = false;
 
-        <div class="search-bar-wrapper">
-            <div class="search-bar">
-                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path>
-                </svg>
-                <input type="text" id="searchItens" placeholder="Pesquisar itens" oninput="filterItens()">
-                
-                <div class="search-bar-filters">
-                    <div class="filter-dropdown-inline">
-                        <select id="filterMarcaItens" onchange="filterItens()">
-                            <option value="">Todas as Marcas</option>
-                        </select>
-                        <svg class="dropdown-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                    </div>
-                </div>
-
-                <button onclick="syncItens()" class="btn-sync" title="Sincronizar">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="23 4 23 10 17 10"></polyline>
-                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                    </svg>
-                </button>
-                
-                <button onclick="perguntarAssinaturaPDF()" class="btn-pdf" title="Gerar Proposta">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                        <polyline points="10 9 9 9 8 9"></polyline>
-                    </svg>
-                </button>
-                
-                <button onclick="abrirModalExequibilidade(currentPregaoId)" class="btn-certificate" title="Comprovante de Exequibilidade">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M4 4v16h16V4H4z"></path>
-                        <rect x="8" y="8" width="8" height="8" rx="1"></rect>
-                        <path d="M8 12h8"></path>
-                        <path d="M12 8v8"></path>
-                    </svg>
-                </button>
-                
-                <button onclick="voltarPregoes()" class="btn-back" title="Voltar">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                        <polyline points="16 17 21 12 16 7"></polyline>
-                        <line x1="21" y1="12" x2="9" y2="12"></line>
-                    </svg>
-                </button>
-            </div>
-        </div>
-
-        <div class="card table-card">
-            <div style="overflow-x: auto;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 40px;">✓</th>
-                            <th style="width: 45px;">ITEM</th>
-                            <th style="min-width: 200px;">DESCRIÇÃO</th>
-                            <th style="width: 55px;">QTD</th>
-                            <th style="width: 45px;">UN</th>
-                            <th style="width: 85px;">MARCA</th>
-                            <th style="width: 85px;">MODELO</th>
-                            <th style="width: 95px;">ESTIMADO UNT</th>
-                            <th style="width: 95px;">ESTIMADO TOTAL</th>
-                            <th style="width: 90px;">CUSTO UNT</th>
-                            <th style="width: 90px;">CUSTO TOTAL</th>
-                            <th style="width: 90px;">VENDA UNT</th>
-                            <th style="width: 90px;">VENDA TOTAL</th>
-                        </tr>
-                    </thead>
-                    <tbody id="itensContainer"></tbody>
-                </table>
-            </div>
-        </div>
-        <div id="itensTotaisBar"></div>
-    `;
-    return div;
-}
-
-// ============================================
+// ============================================================
 // TELA DE GRUPOS
-// ============================================
-
+// ============================================================
 function mostrarTelaGrupos() {
     document.querySelector('.container').style.display = 'none';
     let telaGrupos = document.getElementById('telaGrupos');
@@ -1471,13 +1541,15 @@ function mostrarTelaGrupos() {
     telaGrupos.style.display = 'block';
     const pregao = pregoes.find(p => p.id === currentPregaoId);
     if (pregao) {
-        document.getElementById('tituloGrupos').textContent = `Pregão ${pregao.numero_pregao}${pregao.uasg ? ' — UASG ' + pregao.uasg : ''}`;
+        const el = document.getElementById('tituloGrupos');
+        if (el) el.textContent = `Pregão ${pregao.numero_pregao}${pregao.uasg ? ' — UASG ' + pregao.uasg : ''}`;
     }
     carregarGrupos();
 }
 
 function voltarPregoesDeGrupos() {
-    document.getElementById('telaGrupos').style.display = 'none';
+    const tela = document.getElementById('telaGrupos');
+    if (tela) tela.style.display = 'none';
     document.querySelector('.container').style.display = 'block';
     currentPregaoId = null;
     itens = [];
@@ -1493,13 +1565,13 @@ function criarTelaGrupos() {
             <div class="header-left">
                 <div>
                     <h1>Grupos do Pregão</h1>
-                    <p id="tituloGrupos" class="pregao-info"></p>
+                    <p id="tituloGrupos" style="color:var(--text-secondary);font-size:0.8rem;font-weight:400;margin-top:2px;"></p>
                 </div>
             </div>
-            <div class="actions-buttons">
-                <button onclick="abrirModalNovoGrupo()" class="btn-add-item">+ Grupo</button>
-                <button onclick="abrirModalIntervaloGrupos()" class="btn-add-interval">+ Intervalo</button>
-                <button onclick="abrirModalExcluirGrupo()" class="btn-delete-selected">Excluir</button>
+            <div style="display:flex;gap:0.75rem;align-items:center;">
+                <button onclick="abrirModalNovoGrupo()" style="background:#22C55E;color:white;border:none;padding:0.65rem 1.25rem;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:600;">+ Grupo</button>
+                <button onclick="abrirModalIntervaloGrupos()" style="background:#6B7280;color:white;border:none;padding:0.65rem 1.25rem;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:600;">+ Intervalo</button>
+                <button onclick="abrirModalExcluirGrupo()" style="background:#EF4444;color:white;border:none;padding:0.65rem 1.25rem;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:600;">Excluir</button>
             </div>
         </div>
 
@@ -1523,671 +1595,163 @@ function criarTelaGrupos() {
                         <svg class="dropdown-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
                     </div>
                 </div>
-                <button onclick="perguntarAssinaturaPDFGrupos()" class="btn-pdf" title="Gerar Proposta">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                        <polyline points="10 9 9 9 8 9"></polyline>
+                <button onclick="abrirModalCotacao()" style="background:transparent;border:none;color:var(--text-secondary);cursor:pointer;padding:0.5rem;display:flex;align-items:center;" title="Enviar Cotação">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="20" height="16" x="2" y="4" rx="2"/>
+                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
                     </svg>
                 </button>
-                <button onclick="abrirModalExequibilidade(currentPregaoId)" class="btn-certificate" title="Comprovante de Exequibilidade">
+                <button onclick="perguntarAssinaturaPDFGrupos()" style="background:transparent;border:none;color:var(--text-secondary);cursor:pointer;padding:0.5rem;display:flex;align-items:center;" title="Gerar Proposta PDF">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M4 4v16h16V4H4z"></path>
-                        <rect x="8" y="8" width="8" height="8" rx="1"></rect>
-                        <path d="M8 12h8"></path>
-                        <path d="M12 8v8"></path>
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline>
                     </svg>
                 </button>
-                <button onclick="syncGrupos()" class="btn-sync" title="Sincronizar">
+                <button onclick="abrirModalExequibilidade(currentPregaoId)" style="background:transparent;border:none;color:var(--certificate-color);cursor:pointer;padding:0.5rem;display:flex;align-items:center;" title="Comprovante de Exequibilidade">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="23 4 23 10 17 10"></polyline>
-                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
                     </svg>
                 </button>
-                <button onclick="voltarPregoesDeGrupos()" class="btn-back" title="Voltar">
+                <button onclick="syncGrupos()" style="background:transparent;border:none;color:var(--text-secondary);cursor:pointer;padding:0.5rem;display:flex;align-items:center;" title="Sincronizar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                        <path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                        <path d="M8 16H3v5"/>
+                    </svg>
+                </button>
+                <button onclick="voltarPregoesDeGrupos()" style="background:transparent;border:none;color:var(--text-secondary);cursor:pointer;padding:0.5rem;display:flex;align-items:center;" title="Voltar">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                        <polyline points="16 17 21 12 16 7"></polyline>
-                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line>
                     </svg>
                 </button>
             </div>
         </div>
 
-        <div id="gruposWrapper"></div>
+        <div id="gruposWrapper" style="margin-top:0.5rem;">
+            <div style="text-align:center;padding:3rem;color:var(--text-secondary);">Nenhum grupo cadastrado</div>
+        </div>
+
+        <div class="modal-overlay" id="modalNovoGrupo">
+            <div class="modal-content" style="max-width:520px;">
+                <div class="modal-header">
+                    <h3 class="modal-title">Novo Grupo / Lote</h3>
+                    <button class="close-modal" onclick="fecharModalNovoGrupo()">✕</button>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Tipo</label>
+                        <select id="novoGrupoTipo">
+                            <option value="GRUPO">Grupo</option>
+                            <option value="LOTE">Lote</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Número</label>
+                        <input type="number" id="novoGrupoNumero" min="1" placeholder="Nº do grupo">
+                    </div>
+                    <div class="form-group" style="grid-column:1/-1;">
+                        <label>Itens do grupo <span style="color:var(--text-secondary);font-weight:400;">(ex: 1-5, 10, 15-20)</span></label>
+                        <input type="text" id="novoGrupoItens" placeholder="Ex: 1-5, 10, 15-20">
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="secondary" onclick="fecharModalNovoGrupo();showToast('Registro cancelado','error')">Cancelar</button>
+                    <button class="success" onclick="confirmarNovoGrupo()">Criar Grupo</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="modalExcluirGrupo">
+            <div class="modal-content" style="max-width:520px;">
+                <div class="modal-header">
+                    <h3 class="modal-title">Excluir Grupo / Lote</h3>
+                    <button class="close-modal" onclick="fecharModalExcluirGrupo()">✕</button>
+                </div>
+                <div class="tabs-container">
+                    <div class="tabs-nav">
+                        <button class="tab-btn active">Selecionar</button>
+                    </div>
+                    <div class="tab-content active">
+                        <div class="form-grid">
+                            <div class="form-group" style="grid-column:1/-1;">
+                                <label>Selecione o grupo a excluir</label>
+                                <select id="excluirGrupoSelect">
+                                    <option value="">Selecione...</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="danger" onclick="confirmarExcluirGrupo()">Excluir</button>
+                    <button class="secondary" onclick="fecharModalExcluirGrupo()">Cancelar</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="modalAssinaturaGrupos">
+            <div class="modal-content modal-delete">
+                <button class="close-modal" onclick="document.getElementById('modalAssinaturaGrupos').classList.remove('show')">✕</button>
+                <div class="modal-message-delete">
+                    Deseja incluir a assinatura padrão na proposta?
+                </div>
+                <div class="modal-actions modal-actions-no-border">
+                    <button class="success" onclick="gerarPDFGruposComAssinatura(true)">Sim</button>
+                    <button class="danger" onclick="gerarPDFGruposComAssinatura(false)">Não</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="modalIntervaloGrupos">
+            <div class="modal-content" style="max-width:600px;">
+                <div class="modal-header">
+                    <h3 class="modal-title">Adicionar Grupos em Intervalo</h3>
+                    <button class="close-modal" onclick="fecharModalIntervaloGrupos()">✕</button>
+                </div>
+                <div class="tabs-container">
+                    <div class="tabs-nav">
+                        <button class="tab-btn active" onclick="switchIntervaloTab('intervalo-tab-config')">Configuração</button>
+                        <button class="tab-btn" onclick="switchIntervaloTab('intervalo-tab-itens')">Itens</button>
+                    </div>
+                    <div class="tab-content active" id="intervalo-tab-config">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Tipo</label>
+                                <select id="intervGrupoTipo" onchange="atualizarLinhasIntervalo()">
+                                    <option value="GRUPO">Grupo</option>
+                                    <option value="LOTE">Lote</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Quantidade de grupos</label>
+                                <input type="number" id="intervGrupoQtd" min="1" max="50" value="1" placeholder="Ex: 3" oninput="atualizarLinhasIntervalo()">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="intervalo-tab-itens">
+                        <div id="intervGrupoLinhas" style="display:flex;flex-direction:column;gap:0.75rem;max-height:300px;overflow-y:auto;">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="btnIntervaloPrev" class="secondary" style="display:none;" onclick="prevIntervaloTab()">Anterior</button>
+                    <button type="button" id="btnIntervaloNext" class="secondary" onclick="nextIntervaloTab()">Próximo</button>
+                    <button type="button" id="btnIntervaloCriar" class="success" style="display:none;" onclick="confirmarIntervaloGrupos()">Criar Grupos</button>
+                    <button type="button" class="danger" onclick="fecharModalIntervaloGrupos()">Cancelar</button>
+                </div>
+            </div>
+        </div>
     `;
     return div;
 }
 
-// ============================================
-// FUNÇÕES DE ITENS
-// ============================================
-
-async function carregarItens(pregaoId) {
-    if (!isOnline) return;
-    
-    try {
-        const headers = { 'Accept': 'application/json' };
-        if (sessionToken) headers['X-Session-Token'] = sessionToken;
-
-        const response = await fetch(`${API_URL}/pregoes/${pregaoId}/itens`, {
-            method: 'GET',
-            headers: headers
-        });
-
-        if (response.status === 401) {
-            sessionStorage.removeItem('pregoesSession');
-            mostrarTelaAcessoNegado('Sua sessão expirou');
-            return;
-        }
-
-        if (response.ok) {
-            itens = await response.json();
-            atualizarMarcasItens();
-            renderItens();
-        }
-    } catch (error) {}
-}
-
-function atualizarMarcasItens() {
-    const novas = new Set();
-    for (const item of itens) { if (item.marca) novas.add(item.marca); }
-    marcasItens = novas;
-    const select = document.getElementById('filterMarcaItens');
-    if (select) {
-        const cur = select.value;
-        select.innerHTML = '<option value="">Todas as Marcas</option>' +
-            Array.from(novas).sort().map(m => `<option value="${m}"${m === cur ? ' selected' : ''}>${m}</option>`).join('');
-    }
-}
-
-function filterItens() {
-    const search = document.getElementById('searchItens')?.value.toLowerCase() || '';
-    const marca = document.getElementById('filterMarcaItens')?.value || '';
-    
-    const filtered = itens.filter(item => {
-        const matchSearch = !search || 
-            (item.descricao || '').toLowerCase().includes(search) ||
-            (item.marca && item.marca.toLowerCase().includes(search)) ||
-            item.numero.toString().includes(search);
-        const matchMarca = !marca || item.marca === marca;
-        return matchSearch && matchMarca;
-    });
-    
-    renderItens(filtered);
-}
-
-function renderItens(itensToRender = itens) {
-    const container = document.getElementById('itensContainer');
-    if (!container) return;
-
-    if (itensToRender.length === 0) {
-        container.innerHTML = '<tr><td colspan="13" style="text-align:center;padding:2rem;">Nenhum item cadastrado</td></tr>';
-        return;
-    }
-
-    let totCompra = 0, totCusto = 0, totVenda = 0;
-    const parts = [];
-
-    for (let idx = 0; idx < itensToRender.length; idx++) {
-        const item = itensToRender[idx];
-        const vendaUnt = item.venda_unt || 0;
-        const estimadoUnt = item.estimado_unt || 0;
-        const estTotal = item.estimado_total || 0;
-        const custoTotal = item.custo_total || 0;
-        const vendaTotal = item.venda_total || 0;
-        
-        totCompra += estTotal;
-        totCusto += custoTotal;
-        totVenda += vendaTotal;
-
-        const vendaAcimaEstimado = estimadoUnt > 0 && vendaUnt > estimadoUnt;
-        const rowClass = item.ganho ? 'item-ganho' : (vendaAcimaEstimado ? 'row-venda-alta' : '');
-        
-        const cbId = 'ig-' + item.id;
-        const checked = item.ganho ? 'checked' : '';
-
-        parts.push(`
-            <tr class="${rowClass}" ondblclick="editarItem('${item.id}')">
-                <td style="text-align:center;">
-                    <div class="checkbox-wrapper">
-                        <input type="checkbox" id="${cbId}" ${checked} onchange="toggleItemGanho('${item.id}', this.checked)" class="styled-checkbox">
-                        <label for="${cbId}" class="checkbox-label-styled ${vendaAcimaEstimado ? 'checkbox-alerta' : ''}"></label>
-                    </div>
-                </td>
-                <td style="text-align:center;"><strong>${item.numero}</strong></td>
-                <td style="text-align:left; max-width:200px;">${item.descricao || '-'}</td>
-                <td style="text-align:center;">${item.qtd || 1}</td>
-                <td style="text-align:center;">${item.unidade || 'UN'}</td>
-                <td style="text-align:center;">${item.marca || '-'}</td>
-                <td style="text-align:center;">${item.modelo || '-'}</td>
-                <td style="text-align:right;">${formatarValorBR(estimadoUnt)}</td>
-                <td style="text-align:right;">${formatarValorBR(estTotal)}</td>
-                <td style="text-align:right;">${formatarValorBR(item.custo_unt || 0)}</td>
-                <td style="text-align:right;">${formatarValorBR(custoTotal)}</td>
-                <td style="text-align:right;">${formatarValorBR(vendaUnt)}</td>
-                <td style="text-align:right;">${formatarValorBR(vendaTotal)}</td>
-            </tr>
-        `);
-    }
-
-    container.innerHTML = parts.join('');
-
-    const totaisContainer = document.getElementById('itensTotaisBar');
-    if (totaisContainer) {
-        totaisContainer.innerHTML = `
-            <span><strong>COMPRA TOTAL:</strong> ${formatarValorBR(totCompra)}</span>
-            <span><strong>CUSTO TOTAL:</strong> ${formatarValorBR(totCusto)}</span>
-            <span><strong>VENDA TOTAL:</strong> ${formatarValorBR(totVenda)}</span>
-        `;
-    }
-}
-
-async function toggleItemGanho(id, ganho) {
-    const item = itens.find(i => i.id === id);
-    if (!item) return;
-    
-    item.ganho = ganho;
-
-    try {
-        const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
-        if (sessionToken) headers['X-Session-Token'] = sessionToken;
-        
-        if (!String(id).startsWith('temp-')) {
-            await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens/${id}`, {
-                method: 'PUT', headers, body: JSON.stringify(item)
-            });
-        }
-        
-        renderItens();
-    } catch (error) {}
-}
-
-function payloadItemSeguro(fields) {
-    return {
-        pregao_id: fields.pregao_id,
-        numero: fields.numero || 1,
-        descricao: fields.descricao || ' ',
-        qtd: fields.qtd || 1,
-        unidade: fields.unidade || 'UN',
-        marca: fields.marca || null,
-        modelo: fields.modelo || null,
-        estimado_unt: fields.estimado_unt || 0,
-        estimado_total: fields.estimado_total || 0,
-        custo_unt: fields.custo_unt || 0,
-        custo_total: fields.custo_total || 0,
-        porcentagem: fields.porcentagem || 149,
-        venda_unt: fields.venda_unt || 0,
-        venda_total: fields.venda_total || 0,
-        ganho: fields.ganho || false
-    };
-}
-
-async function adicionarItem() {
-    const numero = itens.length > 0 ? Math.max(...itens.map(i => i.numero)) + 1 : 1;
-    const novoItem = payloadItemSeguro({ pregao_id: currentPregaoId, numero });
-    
-    try {
-        const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
-        if (sessionToken) headers['X-Session-Token'] = sessionToken;
-        
-        const r = await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens`, { 
-            method: 'POST', headers, body: JSON.stringify(novoItem) 
-        });
-        
-        if (r.ok) {
-            const saved = await r.json();
-            itens.push(saved);
-            itens.sort((a, b) => a.numero - b.numero);
-            renderItens();
-            showToast('Item adicionado', 'success');
-        }
-    } catch(e) {}
-}
-
-function abrirModalIntervalo() {
-    document.getElementById('inputIntervalo').value = '';
-    document.getElementById('modalIntervalo').classList.add('show');
-}
-
-function fecharModalIntervalo() {
-    document.getElementById('modalIntervalo').classList.remove('show');
-}
-
-function confirmarAdicionarIntervalo() {
-    const intervalo = document.getElementById('inputIntervalo').value.trim();
-    fecharModalIntervalo();
-    if (!intervalo) return;
-    adicionarIntervalo(intervalo);
-}
-
-async function adicionarIntervalo(intervalo) {
-    let numeros = parsearIntervalo(intervalo);
-    if (!numeros) return;
-    
-    const numerosExistentes = new Set(itens.map(i => i.numero));
-    numeros = numeros.filter(n => !numerosExistentes.has(n));
-    
-    if (numeros.length === 0) {
-        showToast('Todos os itens já existem', 'error');
-        return;
-    }
-    
-    const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
-    if (sessionToken) headers['X-Session-Token'] = sessionToken;
-    
-    for (const numero of numeros) {
-        const novoItem = payloadItemSeguro({ pregao_id: currentPregaoId, numero });
-        try {
-            const r = await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens`, { 
-                method: 'POST', headers, body: JSON.stringify(novoItem) 
-            });
-            if (r.ok) itens.push(await r.json());
-        } catch(e) {}
-    }
-    
-    itens.sort((a, b) => a.numero - b.numero);
-    renderItens();
-    showToast('Itens adicionados', 'success');
-}
-
-function abrirModalExcluirItens() {
-    document.getElementById('inputExcluirIntervalo').value = '';
-    document.getElementById('modalExcluirItens').classList.add('show');
-}
-
-function fecharModalExcluirItens() {
-    document.getElementById('modalExcluirItens').classList.remove('show');
-}
-
-async function confirmarExcluirItens() {
-    const intervalo = document.getElementById('inputExcluirIntervalo').value.trim();
-    fecharModalExcluirItens();
-    
-    if (!intervalo) {
-        showToast('Digite um intervalo para excluir', 'error');
-        return;
-    }
-    
-    const numeros = parsearIntervalo(intervalo);
-    if (!numeros) return;
-    
-    const idsParaExcluir = itens
-        .filter(item => numeros.includes(item.numero))
-        .map(item => item.id);
-    
-    if (idsParaExcluir.length === 0) {
-        showToast('Nenhum item encontrado', 'error');
-        return;
-    }
-    
-    await excluirItensPorIds(idsParaExcluir);
-}
-
-async function excluirItensPorIds(ids) {
-    try {
-        const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
-        if (sessionToken) headers['X-Session-Token'] = sessionToken;
-        
-        const idsServidor = ids.filter(id => !id.startsWith('temp-'));
-        
-        if (idsServidor.length > 0) {
-            await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens/delete-multiple`, {
-                method: 'POST', headers, body: JSON.stringify({ ids: idsServidor })
-            });
-        }
-        
-        const idsSet = new Set(ids);
-        itens = itens.filter(item => !idsSet.has(item.id));
-        renderItens();
-        showToast('Itens excluídos', 'success');
-    } catch (error) {}
-}
-
-function editarItem(id) {
-    const item = itens.find(i => i.id === id);
-    if (!item) return;
-    
-    editingItemIndex = itens.indexOf(item);
-    mostrarModalItem(item);
-}
-
-function mostrarModalItem(item) {
-    let modal = document.getElementById('modalItem');
-    if (!modal) {
-        modal = criarModalItem();
-        document.body.appendChild(modal);
-    }
-    
-    document.getElementById('itemNumero').value = item.numero;
-    document.getElementById('itemDescricao').value = item.descricao;
-    document.getElementById('itemQtd').value = item.qtd;
-    document.getElementById('itemUnidade').value = item.unidade || 'UN';
-    document.getElementById('itemMarca').value = item.marca || '';
-    document.getElementById('itemModelo').value = item.modelo || '';
-    document.getElementById('itemEstimadoUnt').value = item.estimado_unt || 0;
-    document.getElementById('itemEstimadoTotal').value = item.estimado_total || 0;
-    document.getElementById('itemCustoUnt').value = item.custo_unt || 0;
-    document.getElementById('itemCustoTotal').value = item.custo_total || 0;
-    document.getElementById('itemPorcentagem').value = item.porcentagem !== undefined ? item.porcentagem : 149;
-    document.getElementById('itemVendaUnt').value = item.venda_unt || 0;
-    document.getElementById('itemVendaTotal').value = item.venda_total || 0;
-    
-    atualizarTituloModalItem(item);
-    
-    currentItemTab = 0;
-    switchItemTab(itemTabs[0]);
-    
-    modal.classList.add('show');
-    configurarCalculosAutomaticos();
-    setTimeout(calcularValoresItem, 50);
-    setTimeout(setupUpperCaseInputs, 50);
-}
-
-function atualizarTituloModalItem(item) {
-    const titleEl = document.getElementById('modalItemTitle');
-    const prevPag = document.getElementById('btnPrevPagItem');
-    const nextPag = document.getElementById('btnNextPagItem');
-    
-    if (titleEl) titleEl.textContent = `Item ${item.numero}`;
-    if (prevPag) prevPag.style.visibility = editingItemIndex > 0 ? 'visible' : 'hidden';
-    if (nextPag) nextPag.style.visibility = editingItemIndex < itens.length - 1 ? 'visible' : 'hidden';
-}
-
-function switchItemTab(tabId) {
-    itemTabs.forEach((tab, idx) => {
-        const el = document.getElementById(tab);
-        const btn = document.querySelectorAll('#modalItem .tab-btn')[idx];
-        if (el) el.classList.remove('active');
-        if (btn) btn.classList.remove('active');
-    });
-    
-    const activeEl = document.getElementById(tabId);
-    const activeIdx = itemTabs.indexOf(tabId);
-    const activeBtn = document.querySelectorAll('#modalItem .tab-btn')[activeIdx];
-    
-    if (activeEl) activeEl.classList.add('active');
-    if (activeBtn) activeBtn.classList.add('active');
-    
-    currentItemTab = activeIdx;
-    atualizarNavegacaoAbasItem();
-}
-
-function atualizarNavegacaoAbasItem() {
-    const btnPrev = document.getElementById('btnItemTabPrev');
-    const btnNext = document.getElementById('btnItemTabNext');
-    const btnSalvar = document.getElementById('btnSalvarItem');
-    const isLast = currentItemTab === itemTabs.length - 1;
-    
-    if (btnPrev) btnPrev.style.display = currentItemTab === 0 ? 'none' : 'inline-block';
-    if (btnNext) btnNext.style.display = isLast ? 'none' : 'inline-block';
-    if (btnSalvar) btnSalvar.style.display = isLast ? 'inline-block' : 'none';
-}
-
-function nextItemTab() {
-    if (currentItemTab < itemTabs.length - 1) {
-        currentItemTab++;
-        switchItemTab(itemTabs[currentItemTab]);
-    }
-}
-
-function prevItemTab() {
-    if (currentItemTab > 0) {
-        currentItemTab--;
-        switchItemTab(itemTabs[currentItemTab]);
-    }
-}
-
-function criarModalItem() {
-    const modal = document.createElement('div');
-    modal.id = 'modalItem';
-    modal.className = 'modal-overlay';
-    modal.innerHTML = `
-        <div class="modal-content" style="max-width: 680px;">
-            <div class="modal-header">
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <button id="btnPrevPagItem" onclick="navegarItemAnterior()" style="background: none; border: none; cursor: pointer; font-size: 1.2rem; visibility: hidden;">‹</button>
-                    <h3 class="modal-title" id="modalItemTitle">Item</h3>
-                    <button id="btnNextPagItem" onclick="navegarProximoItem()" style="background: none; border: none; cursor: pointer; font-size: 1.2rem; visibility: hidden;">›</button>
-                </div>
-                <button class="close-modal" onclick="fecharModalItem()">✕</button>
-            </div>
-            
-            <div class="tabs-container">
-                <div class="tabs-nav">
-                    <button class="tab-btn active" onclick="switchItemTab('item-tab-item')">Item</button>
-                    <button class="tab-btn" onclick="switchItemTab('item-tab-fornecedor')">Fornecedor</button>
-                    <button class="tab-btn" onclick="switchItemTab('item-tab-valores')">Valores</button>
-                </div>
-                
-                <div class="tab-content active" id="item-tab-item">
-                    <input type="hidden" id="itemNumero">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Quantidade</label>
-                            <input type="number" id="itemQtd" min="1" value="1">
-                        </div>
-                        <div class="form-group">
-                            <label>Unidade</label>
-                            <select id="itemUnidade">
-                                <option value="UN">UN</option>
-                                <option value="MT">MT</option>
-                                <option value="PÇ">PÇ</option>
-                                <option value="CX">CX</option>
-                            </select>
-                        </div>
-                        <div class="form-group" style="grid-column: 1/-1;">
-                            <label>Descrição</label>
-                            <textarea id="itemDescricao" rows="3"></textarea>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="tab-content" id="item-tab-fornecedor">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Marca</label>
-                            <input type="text" id="itemMarca">
-                        </div>
-                        <div class="form-group">
-                            <label>Modelo</label>
-                            <input type="text" id="itemModelo">
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="tab-content" id="item-tab-valores">
-                    <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr;">
-                        <div class="form-group">
-                            <label>%</label>
-                            <input type="number" id="itemPorcentagem" step="any" value="149">
-                        </div>
-                        <div class="form-group">
-                            <label>Compra UNT</label>
-                            <input type="number" id="itemEstimadoUnt" step="any" min="0">
-                        </div>
-                        <div class="form-group">
-                            <label>Custo UNT</label>
-                            <input type="number" id="itemCustoUnt" step="any" min="0">
-                        </div>
-                        <div class="form-group">
-                            <label>Venda UNT</label>
-                            <input type="number" id="itemVendaUnt" step="any" min="0" oninput="calcularVendaTotalManual()">
-                        </div>
-                        <div class="form-group">
-                            <label>Compra Total</label>
-                            <input type="number" id="itemEstimadoTotal" step="any" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label>Custo Total</label>
-                            <input type="number" id="itemCustoTotal" step="any" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label>Venda Total</label>
-                            <input type="number" id="itemVendaTotal" step="any" readonly>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal-actions">
-                <button type="button" id="btnItemTabPrev" onclick="prevItemTab()" class="secondary" style="display:none;">Anterior</button>
-                <button type="button" id="btnItemTabNext" onclick="nextItemTab()" class="secondary">Próximo</button>
-                <button type="button" id="btnSalvarItem" onclick="salvarItemAtual()" class="success" style="display:none;">Salvar</button>
-                <button type="button" onclick="fecharModalItem()" class="danger">Cancelar</button>
-            </div>
-        </div>
-    `;
-    return modal;
-}
-
-function calcularVendaTotalManual() {
-    const qtd = parseFloat(document.getElementById('itemQtd')?.value) || 0;
-    const vendaUnt = parseFloat(document.getElementById('itemVendaUnt')?.value) || 0;
-    document.getElementById('itemVendaTotal').value = (qtd * vendaUnt).toFixed(2);
-}
-
-function calcularValoresItem() {
-    const q = parseFloat(document.getElementById('itemQtd')?.value) || 0;
-    const eu = parseFloat(document.getElementById('itemEstimadoUnt')?.value) || 0;
-    const cu = parseFloat(document.getElementById('itemCustoUnt')?.value) || 0;
-    const perc = parseFloat(document.getElementById('itemPorcentagem')?.value) || 0;
-    
-    const estimadoTotal = q * eu;
-    const custoTotal = q * cu;
-    const vendaUntCalc = cu * (1 + perc / 100);
-    
-    const vendaUntEl = document.getElementById('itemVendaUnt');
-    const vendaTotalEl = document.getElementById('itemVendaTotal');
-    
-    if (!vendaUntEl._isManualEdit) {
-        vendaUntEl.value = vendaUntCalc.toFixed(4);
-        vendaTotalEl.value = (vendaUntCalc * q).toFixed(2);
-    } else {
-        const vendaUntManual = parseFloat(vendaUntEl.value) || 0;
-        vendaTotalEl.value = (vendaUntManual * q).toFixed(2);
-    }
-    
-    document.getElementById('itemEstimadoTotal').value = estimadoTotal.toFixed(2);
-    document.getElementById('itemCustoTotal').value = custoTotal.toFixed(2);
-}
-
-function configurarCalculosAutomaticos() {
-    const modal = document.getElementById('modalItem');
-    if (!modal) return;
-    
-    modal._calcListener = function(e) {
-        const ids = ['itemQtd', 'itemEstimadoUnt', 'itemCustoUnt', 'itemPorcentagem'];
-        if (ids.includes(e.target.id)) {
-            document.getElementById('itemVendaUnt')._isManualEdit = false;
-            calcularValoresItem();
-        }
-        if (e.target.id === 'itemVendaUnt') {
-            e.target._isManualEdit = true;
-            calcularVendaTotalManual();
-        }
-    };
-    
-    modal.addEventListener('input', modal._calcListener);
-}
-
-function navegarItemAnterior() {
-    if (editingItemIndex > 0) {
-        salvarItemAtual(false);
-        editingItemIndex--;
-        mostrarModalItem(itens[editingItemIndex]);
-    }
-}
-
-function navegarProximoItem() {
-    if (editingItemIndex < itens.length - 1) {
-        salvarItemAtual(false);
-        editingItemIndex++;
-        mostrarModalItem(itens[editingItemIndex]);
-    }
-}
-
-async function salvarItemAtual(fechar = true) {
-    const item = itens[editingItemIndex];
-    
-    item.numero = parseInt(document.getElementById('itemNumero').value) || item.numero;
-    item.descricao = toUpperCase(document.getElementById('itemDescricao').value);
-    item.qtd = parseInt(document.getElementById('itemQtd').value);
-    item.unidade = document.getElementById('itemUnidade').value;
-    item.marca = toUpperCase(document.getElementById('itemMarca').value);
-    item.modelo = toUpperCase(document.getElementById('itemModelo').value);
-    item.estimado_unt = parseFloat(document.getElementById('itemEstimadoUnt').value || 0);
-    item.estimado_total = parseFloat(document.getElementById('itemEstimadoTotal').value || 0);
-    item.custo_unt = parseFloat(document.getElementById('itemCustoUnt').value || 0);
-    item.custo_total = parseFloat(document.getElementById('itemCustoTotal').value || 0);
-    item.porcentagem = parseFloat(document.getElementById('itemPorcentagem').value || 149);
-    item.venda_unt = parseFloat(document.getElementById('itemVendaUnt').value || 0);
-    item.venda_total = parseFloat(document.getElementById('itemVendaTotal').value || 0);
-    
-    try {
-        const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
-        if (sessionToken) headers['X-Session-Token'] = sessionToken;
-        
-        const isNew = item.id.startsWith('temp-');
-        const url = isNew 
-            ? `${API_URL}/pregoes/${currentPregaoId}/itens`
-            : `${API_URL}/pregoes/${currentPregaoId}/itens/${item.id}`;
-        const method = isNew ? 'POST' : 'PUT';
-        
-        const response = await fetch(url, { method, headers, body: JSON.stringify(item) });
-        
-        if (response.ok) {
-            const savedItem = await response.json();
-            itens[editingItemIndex] = savedItem;
-            if (fechar) {
-                renderItens();
-                showToast('Item salvo', 'success');
-                fecharModalItem();
-            }
-        }
-    } catch (error) {}
-}
-
-function fecharModalItem() {
-    document.getElementById('modalItem').classList.remove('show');
-    editingItemIndex = null;
-}
-
-function syncItens() {
-    carregarItens(currentPregaoId);
-    showToast('Dados sincronizados', 'success');
-}
-
-function perguntarAssinaturaPDF() {
-    if (!currentPregaoId) {
-        showToast('Erro: Pregão não identificado', 'error');
-        return;
-    }
-    const itensSelecionados = itens.filter(item => item.ganho);
-    if (itensSelecionados.length === 0) {
-        showToast('Marque ao menos um item para gerar a proposta', 'error');
-        return;
-    }
-    document.getElementById('modalAssinatura').classList.add('show');
-}
-
-function fecharModalAssinatura() {
-    document.getElementById('modalAssinatura').classList.remove('show');
-}
-
-async function gerarPDFsProposta(comAssinatura) {
-    fecharModalAssinatura();
-    showToast('PDF gerado com sucesso!', 'success');
-}
-
-// ============================================
-// FUNÇÕES DE GRUPOS (BÁSICAS)
-// ============================================
-
 async function carregarGrupos() {
     await carregarItens(currentPregaoId);
+    reconstruirGruposDeItens();
+    atualizarSelectsGrupos();
+    renderGrupos();
+}
+
+function reconstruirERenderGrupos() {
     reconstruirGruposDeItens();
     atualizarSelectsGrupos();
     renderGrupos();
@@ -2202,6 +1766,7 @@ function reconstruirGruposDeItens() {
         mapa.get(key).itens.push(item);
     });
     grupos = Array.from(mapa.values()).sort((a, b) => a.numero - b.numero);
+    grupos.forEach(g => g.itens.sort((a, b) => (a.numero || 0) - (b.numero || 0)));
 }
 
 function atualizarSelectsGrupos() {
@@ -2236,86 +1801,2215 @@ function grupoByKey(key) {
 function renderGrupos() {
     const wrapper = document.getElementById('gruposWrapper');
     if (!wrapper) return;
-    
-    if (grupos.length === 0) {
-        wrapper.innerHTML = '<div style="text-align:center;padding:3rem;">Nenhum grupo cadastrado</div>';
+    const search = (document.getElementById('searchGrupos')?.value || '').toLowerCase();
+    const gKey = document.getElementById('filterGrupoGrupos')?.value || '';
+    const marcaFiltro = gKey ? (document.getElementById('filterMarcaGrupos')?.value || '') : '';
+    const fmtUnt = v => 'R$ ' + (v || 0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:6});
+    const fmtTot = v => 'R$ ' + (v || 0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+    let gruposRender = gKey ? [grupoByKey(gKey)].filter(Boolean) : grupos;
+
+    if (gruposRender.length === 0) {
+        wrapper.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text-secondary);">Nenhum grupo cadastrado</div>';
         return;
     }
 
     const cards = [];
-    for (const grupo of grupos) {
+    for (const grupo of gruposRender) {
+        let its = grupo.itens;
+        if (marcaFiltro) its = its.filter(i => i.marca === marcaFiltro);
+        if (search) its = its.filter(i =>
+            (i.descricao || '').toLowerCase().includes(search) ||
+            (i.marca || '').toLowerCase().includes(search) ||
+            String(i.numero).includes(search)
+        );
+        const lbl = grupo.tipo + ' ' + grupo.numero;
         let totC = 0, totCu = 0, totV = 0;
-        grupo.itens.forEach(item => {
-            totC += item.estimado_total || 0;
+        const rowParts = new Array(its.length);
+        const grupoAllGanho = grupo.itens.every(i => i.ganho);
+        for (let idx = 0; idx < its.length; idx++) {
+            const item = its[idx];
+            const vm = (item.venda_unt || 0) > (item.estimado_unt || 0) && (item.estimado_unt || 0) > 0;
+            totC  += item.estimado_total || 0;
             totCu += item.custo_total || 0;
-            totV += item.venda_total || 0;
-        });
-        
-        cards.push(`
-            <div class="card table-card" style="margin-bottom:1rem;">
-                <div style="background:#1e3a5f;display:flex;align-items:center;padding:8px 12px;">
-                    <span style="font-weight:700;color:#fff;">${grupo.tipo} ${grupo.numero}</span>
-                </div>
-                <div style="overflow-x:auto;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>ITEM</th><th>DESCRIÇÃO</th><th>QTD</th><th>UN</th>
-                                <th>MARCA</th><th>MODELO</th><th>COMPRA TOTAL</th>
-                                <th>CUSTO TOTAL</th><th>VENDA UNT</th><th>VENDA TOTAL</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${grupo.itens.map(item => `
-                                <tr>
-                                    <td>${item.numero}</td>
-                                    <td style="text-align:left; max-width:180px;">${item.descricao || '-'}</td>
-                                    <td>${item.qtd || 1}</td>
-                                    <td>${item.unidade || 'UN'}</td>
-                                    <td>${item.marca || '-'}</td>
-                                    <td>${item.modelo || '-'}</td>
-                                    <td style="text-align:right;">${formatarValorBR(item.estimado_total || 0)}</td>
-                                    <td style="text-align:right;">${formatarValorBR(item.custo_total || 0)}</td>
-                                    <td style="text-align:right;">${formatarValorBR(item.venda_unt || 0)}</td>
-                                    <td style="text-align:right;">${formatarValorBR(item.venda_total || 0)}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-                <div style="display:flex;gap:2rem;padding:0.5rem;">
-                    <span><strong>COMPRA TOTAL:</strong> ${formatarValorBR(totC)}</span>
-                    <span><strong>CUSTO TOTAL:</strong> ${formatarValorBR(totCu)}</span>
-                    <span><strong>VENDA TOTAL:</strong> ${formatarValorBR(totV)}</span>
-                </div>
-            </div>
-        `);
+            totV  += item.venda_total || 0;
+            const iid = item.id;
+            const rowClass = grupoAllGanho ? 'item-ganho row-won' : (vm ? 'row-venda-alta' : '');
+            rowParts[idx] =
+                '<tr class="' + rowClass + '" ondblclick="editarItemGrupoById(\'' + iid + '\')" oncontextmenu="showItemContextMenu(event,\'' + iid + '\')">' +
+                '<td style="text-align:center;"><strong>' + item.numero + '</strong></td>' +
+                '<td class="descricao-cell" style="text-align:left;">' + (item.descricao || '-') + '</td>' +
+                '<td style="text-align:center;">' + (item.qtd || 1) + '</td>' +
+                '<td style="text-align:center;">' + (item.unidade || 'UN') + '</td>' +
+                '<td style="text-align:center;">' + (item.marca || '-') + '</td>' +
+                '<td style="text-align:center;">' + (item.modelo || '-') + '</td>' +
+                '<td style="text-align:right;">' + fmtTot(item.estimado_total || 0) + '</td>' +
+                '<td style="text-align:right;">' + fmtTot(item.custo_total || 0) + '</td>' +
+                '<td style="text-align:right;">' + fmtUnt(item.venda_unt || 0) + '</td>' +
+                '<td style="text-align:right;">' + fmtTot(item.venda_total || 0) + '</td>' +
+                '</tr>';
+        }
+        const grupoGanho = grupo.itens.length > 0 && grupo.itens.every(i => i.ganho);
+        const grupoGanhoId = 'grp-ganho-' + grupo.tipo + '-' + grupo.numero;
+        const grupoGanhoChk = grupoGanho ? ' checked' : '';
+
+        cards.push(
+            '<div class="card table-card" style="margin-bottom:1.25rem;">' +
+            '<div style="background:#1e3a5f;display:flex;align-items:center;justify-content:flex-start;padding:8px 14px;border-radius:8px 8px 0 0;gap:0.75rem;">' +
+            '<div class="checkbox-wrapper" style="position:relative;">' +
+            '<input type="checkbox" id="' + grupoGanhoId + '"' + grupoGanhoChk +
+            ' onchange="toggleGrupoGanho(\'' + grupo.tipo + '\',' + grupo.numero + ',this.checked)"' +
+            ' class="styled-checkbox">' +
+            '<label for="' + grupoGanhoId + '" class="checkbox-label-styled"></label>' +
+            '</div>' +
+            '<label for="' + grupoGanhoId + '" style="font-weight:700;font-size:1rem;color:#fff;cursor:pointer;margin:0;">' + lbl + '</label>' +
+            '</div>' +
+            '<div style="overflow-x:auto;"><table>' +
+            '<thead><tr>' +
+            '<th style="width:55px;text-align:center;">ITEM</th>' +
+            '<th style="min-width:220px;text-align:left;">DESCRIÇÃO</th>' +
+            '<th style="width:55px;text-align:center;">QTD</th>' +
+            '<th style="width:50px;text-align:center;">UN</th>' +
+            '<th style="width:90px;text-align:center;">MARCA</th>' +
+            '<th style="width:90px;text-align:center;">MODELO</th>' +
+            '<th style="width:105px;text-align:right;">COMPRA TOTAL</th>' +
+            '<th style="width:100px;text-align:right;">CUSTO TOTAL</th>' +
+            '<th style="width:100px;text-align:right;">VENDA UNT</th>' +
+            '<th style="width:105px;text-align:right;">VENDA TOTAL</th>' +
+            '</tr></thead>' +
+            '<tbody>' + rowParts.join('') + '</tbody>' +
+            '</table></div>' +
+            '<div style="display:flex;gap:3rem;padding:0.75rem 1rem 0.25rem 1rem;font-size:10pt;color:var(--text-primary);">' +
+            '<span><strong>COMPRA TOTAL:</strong> ' + fmtTot(totC) + '</span>' +
+            '<span><strong>CUSTO TOTAL:</strong> ' + fmtTot(totCu) + '</span>' +
+            '<span><strong>VENDA TOTAL:</strong> ' + fmtTot(totV) + '</span>' +
+            '</div></div>'
+        );
     }
     wrapper.innerHTML = cards.join('');
 }
 
-function abrirModalNovoGrupo() {}
-function abrirModalIntervaloGrupos() {}
-function abrirModalExcluirGrupo() {}
-function fecharModalNovoGrupo() {}
-function fecharModalIntervaloGrupos() {}
-function fecharModalExcluirGrupo() {}
-async function confirmarNovoGrupo() {}
-async function confirmarIntervaloGrupos() {}
-async function confirmarExcluirGrupo() {}
-function toggleGrupoGanho() {}
-function syncGrupos() { carregarGrupos(); showToast('Dados sincronizados', 'success'); }
-function perguntarAssinaturaPDFGrupos() {}
-async function gerarPDFGruposComAssinatura() {}
+function abrirModalNovoGrupo() {
+    const maxN = grupos.reduce((m, g) => Math.max(m, g.numero), 0);
+    document.getElementById('novoGrupoNumero').value = maxN + 1;
+    document.getElementById('novoGrupoItens').value = '';
+    document.getElementById('novoGrupoTipo').value = 'GRUPO';
+    document.getElementById('modalNovoGrupo').classList.add('show');
+}
 
-// ============================================
-// MODAIS ADICIONAIS
-// ============================================
+function fecharModalNovoGrupo() {
+    document.getElementById('modalNovoGrupo').classList.remove('show');
+}
 
-document.addEventListener('click', function(e) {
-    const modalIntervalo = document.getElementById('modalIntervalo');
-    const modalExcluirItens = document.getElementById('modalExcluirItens');
+async function confirmarNovoGrupo() {
+    const tipo = document.getElementById('novoGrupoTipo').value;
+    const numero = parseInt(document.getElementById('novoGrupoNumero').value);
+    const itensStr = document.getElementById('novoGrupoItens').value.trim();
+    if (!numero || !itensStr) { showToast('Preencha número e itens do grupo', 'error'); return; }
+    const numeros = parsearIntervalo(itensStr);
+    if (!numeros || numeros.length === 0) return;
+    fecharModalNovoGrupo();
+    const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+    if (sessionToken) headers['X-Session-Token'] = sessionToken;
+    for (const numItem of numeros) {
+        const jaExiste = itens.find(i => i.grupo_tipo === tipo && i.grupo_numero === numero && i.numero === numItem);
+        if (jaExiste) continue;
+        const novo = payloadItemSeguro({
+            pregao_id: currentPregaoId,
+            numero: numItem, descricao: '', qtd: 1, unidade: 'UN',
+            marca: '', modelo: '',
+            estimado_unt: 0, estimado_total: 0, custo_unt: 0, custo_total: 0,
+            porcentagem: 149, venda_unt: 0, venda_total: 0, ganho: false,
+            grupo_tipo: tipo, grupo_numero: numero
+        });
+        try {
+            const r = await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens`, { method:'POST', headers, body:JSON.stringify(novo) });
+            if (r.ok) itens.push(await r.json());
+        } catch(e) { console.error(e); }
+    }
+    reconstruirGruposDeItens();
+    atualizarSelectsGrupos();
+    renderGrupos();
+    const grupoNovo = grupos.find(g => g.tipo === tipo && g.numero === numero);
+    if (grupoNovo && grupoNovo.itens.length > 0) {
+        showToast('Grupo criado', 'success');
+        abrirEdicaoGrupoItem(grupoNovo, 0);
+    }
+}
+
+function abrirEdicaoGrupoItem(grupo, idxItem) {
+    editandoGrupoIdx = grupos.indexOf(grupo);
+    editandoGrupoItemIdx = idxItem;
+    const item = grupo.itens[idxItem];
+    editingItemIndex = itens.indexOf(item);
+    mostrarModalItemGrupo(item, grupo, idxItem);
+}
+
+function editarItemGrupoById(itemId) {
+    const item = itens.find(i => i.id === itemId);
+    if (!item) return;
+    const grupo = grupos.find(g => g.itens.includes(item));
+    if (!grupo) { editingItemIndex = itens.indexOf(item); mostrarModalItem(item); return; }
+    const idxItem = grupo.itens.indexOf(item);
+    abrirEdicaoGrupoItem(grupo, idxItem);
+}
+
+function mostrarModalItemGrupo(item, grupo, idxItem) {
+    let modal = document.getElementById('modalItem');
+    if (!modal) { modal = criarModalItem(); document.body.appendChild(modal); }
+    document.getElementById('itemNumero').value = item.numero || '';
+    document.getElementById('itemDescricao').value = item.descricao || '';
+    document.getElementById('itemQtd').value = item.qtd || 1;
+    document.getElementById('itemUnidade').value = item.unidade || 'UN';
+    document.getElementById('itemMarca').value = item.marca || '';
+    document.getElementById('itemModelo').value = item.modelo || '';
+    document.getElementById('itemEstimadoUnt').value = item.estimado_unt || '';
+    document.getElementById('itemEstimadoTotal').value = item.estimado_total || '';
+    document.getElementById('itemCustoUnt').value = item.custo_unt || '';
+    document.getElementById('itemCustoTotal').value = item.custo_total || '';
+    document.getElementById('itemPorcentagem').value = item.porcentagem ?? 149;
+    document.getElementById('itemVendaUnt').value = item.venda_unt || '';
+    document.getElementById('itemVendaTotal').value = item.venda_total || '';
+    const tituloEl = document.getElementById('modalItemTitle');
+    if (tituloEl) tituloEl.textContent = `Item ${item.numero}`;
+    const btnPrev = document.getElementById('btnPrevPagItem');
+    const btnNext = document.getElementById('btnNextPagItem');
+    const temAnterior = idxItem > 0 || editandoGrupoIdx > 0;
+    const temProximo = idxItem < grupo.itens.length - 1 || editandoGrupoIdx < grupos.length - 1;
+    if (btnPrev) btnPrev.style.visibility = temAnterior ? 'visible' : 'hidden';
+    if (btnNext) btnNext.style.visibility = temProximo ? 'visible' : 'hidden';
+    modoNavegacaoGrupo = true;
+    currentItemTab = 0;
+    switchItemTab(itemTabs[0]);
+    modal.classList.add('show');
+    configurarCalculosAutomaticos();
+    setTimeout(calcularValoresItem, 50);
+    setTimeout(setupUpperCaseInputs, 50);
+}
+
+async function navegarGrupoAnterior() {
+    await salvarItemAtual(false);
+    let gi = editandoGrupoIdx;
+    let ii = editandoGrupoItemIdx - 1;
+    if (ii < 0) { gi--; if (gi < 0) return; ii = grupos[gi].itens.length - 1; }
+    editandoGrupoIdx = gi; editandoGrupoItemIdx = ii;
+    const grupo = grupos[gi];
+    editingItemIndex = itens.indexOf(grupo.itens[ii]);
+    mostrarModalItemGrupo(grupo.itens[ii], grupo, ii);
+}
+
+async function navegarGrupoProximo() {
+    await salvarItemAtual(false);
+    let gi = editandoGrupoIdx;
+    let ii = editandoGrupoItemIdx + 1;
+    if (ii >= grupos[gi].itens.length) { gi++; if (gi >= grupos.length) return; ii = 0; }
+    editandoGrupoIdx = gi; editandoGrupoItemIdx = ii;
+    const grupo = grupos[gi];
+    editingItemIndex = itens.indexOf(grupo.itens[ii]);
+    mostrarModalItemGrupo(grupo.itens[ii], grupo, ii);
+}
+
+function abrirModalExcluirGrupo() {
+    const sel = document.getElementById('excluirGrupoSelect');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Selecione...</option>' +
+        grupos.map(g => `<option value="${g.tipo}-${g.numero}">${g.tipo} ${g.numero} (${g.itens.length} item(s))</option>`).join('');
+    document.getElementById('modalExcluirGrupo').classList.add('show');
+}
+
+function fecharModalExcluirGrupo() {
+    document.getElementById('modalExcluirGrupo').classList.remove('show');
+}
+
+async function confirmarExcluirGrupo() {
+    const val = document.getElementById('excluirGrupoSelect').value;
+    if (!val) { showToast('Selecione um grupo', 'error'); return; }
+    const grupo = grupoByKey(val);
+    if (!grupo) return;
+    fecharModalExcluirGrupo();
+    const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+    if (sessionToken) headers['X-Session-Token'] = sessionToken;
+    const ids = grupo.itens.map(i => i.id).filter(id => !String(id).startsWith('temp-'));
+    for (const id of ids) {
+        try {
+            await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens/${id}`, { method:'DELETE', headers });
+        } catch(e) {}
+    }
+    itens = itens.filter(i => !(i.grupo_tipo === grupo.tipo && i.grupo_numero === grupo.numero));
+    reconstruirGruposDeItens();
+    atualizarSelectsGrupos();
+    renderGrupos();
+    showToast('Item excluído', 'error');
+}
+
+const intervaloTabs = ['intervalo-tab-config', 'intervalo-tab-itens'];
+let currentIntervaloTab = 0;
+
+function switchIntervaloTab(tabId) {
+    const allTabs = document.querySelectorAll('#modalIntervaloGrupos .tab-content');
+    const allBtns = document.querySelectorAll('#modalIntervaloGrupos .tab-btn');
+    allTabs.forEach(t => t.classList.remove('active'));
+    allBtns.forEach(b => b.classList.remove('active'));
+    const active = document.getElementById(tabId);
+    if (active) active.classList.add('active');
+    currentIntervaloTab = intervaloTabs.indexOf(tabId);
+    if (allBtns[currentIntervaloTab]) allBtns[currentIntervaloTab].classList.add('active');
+    const isLast = currentIntervaloTab === intervaloTabs.length - 1;
+    const prev = document.getElementById('btnIntervaloPrev');
+    const next = document.getElementById('btnIntervaloNext');
+    const criar = document.getElementById('btnIntervaloCriar');
+    if (prev) prev.style.display = currentIntervaloTab === 0 ? 'none' : 'inline-block';
+    if (next) next.style.display = isLast ? 'none' : 'inline-block';
+    if (criar) criar.style.display = isLast ? 'inline-block' : 'none';
+}
+
+function nextIntervaloTab() {
+    if (currentIntervaloTab < intervaloTabs.length - 1) {
+        currentIntervaloTab++;
+        switchIntervaloTab(intervaloTabs[currentIntervaloTab]);
+    }
+}
+
+function prevIntervaloTab() {
+    if (currentIntervaloTab > 0) {
+        currentIntervaloTab--;
+        switchIntervaloTab(intervaloTabs[currentIntervaloTab]);
+    }
+}
+
+function abrirModalIntervaloGrupos() {
+    document.getElementById('intervGrupoTipo').value = 'GRUPO';
+    document.getElementById('intervGrupoQtd').value = 1;
+    atualizarLinhasIntervalo();
+    switchIntervaloTab('intervalo-tab-config');
+    document.getElementById('modalIntervaloGrupos').classList.add('show');
+}
+
+function fecharModalIntervaloGrupos() {
+    document.getElementById('modalIntervaloGrupos').classList.remove('show');
+}
+
+function atualizarLinhasIntervalo() {
+    const tipo = document.getElementById('intervGrupoTipo').value;
+    const qtd = parseInt(document.getElementById('intervGrupoQtd').value) || 1;
+    const container = document.getElementById('intervGrupoLinhas');
+    const maxN = grupos.reduce((m, g) => Math.max(m, g.numero), 0);
+    let html = '';
+    for (let i = 0; i < qtd; i++) {
+        const n = maxN + i + 1;
+        html += `<div style="display:grid;grid-template-columns:auto 1fr 2fr;gap:0.75rem;align-items:end;padding:0.75rem;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border-color);">
+            <div style="font-weight:700;font-size:0.9rem;color:var(--primary);white-space:nowrap;">${tipo} ${n}</div>
+            <div class="form-group" style="margin:0;">
+                <label style="font-size:0.8rem;">Número</label>
+                <input type="number" class="ig-numero" value="${n}" min="1" style="width:100%;padding:0.5rem 0.65rem;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-card);color:var(--text-primary);font-size:0.9rem;">
+            </div>
+            <div class="form-group" style="margin:0;">
+                <label style="font-size:0.8rem;">Itens (ex: 1-5, 10)</label>
+                <input type="text" class="ig-itens" placeholder="Ex: 1-5, 10" style="width:100%;padding:0.5rem 0.65rem;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-card);color:var(--text-primary);font-size:0.9rem;">
+            </div>
+        </div>`;
+    }
+    container.innerHTML = html;
+}
+
+async function confirmarIntervaloGrupos() {
+    const tipo = document.getElementById('intervGrupoTipo').value;
+    const linhas = document.getElementById('intervGrupoLinhas').querySelectorAll('div[style*="grid"]');
+    if (linhas.length === 0) { showToast('Adicione ao menos um grupo', 'error'); return; }
+    const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+    if (sessionToken) headers['X-Session-Token'] = sessionToken;
+    let totalCriados = 0;
+    fecharModalIntervaloGrupos();
+    for (const linha of linhas) {
+        const numGrupo = parseInt(linha.querySelector('.ig-numero').value);
+        const itensStr = linha.querySelector('.ig-itens').value.trim();
+        if (!numGrupo || !itensStr) continue;
+        const numerosItens = parsearIntervalo(itensStr);
+        if (!numerosItens) continue;
+        for (const numItem of numerosItens) {
+            const jaExiste = itens.find(i => i.grupo_tipo === tipo && i.grupo_numero === numGrupo && String(i.numero) === String(numItem));
+            if (jaExiste) continue;
+            const novo = payloadItemSeguro({ pregao_id: currentPregaoId, numero: numItem, grupo_tipo: tipo, grupo_numero: numGrupo });
+            try {
+                const r = await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens`, { method:'POST', headers, body:JSON.stringify(novo) });
+                if (r.ok) { itens.push(await r.json()); totalCriados++; }
+            } catch(e) { console.error(e); }
+        }
+    }
+    reconstruirGruposDeItens();
+    atualizarSelectsGrupos();
+    renderGrupos();
+    showToast('Grupos criados', 'success');
+}
+
+async function toggleGrupoGanho(tipo, numero, ganho) {
+    const grupoItens = itens.filter(i => i.grupo_tipo === tipo && parseInt(i.grupo_numero) === parseInt(numero));
+    const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+    if (sessionToken) headers['X-Session-Token'] = sessionToken;
+    for (const item of grupoItens) {
+        item.ganho = ganho;
+        if (!String(item.id).startsWith('temp-')) {
+            fetch(`${API_URL}/pregoes/${currentPregaoId}/itens/${item.id}`, {
+                method: 'PUT', headers, body: JSON.stringify(item)
+            }).catch(e => console.error(e));
+        }
+    }
+    renderGrupos();
+}
+
+function syncGrupos() {
+    carregarGrupos();
+    showToast('Dados sincronizados', 'success');
+}
+
+function perguntarAssinaturaPDFGrupos() {
+    const temGanho = itens.some(i => i.ganho && i.grupo_tipo);
+    if (!temGanho) { showToast('Marque ao menos um item (ganho) para gerar a proposta', 'error'); return; }
+    document.getElementById('modalAssinaturaGrupos').classList.add('show');
+}
+
+async function gerarPDFGruposComAssinatura(comAssinatura) {
+    document.getElementById('modalAssinaturaGrupos').classList.remove('show');
+    const pregao = pregoes.find(p => p.id === currentPregaoId);
+    if (!pregao) return;
+    let dadosBancarios = null;
+    try {
+        const h = { 'Accept': 'application/json' };
+        if (sessionToken) h['X-Session-Token'] = sessionToken;
+        const r = await fetch(`${API_URL}/pregoes/${pregao.id}/dados-bancarios`, { headers: h });
+        if (r.ok) { const d = await r.json(); dadosBancarios = d.dados_bancarios || null; }
+    } catch(e) {}
+    const estrutura = grupos.map(g => ({ grupo: g, itens: g.itens.filter(i => i.ganho) })).filter(e => e.itens.length > 0);
+    if (estrutura.length === 0) { showToast('Nenhum item ganho encontrado', 'error'); return; }
+    if (typeof window.jspdf === 'undefined') { showToast('Biblioteca PDF não carregou. Recarregue (F5).', 'error'); return; }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const margin = 20, pageWidth = doc.internal.pageSize.width, pageHeight = doc.internal.pageSize.height;
+    const lineHeight = 5, maxWidth = pageWidth - 2 * margin;
+    let addTextWithWrap;
+    const logo = new Image();
+    logo.crossOrigin = 'anonymous';
+    logo.src = 'I.R.-COMERCIO-E-MATERIAIS-ELETRICOS-LTDA-PDF.png';
+    logo.onload = () => iniciarPDFGrupos(true);
+    logo.onerror = () => iniciarPDFGrupos(false);
+    function iniciarPDFGrupos(logoOk) {
+        let y = 3;
+        try {
+            if (logoOk) {
+                const lw = 40, lh = (logo.height / logo.width) * lw;
+                doc.setGState(new doc.GState({ opacity: 0.3 }));
+                doc.addImage(logo, 'PNG', 5, 3, lw, lh);
+                doc.setGState(new doc.GState({ opacity: 1.0 }));
+                const fs = lh * 0.5;
+                doc.setFontSize(fs); doc.setFont(undefined, 'bold'); doc.setTextColor(150,150,150);
+                doc.text('I.R COMÉRCIO E', 5 + lw + 1.2, 3 + fs * 0.85);
+                doc.text('MATERIAIS ELÉTRICOS LTDA', 5 + lw + 1.2, 3 + fs * 0.85 + fs * 0.5);
+                doc.setTextColor(0, 0, 0);
+                y = 3 + lh + 8;
+            } else { y = 25; }
+        } catch(e) { y = 25; }
+        continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pageWidth, pageHeight, lineHeight, maxWidth, addTextWithWrap, comAssinatura, estrutura);
+    }
+}
+
+function criarTelaItens() {
+    const div = document.createElement('div');
+    div.id = 'telaItens';
+    div.className = 'container';
+    div.innerHTML = `
+        <div class="header">
+            <div class="header-left">
+                <div>
+                    <h1>Itens do Pregão</h1>
+                    <p id="tituloItens" style="color: var(--text-secondary); font-size: 0.8rem; font-weight: 400; margin-top: 2px; letter-spacing: 0.01em;"></p>
+                </div>
+            </div>
+            <div style="display: flex; gap: 0.75rem; align-items:center;">
+                <button onclick="adicionarItem()" style="background: #22C55E; color: white; border: none; padding: 0.65rem 1.25rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600;">+ Item</button>
+                <button onclick="abrirModalIntervalo()" style="background: #6B7280; color: white; border: none; padding: 0.65rem 1.25rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600;">+ Intervalo</button>
+                <button onclick="abrirModalExcluirItens()" style="background: #EF4444; color: white; border: none; padding: 0.65rem 1.25rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600;">Excluir</button>
+            </div>
+        </div>
+
+        <div class="search-bar-wrapper">
+            <div class="search-bar">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input type="text" id="searchItens" placeholder="Pesquisar itens" oninput="filterItens()">
+                
+                <div class="search-bar-filters">
+                    <div class="filter-dropdown-inline">
+                        <select id="filterMarcaItens" onchange="filterItens()">
+                            <option value="">Marca</option>
+                        </select>
+                        <svg class="dropdown-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                </div>
+
+                <button onclick="abrirModalCotacao()" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; display: flex; align-items: center;" title="Enviar Cotação">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="20" height="16" x="2" y="4" rx="2"/>
+                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                    </svg>
+                </button>
+                
+                <button onclick="perguntarAssinaturaPDF()" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; display: flex; align-items: center;" title="Gerar Proposta PDF">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                </button>
+                
+                <button onclick="abrirModalExequibilidade(currentPregaoId)" style="background: transparent; border: none; color: var(--certificate-color); cursor: pointer; padding: 0.5rem; display: flex; align-items: center;" title="Comprovante de Exequibilidade">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                </button>
+                
+                <button onclick="syncItens()" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; display: flex; align-items: center;" title="Sincronizar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
+                </button>
+                
+                <button onclick="voltarPregoes()" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; display: flex; align-items: center;" title="Voltar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="card table-card">
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 40px; text-align: center;">
+                                <span style="font-size: 1.1rem;">✓</span>
+                            </th>
+                            <th style="width: 60px; text-align: center;">ITEM</th>
+                            <th style="min-width: 300px; text-align: left;">DESCRIÇÃO</th>
+                            <th style="width: 80px; text-align: center;">QTD</th>
+                            <th style="width: 80px; text-align: center;">UNIDADE</th>
+                            <th style="width: 120px; text-align: center;">MARCA</th>
+                            <th style="width: 120px; text-align: center;">MODELO</th>
+                            <th style="width: 120px; text-align: right;">ESTIMADO UNT</th>
+                            <th style="width: 120px; text-align: right;">ESTIMADO TOTAL</th>
+                            <th style="width: 120px; text-align: right;">CUSTO UNT</th>
+                            <th style="width: 120px; text-align: right;">CUSTO TOTAL</th>
+                            <th style="width: 120px; text-align: right;">VENDA UNT</th>
+                            <th style="width: 120px; text-align: right;">VENDA TOTAL</th>
+                        </tr>
+                    </thead>
+                    <tbody id="itensContainer"></tbody>
+                </table>
+            </div>
+        </div>
+        <div id="itensTotaisBar" style="display:flex;gap:3rem;padding:0.75rem 1rem 0.25rem 1rem;font-size:10pt;color:var(--text-primary);"></div>
+
+        <div class="modal-overlay" id="modalIntervalo">
+            <div class="modal-content" style="max-width:520px;">
+                <div class="modal-header">
+                    <h3 class="modal-title">Adicionar Intervalo</h3>
+                    <button class="close-modal" onclick="fecharModalIntervalo()">✕</button>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group" style="grid-column:1/-1;">
+                        <label>Intervalo de itens <span style="color:var(--text-secondary);font-weight:400;">(ex: 1-5, 10, 15-20)</span></label>
+                        <input type="text" id="inputIntervalo" placeholder="Ex: 1-5, 10, 15-20">
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="secondary" onclick="fecharModalIntervalo();showToast('Registro cancelado','error')">Cancelar</button>
+                    <button class="success" onclick="confirmarAdicionarIntervalo()">Adicionar</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="modalExcluirItens">
+            <div class="modal-content" style="max-width:520px;">
+                <div class="modal-header">
+                    <h3 class="modal-title">Excluir Itens</h3>
+                    <button class="close-modal" onclick="fecharModalExcluirItens()">✕</button>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group" style="grid-column:1/-1;">
+                        <label>Intervalo a excluir <span style="color:var(--text-secondary);font-weight:400;">(ex: 1-5, 10)</span></label>
+                        <input type="text" id="inputExcluirIntervalo" placeholder="Ex: 1-5, 10">
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="secondary" onclick="fecharModalExcluirItens();showToast('Registro cancelado','error')">Cancelar</button>
+                    <button class="danger" onclick="confirmarExcluirItens()">Excluir</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="modalAssinatura">
+            <div class="modal-content modal-delete">
+                <button class="close-modal" onclick="fecharModalAssinatura()">✕</button>
+                <div class="modal-message-delete">
+                    Deseja incluir a assinatura padrão na proposta?
+                </div>
+                <div class="modal-actions modal-actions-no-border">
+                    <button class="success" onclick="gerarPDFsProposta(true)">Sim</button>
+                    <button class="danger" onclick="gerarPDFsProposta(false)">Não</button>
+                </div>
+            </div>
+        </div>
+
+    `;
+    return div;
+}
+
+function obterSaudacao() {
+    const hora = new Date().getHours();
+    if (hora >= 5 && hora < 12) return 'Bom dia';
+    if (hora >= 12 && hora < 18) return 'Boa tarde';
+    return 'Boa noite';
+}
+
+async function carregarItens(pregaoId) {
+    if (!isOnline) return;
     
-    if (modalIntervalo && e.target === modalIntervalo) fecharModalIntervalo();
-    if (modalExcluirItens && e.target === modalExcluirItens) fecharModalExcluirItens();
-});
+    try {
+        const headers = { 'Accept': 'application/json' };
+        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+
+        const response = await fetch(`${API_URL}/pregoes/${pregaoId}/itens`, {
+            method: 'GET',
+            headers: headers
+        });
+
+        if (response.status === 401) {
+            sessionStorage.removeItem('pregoesSession');
+            mostrarTelaAcessoNegado('Sua sessão expirou');
+            return;
+        }
+
+        if (response.ok) {
+            itens = await response.json();
+            atualizarMarcasItens();
+            renderItens();
+        }
+    } catch (error) {
+        console.error('Erro ao carregar itens:', error);
+    }
+}
+
+function atualizarMarcasItens() {
+    const novas = new Set();
+    for (const item of itens) { if (item.marca) novas.add(item.marca); }
+    const antes = Array.from(marcasItens).sort().join('|');
+    const depois = Array.from(novas).sort().join('|');
+    marcasItens = novas;
+    if (antes === depois) return;
+    const select = document.getElementById('filterMarcaItens');
+    if (select) {
+        const cur = select.value;
+        select.innerHTML = '<option value="">Marca</option>' +
+            Array.from(novas).sort().map(m => '<option value="' + m + '"' + (m === cur ? ' selected' : '') + '>' + m + '</option>').join('');
+    }
+}
+
+function filterItens() {
+    const search = document.getElementById('searchItens')?.value.toLowerCase() || '';
+    const marca = document.getElementById('filterMarcaItens')?.value || '';
+    
+    const filtered = itens.filter(item => {
+        const matchSearch = !search || 
+            (item.descricao || '').toLowerCase().includes(search) ||
+            (item.marca && item.marca.toLowerCase().includes(search)) ||
+            item.numero.toString().includes(search);
+        const matchMarca = !marca || item.marca === marca;
+        return matchSearch && matchMarca;
+    });
+    
+    renderItens(filtered);
+}
+
+function renderItens(itensToRender = itens) {
+    const container = document.getElementById('itensContainer');
+    if (!container) return;
+
+    if (itensToRender.length === 0) {
+        container.innerHTML = '<tr><td colspan="13" style="text-align:center;padding:2rem;">Nenhum item cadastrado</td></tr>';
+        return;
+    }
+
+    let totCompra = 0, totCusto = 0, totVenda = 0;
+    const parts = new Array(itensToRender.length);
+
+    for (let idx = 0; idx < itensToRender.length; idx++) {
+        const item = itensToRender[idx];
+        const vendaUnt  = item.venda_unt  || 0;
+        const compraUnt = item.estimado_unt || 0;
+        const estTotal  = item.estimado_total || 0;
+        const custoTotal= item.custo_total || 0;
+        const vendaTotal= item.venda_total || 0;
+        totCompra += estTotal; totCusto += custoTotal; totVenda += vendaTotal;
+
+        const vm = compraUnt > 0 && vendaUnt > compraUnt;
+        const rc = (item.ganho ? 'item-ganho row-won' : '') + (vm ? ' row-venda-alta' : '');
+        const cbId = 'ig-' + item.id;
+        const ck = item.ganho ? ' checked' : '';
+
+        const iid = item.id;
+        parts[idx] = '<tr class="' + rc + '" ondblclick="editarItem(\'' + iid + '\')" oncontextmenu="showItemContextMenu(event,\'' + iid + '\')">' +
+            '<td style="text-align:center;padding:8px;"><div class="checkbox-wrapper">' +
+            '<input type="checkbox" id="' + cbId + '"' + ck +
+            (vm ? ' onclick="event.preventDefault();event.stopPropagation()"' : ' onchange="toggleItemGanho(\'' + iid + '\',this.checked)" onclick="event.stopPropagation()"') +
+            ' class="styled-checkbox' + (vm ? ' cb-venda-alta' : '') + '">' +
+            '<label for="' + cbId + '" class="checkbox-label-styled' + (vm ? ' cb-label-venda-alta' : '') + '">' + (vm ? '✕' : '') + '</label>' +
+            '</div></td>' +
+            '<td style="text-align:center;"><strong>' + item.numero + '</strong></td>' +
+            '<td class="descricao-cell" style="text-align:left;">' + (item.descricao || '-') + '</td>' +
+            '<td style="text-align:center;">' + (item.qtd || 1) + '</td>' +
+            '<td style="text-align:center;">' + (item.unidade || 'UN') + '</td>' +
+            '<td style="text-align:center;">' + (item.marca || '-') + '</td>' +
+            '<td style="text-align:center;">' + (item.modelo || '-') + '</td>' +
+            '<td style="text-align:right;">' + fmtUnt(compraUnt) + '</td>' +
+            '<td style="text-align:right;">' + fmtTotal(estTotal) + '</td>' +
+            '<td style="text-align:right;">' + fmtUnt(item.custo_unt || 0) + '</td>' +
+            '<td style="text-align:right;">' + fmtTotal(custoTotal) + '</td>' +
+            '<td style="text-align:right;">' + fmtUnt(vendaUnt) + '</td>' +
+            '<td style="text-align:right;">' + fmtTotal(vendaTotal) + '</td>' +
+            '</tr>';
+    }
+
+    container.innerHTML = parts.join('');
+
+    const totaisContainer = document.getElementById('itensTotaisBar');
+    if (totaisContainer) {
+        totaisContainer.innerHTML =
+            '<span><strong>COMPRA TOTAL:</strong> ' + fmtTotal(totCompra) + '</span>' +
+            '<span><strong>CUSTO TOTAL:</strong> ' + fmtTotal(totCusto) + '</span>' +
+            '<span><strong>VENDA TOTAL:</strong> ' + fmtTotal(totVenda) + '</span>';
+    }
+}
+
+function showItemContextMenu(event, itemId) {
+    event.preventDefault();
+    
+    const existingMenu = document.getElementById('contextMenu');
+    if (existingMenu) existingMenu.remove();
+    
+    const menu = document.createElement('div');
+    menu.id = 'contextMenu';
+    menu.style.cssText = `
+        position: fixed;
+        left: ${event.clientX}px;
+        top: ${event.clientY}px;
+        background: white;
+        border: 1px solid #E5E7EB;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10000;
+        min-width: 150px;
+        padding: 0.5rem 0;
+    `;
+    
+    menu.innerHTML = `
+        <div onclick="excluirItemContexto('${itemId}')" style="
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            color: #EF4444;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        " onmouseover="this.style.background='#FEE2E2'" onmouseout="this.style.background='white'">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            Excluir
+        </div>
+    `;
+    
+    document.body.appendChild(menu);
+    
+    const closeMenu = () => {
+        menu.remove();
+        document.removeEventListener('click', closeMenu);
+    };
+    setTimeout(() => document.addEventListener('click', closeMenu), 100);
+}
+
+async function excluirItemContexto(itemId) {
+    try {
+        const headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        };
+        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        
+        if (!itemId.startsWith('temp-')) {
+            const response = await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens/${itemId}`, {
+                method: 'DELETE',
+                headers: headers
+            });
+            
+            if (!response.ok) throw new Error('Erro ao excluir');
+        }
+        
+        itens = itens.filter(item => item.id !== itemId);
+        selectedItens.delete(itemId);
+        renderItens();
+        showToast('Item excluído', 'success');
+    } catch (error) {
+        console.error('Erro:', error);
+        showToast('Erro ao excluir item', 'error');
+    }
+}
+
+async function toggleItemGanho(id, ganho) {
+    const item = itens.find(i => i.id === id);
+    if (!item) return;
+    item.ganho = ganho;
+
+    const cb = document.getElementById('ig-' + id) || document.getElementById('grp-' + id);
+    if (cb) {
+        cb.checked = ganho;
+        const row = cb.closest('tr');
+        if (row) {
+            if (ganho) row.classList.add('item-ganho', 'row-won');
+            else row.classList.remove('item-ganho', 'row-won');
+        }
+    }
+
+    try {
+        const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        if (!String(id).startsWith('temp-')) {
+            fetch(`${API_URL}/pregoes/${currentPregaoId}/itens/${id}`, {
+                method: 'PUT', headers, body: JSON.stringify(item)
+            }).catch(e => console.error('Erro ao salvar ganho:', e));
+        }
+    } catch (error) {
+        console.error('Erro ao atualizar ganho:', error);
+    }
+}
+
+function toggleItemSelection(id) {
+    if (selectedItens.has(id)) {
+        selectedItens.delete(id);
+    } else {
+        selectedItens.add(id);
+    }
+}
+
+function toggleSelectAllItens() {
+    const checkbox = document.getElementById('selectAllItens');
+    if (checkbox.checked) {
+        itens.forEach(item => selectedItens.add(item.id));
+    } else {
+        selectedItens.clear();
+    }
+    renderItens();
+}
+
+const _fmtBRL = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const _fmtBRL6 = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 6 });
+function fmtTotal(v) { return 'R$ ' + _fmtBRL.format(v || 0); }
+function fmtUnt(v) {
+    const n = v || 0;
+    if (n === 0) return 'R$ 0,00';
+    const s = _fmtBRL6.format(n);
+    return 'R$ ' + s.replace(/,?0+$/, m => m === ',00' ? ',00' : m.replace(/0+$/, '') || ',00');
+}
+
+function payloadItemSeguro(fields) {
+    return {
+        pregao_id: fields.pregao_id,
+        numero: fields.numero || 1,
+        descricao: fields.descricao || ' ',
+        qtd: fields.qtd || 1,
+        unidade: fields.unidade || 'UN',
+        marca: fields.marca || null,
+        modelo: fields.modelo || null,
+        estimado_unt: fields.estimado_unt || 0,
+        estimado_total: fields.estimado_total || 0,
+        custo_unt: fields.custo_unt || 0,
+        custo_total: fields.custo_total || 0,
+        porcentagem: fields.porcentagem || 149,
+        venda_unt: fields.venda_unt || 0,
+        venda_total: fields.venda_total || 0,
+        ganho: fields.ganho || false,
+        ...(fields.grupo_tipo !== undefined ? { grupo_tipo: fields.grupo_tipo } : {}),
+        ...(fields.grupo_numero !== undefined ? { grupo_numero: fields.grupo_numero } : {})
+    };
+}
+
+async function adicionarItem() {
+    const numero = itens.length > 0 ? Math.max(...itens.map(i => i.numero)) + 1 : 1;
+    const novoItem = payloadItemSeguro({
+        pregao_id: currentPregaoId,
+        numero
+    });
+    try {
+        const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        const r = await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens`, { method:'POST', headers, body:JSON.stringify(novoItem) });
+        if (r.ok) {
+            const saved = await r.json();
+            itens.push(saved);
+            renderItens();
+            showToast('Item salvo', 'success');
+        } else { throw new Error('Erro ' + r.status); }
+    } catch(e) {
+        console.error(e);
+        showToast('Erro ao criar item', 'error');
+    }
+}
+
+function abrirModalIntervalo() {
+    const modal = document.getElementById('modalIntervalo');
+    if (modal) {
+        document.getElementById('inputIntervalo').value = '';
+        modal.classList.add('show');
+    }
+}
+
+function fecharModalIntervalo() {
+    const modal = document.getElementById('modalIntervalo');
+    if (modal) modal.classList.remove('show');
+    showToast('Registro cancelado', 'error');
+}
+
+function confirmarAdicionarIntervalo() {
+    const intervalo = document.getElementById('inputIntervalo').value.trim();
+    fecharModalIntervalo();
+    if (!intervalo) return;
+    adicionarIntervalo(intervalo);
+}
+
+async function adicionarIntervalo(intervalo) {
+    let numeros = [];
+    const partes = intervalo.split(',').map(p => p.trim());
+    
+    for (const parte of partes) {
+        if (parte.includes('-')) {
+            const [inicio, fim] = parte.split('-').map(n => parseInt(n.trim()));
+            if (isNaN(inicio) || isNaN(fim) || inicio > fim) {
+                showToast('Intervalo inválido', 'error');
+                return;
+            }
+            for (let i = inicio; i <= fim; i++) {
+                numeros.push(i);
+            }
+        } else {
+            const num = parseInt(parte);
+            if (isNaN(num)) {
+                showToast('Número inválido', 'error');
+                return;
+            }
+            numeros.push(num);
+        }
+    }
+    
+    const numerosExistentes = new Set(itens.map(i => i.numero));
+    const duplicatas = numeros.filter(n => numerosExistentes.has(n));
+    if (duplicatas.length > 0) {
+        showToast(`Itens ${duplicatas.join(', ')} já existem — ignorados`, 'error');
+        numeros = numeros.filter(n => !numerosExistentes.has(n));
+        if (numeros.length === 0) return;
+    }
+    
+    const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+    if (sessionToken) headers['X-Session-Token'] = sessionToken;
+    let criados = 0;
+    for (const numero of numeros) {
+        const novoItem = payloadItemSeguro({ pregao_id: currentPregaoId, numero });
+        try {
+            const r = await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens`, { method:'POST', headers, body:JSON.stringify(novoItem) });
+            if (r.ok) { itens.push(await r.json()); criados++; }
+        } catch(e) { console.error(e); }
+    }
+    itens.sort((a, b) => a.numero - b.numero);
+    renderItens();
+    showToast('Item salvo', 'success');
+}
+
+function abrirModalExcluirItens() {
+    const modal = document.getElementById('modalExcluirItens');
+    if (modal) {
+        document.getElementById('inputExcluirIntervalo').value = '';
+        modal.classList.add('show');
+    }
+}
+
+function fecharModalExcluirItens() {
+    const modal = document.getElementById('modalExcluirItens');
+    if (modal) modal.classList.remove('show');
+}
+
+async function confirmarExcluirItens() {
+    const intervalo = document.getElementById('inputExcluirIntervalo').value.trim();
+    fecharModalExcluirItens();
+    
+    if (!intervalo) {
+        showToast('Digite um intervalo para excluir', 'error');
+        return;
+    }
+    
+    const numeros = parsearIntervalo(intervalo);
+    if (!numeros) return;
+    
+    const idsParaExcluir = itens
+        .filter(item => numeros.includes(item.numero))
+        .map(item => item.id);
+    
+    if (idsParaExcluir.length === 0) {
+        showToast('Nenhum item encontrado no intervalo informado', 'error');
+        return;
+    }
+    
+    await excluirItensPorIds(idsParaExcluir);
+}
+
+function parsearIntervalo(intervalo) {
+    const numeros = [];
+    const partes = intervalo.split(',').map(p => p.trim());
+    
+    for (const parte of partes) {
+        if (parte.includes('-')) {
+            const [inicio, fim] = parte.split('-').map(n => parseInt(n.trim()));
+            if (isNaN(inicio) || isNaN(fim) || inicio > fim) {
+                showToast('Intervalo inválido', 'error');
+                return null;
+            }
+            for (let i = inicio; i <= fim; i++) numeros.push(i);
+        } else {
+            const num = parseInt(parte);
+            if (isNaN(num)) {
+                showToast('Número inválido', 'error');
+                return null;
+            }
+            numeros.push(num);
+        }
+    }
+    return numeros;
+}
+
+async function excluirItensPorIds(ids) {
+    try {
+        const headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        };
+        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        
+        const idsServidor = ids.filter(id => !id.startsWith('temp-'));
+        
+        if (idsServidor.length > 0) {
+            const response = await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens/delete-multiple`, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({ ids: idsServidor })
+            });
+            if (!response.ok) throw new Error('Erro ao excluir');
+        }
+        
+        const idsSet = new Set(ids);
+        itens = itens.filter(item => !idsSet.has(item.id));
+        ids.forEach(id => selectedItens.delete(id));
+        renderItens();
+        showToast('Itens excluídos', 'success');
+    } catch (error) {
+        console.error('Erro:', error);
+        showToast('Erro ao excluir itens', 'error');
+    }
+}
+
+async function excluirItensSelecionados() {
+    if (selectedItens.size === 0) {
+        showToast('Selecione itens para excluir', 'error');
+        return;
+    }
+    
+    try {
+        const headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        };
+        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        
+        const idsParaExcluir = Array.from(selectedItens).filter(id => !id.startsWith('temp-'));
+        
+        if (idsParaExcluir.length > 0) {
+            const response = await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens/delete-multiple`, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({ ids: idsParaExcluir })
+            });
+            
+            if (!response.ok) throw new Error('Erro ao excluir');
+        }
+        
+        itens = itens.filter(item => !selectedItens.has(item.id));
+        selectedItens.clear();
+        renderItens();
+        showToast('Itens excluídos', 'success');
+    } catch (error) {
+        console.error('Erro:', error);
+        showToast('Erro ao excluir itens', 'error');
+    }
+}
+
+function editarItem(id) {
+    const item = itens.find(i => i.id === id);
+    if (!item) return;
+    
+    editingItemIndex = itens.indexOf(item);
+    mostrarModalItem(item);
+}
+
+let currentItemTab = 0;
+const itemTabs = ['item-tab-item', 'item-tab-fornecedor', 'item-tab-valores'];
+
+function mostrarModalItem(item) {
+    let modal = document.getElementById('modalItem');
+    if (!modal) {
+        modal = criarModalItem();
+        document.body.appendChild(modal);
+    }
+    
+    document.getElementById('itemNumero').value = item.numero;
+    document.getElementById('itemDescricao').value = item.descricao;
+    document.getElementById('itemQtd').value = item.qtd;
+    document.getElementById('itemUnidade').value = item.unidade || 'UN';
+    document.getElementById('itemMarca').value = item.marca || '';
+    document.getElementById('itemModelo').value = item.modelo || '';
+    document.getElementById('itemEstimadoUnt').value = item.estimado_unt || 0;
+    document.getElementById('itemEstimadoTotal').value = item.estimado_total || 0;
+    document.getElementById('itemCustoUnt').value = item.custo_unt || 0;
+    document.getElementById('itemCustoTotal').value = item.custo_total || 0;
+    document.getElementById('itemPorcentagem').value = item.porcentagem !== undefined ? item.porcentagem : 149;
+    document.getElementById('itemVendaUnt').value = item.venda_unt || 0;
+    document.getElementById('itemVendaTotal').value = item.venda_total || 0;
+    
+    modoNavegacaoGrupo = false;
+    atualizarTituloModalItem(item);
+    
+    currentItemTab = 0;
+    switchItemTab(itemTabs[0]);
+    
+    modal.classList.add('show');
+    configurarCalculosAutomaticos();
+    setTimeout(calcularValoresItem, 50);
+    setTimeout(setupUpperCaseInputs, 50);
+}
+
+function atualizarTituloModalItem(item) {
+    const totalItens = itens.length;
+    const posicao = editingItemIndex + 1;
+    
+    const titleEl = document.getElementById('modalItemTitle');
+    const prevPag = document.getElementById('btnPrevPagItem');
+    const nextPag = document.getElementById('btnNextPagItem');
+    
+    if (titleEl) titleEl.textContent = `Item ${item.numero}`;
+    if (prevPag) prevPag.style.visibility = editingItemIndex > 0 ? 'visible' : 'hidden';
+    if (nextPag) nextPag.style.visibility = editingItemIndex < itens.length - 1 ? 'visible' : 'hidden';
+}
+
+function switchItemTab(tabId) {
+    itemTabs.forEach((tab, idx) => {
+        const el = document.getElementById(tab);
+        const btn = document.querySelectorAll('#modalItem .tab-btn')[idx];
+        if (el) el.classList.remove('active');
+        if (btn) btn.classList.remove('active');
+    });
+    
+    const activeEl = document.getElementById(tabId);
+    const activeIdx = itemTabs.indexOf(tabId);
+    const activeBtn = document.querySelectorAll('#modalItem .tab-btn')[activeIdx];
+    
+    if (activeEl) activeEl.classList.add('active');
+    if (activeBtn) activeBtn.classList.add('active');
+    
+    currentItemTab = activeIdx;
+    atualizarNavegacaoAbasItem();
+}
+
+function atualizarNavegacaoAbasItem() {
+    const btnPrev   = document.getElementById('btnItemTabPrev');
+    const btnNext   = document.getElementById('btnItemTabNext');
+    const btnSalvar = document.getElementById('btnSalvarItem');
+    const isLast = currentItemTab === itemTabs.length - 1;
+    if (btnPrev)   btnPrev.style.display   = currentItemTab === 0 ? 'none' : 'inline-block';
+    if (btnNext)   btnNext.style.display   = isLast ? 'none' : 'inline-block';
+    if (btnSalvar) btnSalvar.style.display = isLast ? 'inline-block' : 'none';
+}
+
+function nextItemTab() {
+    if (currentItemTab < itemTabs.length - 1) {
+        currentItemTab++;
+        switchItemTab(itemTabs[currentItemTab]);
+    }
+}
+
+function prevItemTab() {
+    if (currentItemTab > 0) {
+        currentItemTab--;
+        switchItemTab(itemTabs[currentItemTab]);
+    }
+}
+
+function criarModalItem() {
+    const modal = document.createElement('div');
+    modal.id = 'modalItem';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content large" style="max-width: 680px; width: 90vw;">
+            <div class="modal-header" style="align-items: center;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <button id="btnPrevPagItem" onclick="navegarItemAnterior()" 
+                            style="background: none; border: none; cursor: pointer; color: var(--text-secondary); font-size: 1.1rem; padding: 0 0.25rem; visibility: hidden;">‹</button>
+                    <h3 class="modal-title" id="modalItemTitle">Item</h3>
+                    <button id="btnNextPagItem" onclick="navegarProximoItem()"
+                            style="background: none; border: none; cursor: pointer; color: var(--text-secondary); font-size: 1.1rem; padding: 0 0.25rem; visibility: hidden;">›</button>
+                </div>
+                <button class="close-modal" onclick="fecharModalItem()">✕</button>
+            </div>
+            
+            <div class="tabs-container">
+                <div class="tabs-nav">
+                    <button class="tab-btn active" onclick="switchItemTab('item-tab-item')">Item</button>
+                    <button class="tab-btn" onclick="switchItemTab('item-tab-fornecedor')">Fornecedor</button>
+                    <button class="tab-btn" onclick="switchItemTab('item-tab-valores')">Valores</button>
+                </div>
+                
+                <div class="tab-content active" id="item-tab-item">
+                    <input type="hidden" id="itemNumero">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Quantidade *</label>
+                            <input type="number" id="itemQtd" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Unidade *</label>
+                            <select id="itemUnidade">
+                                <option value="UN">UN</option>
+                                <option value="MT">MT</option>
+                                <option value="PÇ">PÇ</option>
+                                <option value="CX">CX</option>
+                                <option value="PT">PT</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label>Descrição *</label>
+                            <textarea id="itemDescricao" rows="4" required></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="item-tab-fornecedor">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Marca</label>
+                            <input type="text" id="itemMarca">
+                        </div>
+                        <div class="form-group">
+                            <label>Modelo</label>
+                            <input type="text" id="itemModelo">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="item-tab-valores">
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 0.75rem; padding: 0.25rem 0;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
+                            <div class="form-group" style="margin:0;">
+                                <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">Porcentagem (%)</label>
+                                <input type="number" id="itemPorcentagem" min="0" step="any" value="149" 
+                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box;">
+                            </div>
+                            <div></div>
+                            <div></div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
+                            <div class="form-group" style="margin:0;">
+                                <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">Compra UNT</label>
+                                <input type="number" id="itemEstimadoUnt" step="any" min="0"
+                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box;">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">Custo UNT</label>
+                                <input type="number" id="itemCustoUnt" step="any" min="0"
+                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box;">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">Venda UNT</label>
+                                <input type="number" id="itemVendaUnt" step="any" min="0"
+                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box;">
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
+                            <div class="form-group" style="margin:0;">
+                                <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">Compra Total</label>
+                                <input type="number" id="itemEstimadoTotal" step="any" min="0"
+                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box;">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">Custo Total</label>
+                                <input type="number" id="itemCustoTotal" step="any" min="0"
+                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box;">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">Venda Total</label>
+                                <input type="number" id="itemVendaTotal" step="any" min="0"
+                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" id="btnItemTabPrev" onclick="prevItemTab()" class="secondary" style="display: none;">Anterior</button>
+                <button type="button" id="btnItemTabNext" onclick="nextItemTab()" class="secondary">Próximo</button>
+                <button type="button" id="btnSalvarItem" onclick="salvarItemAtual()" class="success" style="display:none;">Salvar</button>
+                <button type="button" onclick="fecharModalItem()" class="danger">Cancelar</button>
+            </div>
+        </div>
+    `;
+    return modal;
+}
+
+function calcularValoresItem() {
+    const q = parseFloat(document.getElementById('itemQtd')?.value) || 0;
+    const eu = parseFloat(document.getElementById('itemEstimadoUnt')?.value) || 0;
+    const cu = parseFloat(document.getElementById('itemCustoUnt')?.value) || 0;
+    const perc = parseFloat(document.getElementById('itemPorcentagem')?.value) || 0;
+    
+    const estimadoTotal = q * eu;
+    const custoTotal = q * cu;
+    const vendaUnt = cu * (1 + perc / 100);
+    const vendaTotal = vendaUnt * q;
+    
+    const etEl = document.getElementById('itemEstimadoTotal');
+    const ctEl = document.getElementById('itemCustoTotal');
+    const vuEl = document.getElementById('itemVendaUnt');
+    const vtEl = document.getElementById('itemVendaTotal');
+    
+    if (etEl) etEl.value = estimadoTotal.toFixed(2);
+    if (ctEl) ctEl.value = custoTotal.toFixed(2);
+    if (vuEl) {
+        vuEl.value = vendaUnt.toFixed(4).replace(/\.?0+$/, '');
+    }
+    if (vtEl) vtEl.value = vendaTotal.toFixed(2);
+}
+
+function configurarCalculosAutomaticos() {
+    const modal = document.getElementById('modalItem');
+    if (!modal) return;
+    
+    if (modal._calcListener) {
+        modal.removeEventListener('input', modal._calcListener);
+    }
+    
+    modal._calcListener = function(e) {
+        const ids = ['itemQtd', 'itemEstimadoUnt', 'itemCustoUnt', 'itemPorcentagem'];
+        if (ids.includes(e.target.id)) {
+            requestAnimationFrame(() => {
+                calcularValoresItem();
+            });
+        }
+    };
+    
+    modal.addEventListener('input', modal._calcListener);
+    
+    const inputs = ['itemQtd', 'itemEstimadoUnt', 'itemCustoUnt', 'itemPorcentagem'];
+    inputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.removeEventListener('blur', calcularValoresItem);
+            el.addEventListener('blur', calcularValoresItem);
+        }
+    });
+}
+    
+function navegarItemAnterior() {
+    if (modoNavegacaoGrupo) { navegarGrupoAnterior(); return; }
+    if (editingItemIndex > 0) {
+        salvarItemAtual(false);
+        editingItemIndex--;
+        mostrarModalItem(itens[editingItemIndex]);
+    }
+}
+
+function navegarProximoItem() {
+    if (modoNavegacaoGrupo) { navegarGrupoProximo(); return; }
+    if (editingItemIndex < itens.length - 1) {
+        salvarItemAtual(false);
+        editingItemIndex++;
+        mostrarModalItem(itens[editingItemIndex]);
+    }
+}
+
+async function salvarItemAtual(fechar = true) {
+    const item = itens[editingItemIndex];
+    
+    item.numero = parseInt(document.getElementById('itemNumero').value) || item.numero;
+    item.descricao = toUpperCase(document.getElementById('itemDescricao').value);
+    item.qtd = parseInt(document.getElementById('itemQtd').value);
+    item.unidade = document.getElementById('itemUnidade').value;
+    item.marca = toUpperCase(document.getElementById('itemMarca').value);
+    item.modelo = toUpperCase(document.getElementById('itemModelo').value);
+    item.estimado_unt = parseFloat(document.getElementById('itemEstimadoUnt').value || 0);
+    item.estimado_total = parseFloat(document.getElementById('itemEstimadoTotal').value || 0);
+    item.custo_unt = parseFloat(document.getElementById('itemCustoUnt').value || 0);
+    item.custo_total = parseFloat(document.getElementById('itemCustoTotal').value || 0);
+    item.porcentagem = parseFloat(document.getElementById('itemPorcentagem').value || 149);
+    item.venda_unt = parseFloat(document.getElementById('itemVendaUnt').value || 0);
+    item.venda_total = parseFloat(document.getElementById('itemVendaTotal').value || 0);
+    
+    try {
+        const headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        };
+        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        
+        const isNew = item.id.startsWith('temp-');
+        const url = isNew 
+            ? `${API_URL}/pregoes/${currentPregaoId}/itens`
+            : `${API_URL}/pregoes/${currentPregaoId}/itens/${item.id}`;
+        const method = isNew ? 'POST' : 'PUT';
+        
+        const response = await fetch(url, {
+            method: method,
+            headers: headers,
+            body: JSON.stringify(item)
+        });
+        
+        if (response.ok) {
+            const savedItem = await response.json();
+            itens[editingItemIndex] = savedItem;
+            if (fechar) {
+                if (editandoGrupoIdx !== null) {
+                    reconstruirGruposDeItens();
+                    atualizarSelectsGrupos();
+                    renderGrupos();
+                } else {
+                    atualizarMarcasItens();
+                    renderItens();
+                }
+                showToast('Item salvo', 'success');
+                fecharModalItemContexto();
+            }
+        }
+    } catch (error) {
+        console.error('Erro:', error);
+        showToast('Erro ao salvar item', 'error');
+    }
+}
+
+function fecharModalItem() {
+    const modal = document.getElementById('modalItem');
+    if (modal) modal.classList.remove('show');
+    editingItemIndex = null;
+    editandoGrupoIdx = null;
+    editandoGrupoItemIdx = null;
+    modoNavegacaoGrupo = false;
+}
+
+function fecharModalItemContexto() {
+    fecharModalItem();
+}
+
+function syncItens() {
+    carregarItens(currentPregaoId);
+    showToast('Dados sincronizados', 'success');
+}
+
+function perguntarAssinaturaPDF() {
+    if (!currentPregaoId) {
+        showToast('Erro: Pregão não identificado', 'error');
+        return;
+    }
+    const itensSelecionados = itens.filter(item => item.ganho);
+    if (itensSelecionados.length === 0) {
+        showToast('Marque ao menos um item (ganho) para gerar a proposta', 'error');
+        return;
+    }
+    const modal = document.getElementById('modalAssinatura');
+    if (modal) modal.classList.add('show');
+}
+
+function fecharModalAssinatura() {
+    const modal = document.getElementById('modalAssinatura');
+    if (modal) modal.classList.remove('show');
+}
+
+let fornecedoresDisponiveis = [];
+
+async function abrirModalCotacao() {
+    let modal = document.getElementById('modalCotacao');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'modalCotacao';
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 500px;">
+                <div class="modal-header">
+                    <h3 class="modal-title">Enviar Cotação</h3>
+                    <button class="close-modal" onclick="fecharModalCotacao()">✕</button>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group" style="grid-column:1/-1;">
+                        <label>Fornecedor</label>
+                        <select id="cotacaoFornecedor" onchange="selecionarFornecedorCotacao()">
+                            <option value="">Selecione...</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="grid-column:1/-1;">
+                        <label>Contato / Meio de Envio</label>
+                        <input type="text" id="cotacaoContato" readonly placeholder="Preenchido ao selecionar fornecedor">
+                    </div>
+                    <div class="form-group" style="grid-column:1/-1;">
+                        <label>Tipo de Envio</label>
+                        <select id="cotacaoTipo">
+                            <option value="descricao">Enviar por Descrição</option>
+                            <option value="modelo">Enviar por Modelo</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="success" onclick="enviarCotacao()">Enviar</button>
+                    <button class="danger" onclick="fecharModalCotacao()">Cancelar</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    const marcasNosItens = [...new Set(itens.filter(i => i.marca).map(i => i.marca))].sort();
+    const select = document.getElementById('cotacaoFornecedor');
+    if (select) {
+        select.innerHTML = '<option value="">Selecione...</option>' +
+            marcasNosItens.map(m => `<option value="${m}">${m}</option>`).join('');
+    }
+    document.getElementById('cotacaoContato').value = '';
+    document.getElementById('cotacaoTipo').value = 'descricao';
+    modal.classList.add('show');
+}
+
+function fecharModalCotacao() {
+    const modal = document.getElementById('modalCotacao');
+    if (modal) modal.classList.remove('show');
+}
+
+async function selecionarFornecedorCotacao() {
+    const marca = document.getElementById('cotacaoFornecedor').value;
+    const contatoEl = document.getElementById('cotacaoContato');
+
+    if (!marca) { contatoEl.value = ''; return; }
+
+    try {
+        const headers = { 'Accept': 'application/json' };
+        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        const response = await fetch(`${API_URL}/fornecedores`, { headers });
+
+        if (response.ok) {
+            const lista = await response.json();
+            const fornecedor = lista.find(f =>
+                (f.nome || f.razao_social || f.name || '').toUpperCase() === marca.toUpperCase()
+            );
+            if (fornecedor) {
+                const meio = fornecedor.meio_envio || fornecedor.envio || '';
+                const contato = fornecedor.email || fornecedor.whatsapp || fornecedor.telefone || '';
+                contatoEl.value = `${meio ? meio + ': ' : ''}${contato}`;
+                fornecedoresDisponiveis = lista;
+            } else {
+                contatoEl.value = '';
+                showToast('Fornecedor não encontrado', 'error');
+            }
+        } else {
+            contatoEl.value = '';
+            showToast('Fornecedor não encontrado', 'error');
+        }
+    } catch (e) {
+        contatoEl.value = '';
+        showToast('Fornecedor não encontrado', 'error');
+    }
+}
+
+function enviarCotacao() {
+    const marca = document.getElementById('cotacaoFornecedor').value;
+    const tipo = document.getElementById('cotacaoTipo').value;
+    const contato = document.getElementById('cotacaoContato').value;
+    
+    if (!marca) {
+        showToast('Selecione um fornecedor', 'error');
+        return;
+    }
+    
+    const itensCotacao = itens.filter(item => item.marca === marca);
+    
+    if (itensCotacao.length === 0) {
+        showToast('Nenhum item encontrado para este fornecedor', 'error');
+        return;
+    }
+    
+    const saudacao = obterSaudacao();
+    let mensagem = `${saudacao}! \n\nSolicito, por gentileza, um orçamento para os itens mencionados a seguir:\n\n`;
+    
+    itensCotacao.forEach((item, idx) => {
+        const numLista = idx + 1;
+        if (tipo === 'descricao') {
+            mensagem += `${numLista} - ${item.descricao}\n${item.qtd} ${item.unidade}\n\n`;
+        } else {
+            mensagem += `ITEM ${numLista} - ${item.modelo || item.descricao}\n${item.qtd} ${item.unidade}\n\n`;
+        }
+    });
+    
+    mensagem = mensagem.trim();
+    const msgEncoded = encodeURIComponent(mensagem);
+    
+    const fornecedor = fornecedoresDisponiveis.find(f =>
+        (f.nome || f.razao_social || f.name || '').toUpperCase() === marca.toUpperCase()
+    );
+    const meio = (fornecedor?.meio_envio || fornecedor?.envio || contato || '').toLowerCase();
+    const contatoLimpo = fornecedor?.email || fornecedor?.whatsapp || fornecedor?.telefone || '';
+    
+    if (meio.includes('whatsapp') || meio.includes('whats')) {
+        const numero = contatoLimpo.replace(/\D/g, '');
+        window.open(`https://wa.me/${numero}?text=${msgEncoded}`, '_blank');
+    } else {
+        window.open(`mailto:${contatoLimpo}?body=${msgEncoded}`, '_blank');
+    }
+    
+    fecharModalCotacao();
+}
+
+function numeroPorExtenso(valor) {
+    if (valor === 0) return 'ZERO REAIS';
+    
+    const unidades = ['', 'UM', 'DOIS', 'TRÊS', 'QUATRO', 'CINCO', 'SEIS', 'SETE', 'OITO', 'NOVE'];
+    const dezenas = ['', 'DEZ', 'VINTE', 'TRINTA', 'QUARENTA', 'CINQUENTA', 'SESSENTA', 'SETENTA', 'OITENTA', 'NOVENTA'];
+    const especiais = ['ONZE', 'DOZE', 'TREZE', 'CATORZE', 'QUINZE', 'DEZESSEIS', 'DEZESSETE', 'DEZOITO', 'DEZENOVE'];
+    const centenas = ['', 'CENTO', 'DUZENTOS', 'TREZENTOS', 'QUATROCENTOS', 'QUINHENTOS', 'SEISCENTOS', 'SETECENTOS', 'OITOCENTOS', 'NOVECENTOS'];
+    
+    let inteiro = Math.floor(valor);
+    let centavos = Math.round((valor - inteiro) * 100);
+    
+    function converterTresDigitos(num) {
+        if (num === 0) return '';
+        if (num === 100) return 'CEM';
+        
+        let resultado = [];
+        let centena = Math.floor(num / 100);
+        let resto = num % 100;
+        
+        if (centena > 0) {
+            resultado.push(centenas[centena]);
+        }
+        
+        if (resto > 0) {
+            if (resto < 10) {
+                resultado.push(unidades[resto]);
+            } else if (resto < 20) {
+                resultado.push(especiais[resto - 11]);
+            } else {
+                let dezena = Math.floor(resto / 10);
+                let unidade = resto % 10;
+                if (dezena > 0) {
+                    resultado.push(dezenas[dezena]);
+                }
+                if (unidade > 0) {
+                    resultado.push(unidades[unidade]);
+                }
+            }
+        }
+        
+        return resultado.join(' E ');
+    }
+    
+    let partes = [];
+    
+    if (inteiro > 0) {
+        let milhares = Math.floor(inteiro / 1000);
+        let restante = inteiro % 1000;
+        
+        if (milhares > 0) {
+            if (milhares === 1) {
+                partes.push('MIL');
+            } else {
+                let milharTexto = converterTresDigitos(milhares);
+                partes.push(milharTexto + (milharTexto.endsWith('O') ? ' MIL' : ' MIL'));
+            }
+        }
+        
+        if (restante > 0) {
+            partes.push(converterTresDigitos(restante));
+        }
+        
+        let textoInteiro = partes.join(' E ');
+        if (inteiro === 1) {
+            textoInteiro = 'UM REAL';
+        } else {
+            textoInteiro += ' REAIS';
+        }
+        partes = [textoInteiro];
+    }
+    
+    if (centavos > 0) {
+        if (centavos === 1) {
+            partes.push('UM CENTAVO');
+        } else {
+            partes.push(converterTresDigitos(centavos) + ' CENTAVOS');
+        }
+    }
+    
+    return partes.join(' E ');
+}
+
+async function gerarPDFsProposta(comAssinatura = true) {
+    fecharModalAssinatura();
+    if (!currentPregaoId) {
+        showToast('Erro: Pregão não identificado', 'error');
+        return;
+    }
+    
+    const pregao = pregoes.find(p => p.id === currentPregaoId);
+    if (!pregao) {
+        showToast('Erro: Pregão não encontrado', 'error');
+        return;
+    }
+    
+    const itensSelecionados = itens.filter(item => item.ganho);
+    if (itensSelecionados.length === 0) {
+        showToast('Marque ao menos um item (ganho) para gerar a proposta', 'error');
+        return;
+    }
+    
+    if (typeof window.jspdf === 'undefined') {
+        let attempts = 0;
+        const maxAttempts = 5;
+        const checkInterval = setInterval(() => {
+            attempts++;
+            if (typeof window.jspdf !== 'undefined') {
+                clearInterval(checkInterval);
+                gerarPDFPropostaInterno(pregao, comAssinatura);
+            } else if (attempts >= maxAttempts) {
+                clearInterval(checkInterval);
+                showToast('Erro: Biblioteca PDF não carregou. Recarregue a página (F5).', 'error');
+            }
+        }, 500);
+        return;
+    }
+    
+    gerarPDFPropostaInterno(pregao, comAssinatura);
+}
+
+async function gerarPDFPropostaInterno(pregao, comAssinatura = true) {
+    let dadosBancarios = null;
+    try {
+        const headers = { 'Accept': 'application/json' };
+        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        
+        const response = await fetch(`${API_URL}/pregoes/${currentPregaoId}/dados-bancarios`, {
+            method: 'GET',
+            headers: headers
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            dadosBancarios = data.dados_bancarios;
+        }
+    } catch (error) {
+        console.error('Erro ao buscar dados bancários:', error);
+    }
+    
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    let y = 3;
+    const margin = 15;
+    const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
+    const lineHeight = 5;
+    const maxWidth = pageWidth - (2 * margin);
+    
+    function addTextWithWrap(text, x, yStart, maxW, lineH = 5) {
+        const lines = doc.splitTextToSize(text, maxW);
+        lines.forEach((line, index) => {
+            if (yStart + (index * lineH) > pageHeight - 30) {
+                yStart = addPageWithHeader();
+            }
+            doc.text(line, x, yStart + (index * lineH));
+        });
+        return yStart + (lines.length * lineH);
+    }
+    
+    const logoHeader = new Image();
+    logoHeader.crossOrigin = 'anonymous';
+    logoHeader.src = 'I.R.-COMERCIO-E-MATERIAIS-ELETRICOS-LTDA-PDF.png';
+    
+    logoHeader.onload = function() {
+        try {
+            const logoWidth = 40;
+            const logoHeight = (logoHeader.height / logoHeader.width) * logoWidth;
+            const logoX = 5;
+            const logoY = y;
+            
+            doc.setGState(new doc.GState({ opacity: 0.3 }));
+            doc.addImage(logoHeader, 'PNG', logoX, logoY, logoWidth, logoHeight);
+            doc.setGState(new doc.GState({ opacity: 1.0 }));
+            
+            const fontSize = logoHeight * 0.5;
+            doc.setFontSize(fontSize);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(150, 150, 150);
+            const textX = logoX + logoWidth + 1.2;
+            
+            const lineSpacing = fontSize * 0.5;
+            const textY1 = logoY + fontSize * 0.85;
+            doc.text('I.R COMÉRCIO E', textX, textY1);
+            
+            const textY2 = textY1 + lineSpacing;
+            doc.text('MATERIAIS ELÉTRICOS LTDA', textX, textY2);
+            
+            doc.setTextColor(0, 0, 0);
+            y = logoY + logoHeight + 8;
+            
+            continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pageWidth, pageHeight, lineHeight, maxWidth, addTextWithWrap, comAssinatura);
+            
+        } catch (e) {
+            console.log('Erro ao adicionar logo:', e);
+            y = 25;
+            continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pageWidth, pageHeight, lineHeight, maxWidth, addTextWithWrap, comAssinatura);
+        }
+    };
+    
+    logoHeader.onerror = function() {
+        console.log('Erro ao carregar logo, gerando PDF sem ela');
+        y = 25;
+        continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pageWidth, pageHeight, lineHeight, maxWidth, addTextWithWrap, comAssinatura);
+    };
+}
+
+function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pageWidth, pageHeight, lineHeight, maxWidth, addTextWithWrap, comAssinatura = true, gruposEstrutura = null) {
+    const logoHeaderImg = new Image();
+    logoHeaderImg.crossOrigin = 'anonymous';
+    logoHeaderImg.src = 'I.R.-COMERCIO-E-MATERIAIS-ELETRICOS-LTDA-PDF.png';
+    
+    logoHeaderImg.onload = function() {
+        gerarPDFPropostaComCabecalho();
+    };
+    
+    logoHeaderImg.onerror = function() {
+        console.log('Erro ao carregar logo do cabeçalho');
+        gerarPDFPropostaComCabecalho();
+    };
+    
+    function gerarPDFPropostaComCabecalho() {
+        const logoCarregada = logoHeaderImg.complete && logoHeaderImg.naturalHeight !== 0;
+        
+        function adicionarCabecalho() {
+            if (!logoCarregada) {
+                return 20;
+            }
+            
+            const headerY = 3;
+            const logoWidth = 40;
+            const logoHeight = (logoHeaderImg.height / logoHeaderImg.width) * logoWidth;
+            const logoX = 5;
+            
+            doc.setGState(new doc.GState({ opacity: 0.3 }));
+            doc.addImage(logoHeaderImg, 'PNG', logoX, headerY, logoWidth, logoHeight);
+            doc.setGState(new doc.GState({ opacity: 1.0 }));
+            
+            const fontSize = logoHeight * 0.5;
+            doc.setFontSize(fontSize);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(150, 150, 150);
+            const textX = logoX + logoWidth + 1.2;
+            
+            const lineSpacing = fontSize * 0.5;
+            const textY1 = headerY + fontSize * 0.85;
+            doc.text('I.R COMÉRCIO E', textX, textY1);
+            
+            const textY2 = textY1 + lineSpacing;
+            doc.text('MATERIAIS ELÉTRICOS LTDA', textX, textY2);
+            
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            doc.setDrawColor(0, 0, 0);
+            doc.setLineWidth(0.2);
+            
+            return headerY + logoHeight + 8;
+        }
+        
+        function addPageWithHeader() {
+            doc.addPage();
+            const newY = adicionarCabecalho();
+            return newY;
+        }
+        
+        function paginaCheia(yAtual, espaco = 40) {
+            return yAtual > pageHeight - footerMargin - espaco;
+        }
+        
+        addTextWithWrap = function(text, x, yStart, maxW, lineH = 5) {
+            const lines = doc.splitTextToSize(text, maxW);
+            lines.forEach((line, index) => {
+                if (yStart + (index * lineH) > pageHeight - 30) {
+                    yStart = addPageWithHeader();
+                }
+                doc.text(line, x, yStart + (index * lineH));
+            });
+            return yStart + (lines.length * lineH);
+        };
+        
+        const footerLines = [
+            'I.R. COMÉRCIO E MATERIAIS ELÉTRICOS LTDA  |  CNPJ: 33.149.502/0001-38  |  IE: 083.780.74-2',
+            'RUA TADORNA Nº 472, SALA 2, NOVO HORIZONTE – SERRA/ES  |  CEP: 29.163-318',
+            'TELEFAX: (27) 3209-4291  |  E-MAIL: COMERCIAL.IRCOMERCIO@GMAIL.COM'
+        ];
+        const footerLineH = 5;
+        const footerH = footerLines.length * footerLineH + 4;
+        
+        function addFooter(docRef) {
+            const totalPags = docRef.internal.getNumberOfPages();
+            for (let pg = 1; pg <= totalPags; pg++) {
+                docRef.setPage(pg);
+                docRef.setFontSize(8);
+                docRef.setFont(undefined, 'normal');
+                docRef.setTextColor(150, 150, 150);
+                const fyBase = pageHeight - footerH + 2;
+                footerLines.forEach((line, i) => {
+                    docRef.text(line, pageWidth / 2, fyBase + (i * footerLineH), { align: 'center' });
+                });
+                docRef.setTextColor(0, 0, 0);
+            }
+        }
+
+        const footerMargin = footerH + 4;
+        
+        doc.setFontSize(18);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(0, 0, 0);
+        doc.text('PROPOSTA', pageWidth / 2, y, { align: 'center' });
+        
+        y += 8;
+        doc.setFontSize(14);
+        doc.text(`${pregao.numero_pregao}${pregao.uasg ? ' - ' + pregao.uasg : ''}`, pageWidth / 2, y, { align: 'center' });
+        
+        y += 12;
+        
+        const fs = 10;
+        doc.setFontSize(fs);
+        doc.setTextColor(0, 0, 0);
+        
+        doc.text('AO', margin, y);
+        y += lineHeight + 1;
+        if (pregao.nome_orgao) {
+            doc.setFont(undefined, 'bold');
+            doc.text(toUpperCase(pregao.nome_orgao), margin, y);
+            doc.setFont(undefined, 'normal');
+            y += lineHeight + 1;
+        }
+        doc.text('COMISSÃO PERMANENTE DE LICITAÇÃO', margin, y);
+        y += lineHeight + 1;
+        doc.text(`PREGÃO ELETRÔNICO: ${pregao.numero_pregao}${pregao.uasg ? '  UASG: ' + pregao.uasg : ''}`, margin, y);
+        y += 10;
+        
+        if (y > pageHeight - footerMargin - 50) {
+            y = addPageWithHeader();
+        }
+        
+        const fmtValorPdf = (v, decimals = 2) => {
+            return 'R$ ' + (v || 0).toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+        };
+        const fmtUntPdf = (v) => {
+            const n = v || 0;
+            const s = n.toFixed(4).replace(/(\.(\d*?)?)0+$/, '$1').replace(/\.$/, '');
+            return 'R$ ' + parseFloat(s || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+        };
+
+        const tableWidth = pageWidth - (2 * margin);
+        const colWidths = {
+            item:     tableWidth * 0.05,
+            descricao:tableWidth * 0.30,
+            qtd:      tableWidth * 0.06,
+            unid:     tableWidth * 0.05,
+            marca:    tableWidth * 0.12,
+            modelo:   tableWidth * 0.12,
+            vunt:     tableWidth * 0.14,
+            total:    tableWidth * 0.16
+        };
+        const itemRowHeight = 10;
+
+        function desenharCabecalhoTabela() {
+            doc.setFillColor(108, 117, 125);
+            doc.setDrawColor(180, 180, 180);
+            doc.rect(margin, y, tableWidth, itemRowHeight, 'FD');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(7.5);
+            doc.setFont(undefined, 'bold');
+            let xp = margin;
+            [['ITEM', colWidths.item, 'center'],
+             ['DESCRIÇÃO', colWidths.descricao, 'left'],
+             ['QTD', colWidths.qtd, 'center'],
+             ['UN', colWidths.unid, 'center'],
+             ['MARCA', colWidths.marca, 'center'],
+             ['MODELO', colWidths.modelo, 'center'],
+             ['VD. UNT', colWidths.vunt, 'right'],
+             ['VD. TOTAL', colWidths.total, 'right']].forEach(([lbl, w, align]) => {
+                doc.line(xp, y, xp, y + itemRowHeight);
+                doc.text(lbl, xp + w / 2, y + 6.5, { align: align === 'center' ? 'center' : align === 'left' ? 'left' : 'right' });
+                xp += w;
+            });
+            doc.line(xp, y, xp, y + itemRowHeight);
+            y += itemRowHeight;
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(7.5);
+            doc.setFont(undefined, 'normal');
+        }
+
+        function desenharLinhaItem(item, rowIndex) {
+            const descricaoUpper = toUpperCase(item.descricao);
+            const descLines = doc.splitTextToSize(descricaoUpper, colWidths.descricao - 4);
+            const marcaWrap = doc.splitTextToSize(item.marca || '-', colWidths.marca - 2);
+            const modeloWrap = doc.splitTextToSize(item.modelo || '-', colWidths.modelo - 2);
+            const lineCount = Math.max(descLines.length, marcaWrap.length, modeloWrap.length);
+            const rowH = Math.max(itemRowHeight, lineCount * 3.5 + 4);
+            if (paginaCheia(y, rowH + 10)) {
+                y = addPageWithHeader();
+                desenharCabecalhoTabela();
+            }
+            const rowBg = (rowIndex % 2 === 0) ? [255,255,255] : [247,248,250];
+            doc.setFillColor(...rowBg);
+            doc.setDrawColor(180, 180, 180);
+            doc.rect(margin, y, tableWidth, rowH, 'FD');
+            let xp = margin;
+            const cy = y + (rowH / 2) + 1.5;
+            doc.line(xp, y, xp, y + rowH);
+            doc.text(String(item.numero), xp + colWidths.item/2, cy, { align: 'center' });
+            xp += colWidths.item; doc.line(xp, y, xp, y + rowH);
+            let yt = y + 4; descLines.forEach(l => { doc.text(l, xp + 2, yt); yt += 3.5; });
+            xp += colWidths.descricao; doc.line(xp, y, xp, y + rowH);
+            doc.text(String(item.qtd || 1), xp + colWidths.qtd/2, cy, { align: 'center' });
+            xp += colWidths.qtd; doc.line(xp, y, xp, y + rowH);
+            doc.text(item.unidade || 'UN', xp + colWidths.unid/2, cy, { align: 'center' });
+            xp += colWidths.unid; doc.line(xp, y, xp, y + rowH);
+            let ym = y + 4; marcaWrap.forEach(ml => { doc.text(ml, xp + colWidths.marca/2, ym, { align:'center' }); ym += 3.5; });
+            xp += colWidths.marca; doc.line(xp, y, xp, y + rowH);
+            let ymo = y + 4; modeloWrap.forEach(ml => { doc.text(ml, xp + colWidths.modelo/2, ymo, { align:'center' }); ymo += 3.5; });
+            xp += colWidths.modelo; doc.line(xp, y, xp, y + rowH);
+            doc.text(fmtUntPdf(item.venda_unt), xp + colWidths.vunt/2, cy, { align: 'center' });
+            xp += colWidths.vunt; doc.line(xp, y, xp, y + rowH);
+            doc.text(fmtValorPdf(item.venda_total), xp + colWidths.total/2, cy, { align: 'center' });
+            xp += colWidths.total; doc.line(xp, y, xp, y + rowH);
+            y += rowH;
+        }
+
+        function desenharRodapeTabela(totalValor) {
+            doc.setFillColor(240, 240, 240);
+            doc.setFont(undefined, 'bold');
+            doc.rect(margin, y, tableWidth, 8, 'FD');
+            doc.text('TOTAL GERAL:', margin + tableWidth - colWidths.total - colWidths.vunt - 4, y + 5.5, { align: 'right' });
+            doc.text(fmtValorPdf(totalValor), margin + tableWidth - 2, y + 5.5, { align: 'right' });
+            doc.setFont(undefined, 'normal');
+            y += 8;
+        }
+
+        let totalFinalProposta = 0;
+        if (gruposEstrutura) {
+            doc.setFontSize(11); doc.setFont(undefined, 'bold');
+            doc.text('ITENS DA PROPOSTA', margin, y);
+            y += 8;
+            let totalGeralGlobal = 0;
+            gruposEstrutura.forEach(({ grupo, itens: iGrupo }) => {
+                if (paginaCheia(y, 30)) y = addPageWithHeader();
+                doc.setFontSize(10); doc.setFont(undefined, 'bold');
+                doc.text(`${grupo.tipo} ${grupo.numero}`, margin, y);
+                y += 6;
+                desenharCabecalhoTabela();
+                iGrupo.forEach((item, idx) => desenharLinhaItem(item, idx));
+                const totalGrupo = iGrupo.reduce((acc, i) => acc + (i.venda_total || 0), 0);
+                totalGeralGlobal += totalGrupo;
+                desenharRodapeTabela(totalGrupo);
+                y += 6;
+            });
+            if (gruposEstrutura.length > 1) {
+                doc.setFillColor(80, 80, 80); doc.setFont(undefined, 'bold');
+                doc.setTextColor(255,255,255);
+                doc.rect(margin, y, tableWidth, 8, 'FD');
+                doc.text('TOTAL GLOBAL:', margin + tableWidth - colWidths.total - colWidths.vunt - 4, y + 5.5, { align: 'right' });
+                doc.text(fmtValorPdf(totalGeralGlobal), margin + tableWidth - 2, y + 5.5, { align: 'right' });
+                doc.setTextColor(0,0,0); doc.setFont(undefined, 'normal');
+                y += 8;
+            }
+            totalFinalProposta = totalGeralGlobal;
+        } else {
+            doc.setFontSize(11); doc.setFont(undefined, 'bold');
+            doc.text('ITENS DA PROPOSTA', margin, y);
+            y += 6;
+            desenharCabecalhoTabela();
+            const itensSelecionados = itens.filter(item => item.ganho);
+            itensSelecionados.forEach((item, index) => desenharLinhaItem(item, index));
+            const totalGeral = itensSelecionados.reduce((acc, item) => acc + (item.venda_total || 0), 0);
+            totalFinalProposta = totalGeral;
+        }
+
+        y += 8;
+        
+        if (y > pageHeight - footerMargin - 60) {
+            y = addPageWithHeader();
+        }
+        
+        doc.setFontSize(10);
+        
+        function addCampoCondicao(label, valor) {
+            if (!valor || valor.toString().trim() === '') return;
+            doc.setFont(undefined, 'bold');
+            const lw = doc.getTextWidth(label + ': ');
+            doc.text(label + ': ', margin, y);
+            doc.setFont(undefined, 'normal');
+            const linhas = doc.splitTextToSize(valor.toString(), maxWidth - lw);
+            doc.text(linhas[0], margin + lw, y);
+            y += lineHeight;
+            for (let i = 1; i < linhas.length; i++) {
+                doc.text(linhas[i], margin, y);
+                y += lineHeight;
+            }
+            y += 3;
+        }
+
+        const valorExtenso = numeroPorExtenso(totalFinalProposta);
+        addCampoCondicao('VALOR TOTAL DA PROPOSTA', `${fmtValorPdf(totalFinalProposta)} (${valorExtenso})`);
+
+        addCampoCondicao('VALIDADE DA PROPOSTA', pregao.validade_proposta);
+        addCampoCondicao('PRAZO DE ENTREGA', pregao.prazo_entrega);
+        addCampoCondicao('FORMA DE PAGAMENTO', pregao.prazo_pagamento);
+        
+        if (dadosBancarios) {
+            addCampoCondicao('DADOS BANCÁRIOS', dadosBancarios);
+        }
+        
+        y += 16;
+        
+        if (y > pageHeight - footerMargin - 60) {
+            y = addPageWithHeader();
+        }
+        
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'normal');
+        const declaracoes = [
+            'DECLARAMOS QUE NOS PREÇOS COTADOS ESTÃO INCLUÍDAS TODAS AS DESPESAS TAIS COMO FRETE (CIF), IMPOSTOS, TAXAS, SEGUROS, TRIBUTOS E DEMAIS ENCARGOS DE QUALQUER NATUREZA INCIDENTES SOBRE O OBJETO DO PREGÃO.',
+            'DECLARAMOS QUE SOMOS OPTANTES PELO SIMPLES NACIONAL.',
+            'DECLARAMOS QUE O OBJETO FORNECIDO NÃO É REMANUFATURADO OU RECONDICIONADO.'
+        ];
+        declaracoes.forEach(decl => {
+            if (paginaCheia(y, 20)) y = addPageWithHeader();
+            const linhas = doc.splitTextToSize(decl, maxWidth);
+            linhas.forEach(linha => {
+                if (paginaCheia(y, 10)) y = addPageWithHeader();
+                doc.text(linha, pageWidth / 2, y, { align: 'center' });
+                y += lineHeight;
+            });
+            y += 3;
+        });
+        
+        y += 12;
+        
+        if (y > pageHeight - footerMargin - 40) {
+            y = addPageWithHeader();
+        }
+        
+        const dataAtual = new Date();
+        const dia = dataAtual.getDate();
+        const meses = ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 
+                       'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO'];
+        const mes = meses[dataAtual.getMonth()];
+        const ano = dataAtual.getFullYear();
+        
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'normal');
+        doc.text(`SERRA/ES, ${dia} DE ${mes} DE ${ano}`, pageWidth / 2, y, { align: 'center' });
+        
+        y += 5;
+        
+        if (comAssinatura) {
+            const assinatura = new Image();
+            assinatura.crossOrigin = 'anonymous';
+            assinatura.src = 'assinatura.png';
+            
+            assinatura.onload = function() {
+                try {
+                    const imgWidth = 50;
+                    const imgHeight = (assinatura.height / assinatura.width) * imgWidth;
+                    
+                    doc.addImage(assinatura, 'PNG', (pageWidth / 2) - (imgWidth / 2), y + 2, imgWidth, imgHeight);
+                    
+                    let yFinal = y + imgHeight + 5;
+                    
+                    yFinal += 5;
+                    doc.setFontSize(10);
+                    doc.setFont(undefined, 'bold');
+                    doc.text('ROSEMEIRE BICALHO DE LIMA GRAVINO', pageWidth / 2, yFinal, { align: 'center' });
+                    
+                    yFinal += 5;
+                    doc.setFontSize(9);
+                    doc.setFont(undefined, 'normal');
+                    doc.text('MG-10.078.568 / CPF: 045.160.616-78', pageWidth / 2, yFinal, { align: 'center' });
+                    
+                    yFinal += 5;
+                    doc.text('DIRETORA', pageWidth / 2, yFinal, { align: 'center' });
+                    
+                    const nomeArquivo = `PROPOSTA-${pregao.numero_pregao}${pregao.uasg ? '-' + pregao.uasg : ''}.pdf`;
+                    addFooter(doc);
+                    doc.save(nomeArquivo);
+                    showToast('PDF gerado com sucesso!', 'success');
+                    
+                } catch (e) {
+                    console.log('Erro ao adicionar assinatura:', e);
+                    gerarPDFSemAssinatura();
+                }
+            };
+            
+            assinatura.onerror = function() {
+                console.log('Erro ao carregar assinatura, gerando PDF sem ela');
+                gerarPDFSemAssinatura();
+            };
+        } else {
+            gerarPDFSemAssinatura();
+        }
+        
+        function gerarPDFSemAssinatura() {
+            y += 20;
+            doc.setDrawColor(0, 0, 0);
+            doc.line(pageWidth / 2 - 40, y, pageWidth / 2 + 40, y);
+            
+            y += 5;
+            doc.setFont(undefined, 'bold');
+            doc.text('ROSEMEIRE BICALHO DE LIMA GRAVINO', pageWidth / 2, y, { align: 'center' });
+            
+            y += 5;
+            doc.setFont(undefined, 'normal');
+            doc.text('MG-10.078.568 / CPF: 045.160.616-78', pageWidth / 2, y, { align: 'center' });
+            
+            y += 5;
+            doc.setFont(undefined, 'bold');
+            doc.text('DIRETORA', pageWidth / 2, y, { align: 'center' });
+            
+            const nomeArquivo = `PROPOSTA-${pregao.numero_pregao}${pregao.uasg ? '-' + pregao.uasg : ''}.pdf`;
+            addFooter(doc);
+            doc.save(nomeArquivo);
+            showToast('PDF gerado (sem assinatura)', 'success');
+        }
+    }
+}
