@@ -399,7 +399,11 @@ function displayPregoes(pregoesToDisplay) {
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
                         </svg>
-                        Comprovante
+                    </button>
+                    <button class="action-btn btn-edit-doc" onclick="abrirModalDocumentoEditavel('${pregao.id}')" title="Editar Dados da Proposta">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                        </svg>
                     </button>
                     <button class="action-btn delete" onclick="openDeleteModal('${pregao.id}')" title="Excluir">Excluir</button>
                 </td>
@@ -1002,15 +1006,402 @@ async function openItems(id) {
 }
 
 // ============================================
-// COMPROVANTE DE EXEQUIBILIDADE
+// MODAL DE DOCUMENTO EDITÁVEL
 // ============================================
 
-let exequibilidadeData = {
-    intervalo: '',
-    impostoFederal: 9.7,
-    freteVenda: 5,
-    freteCompra: 0
+let dadosEditaveis = {
+    cabecalho: {
+        titulo: 'PROPOSTA',
+        subtitulo: '',
+        dadosOrgao: ''
+    },
+    empresa: {
+        nome: 'I.R. COMÉRCIO E MATERIAIS ELÉTRICOS LTDA',
+        telefone: '(27) 3209-4291',
+        cnpj: '33.149.502/0001-38',
+        endereco: 'RUA TADORNA, Nº 472, SALA 2',
+        bairro: 'NOVO HORIZONTE',
+        cidade: 'SERRA',
+        uf: 'ES',
+        cep: '29.163-318',
+        dadosBancarios: ''
+    },
+    declaracoes: [
+        'DECLARAMOS QUE NOS PREÇOS COTADOS ESTÃO INCLUÍDAS TODAS AS DESPESAS TAIS COMO FRETE (CIF), IMPOSTOS, TAXAS, SEGUROS, TRIBUTOS E DEMAIS ENCARGOS DE QUALQUER NATUREZA INCIDENTES SOBRE O OBJETO DO PREGÃO.',
+        'DECLARAMOS QUE SOMOS OPTANTES PELO SIMPLES NACIONAL.',
+        'DECLARAMOS QUE O OBJETO FORNECIDO NÃO É REMANUFATURADO OU RECONDICIONADO.'
+    ],
+    assinatura: {
+        nome: 'ROSEMEIRE BICALHO DE LIMA GRAVINO',
+        registro: 'MG-10.078.568 / CPF: 045.160.616-78',
+        cargo: 'DIRETORA'
+    }
 };
+
+function abrirModalDocumentoEditavel(pregaoId) {
+    currentPregaoId = pregaoId;
+    const pregao = pregoes.find(p => p.id === pregaoId);
+    if (!pregao) return;
+    
+    dadosEditaveis.cabecalho.subtitulo = `${pregao.numero_pregao}${pregao.uasg ? ' - ' + pregao.uasg : ''}`;
+    dadosEditaveis.cabecalho.dadosOrgao = `${pregao.nome_orgao || ''} - ${pregao.uasg || ''}`;
+    
+    let modal = document.getElementById('modalDocumentoEditavel');
+    if (!modal) {
+        modal = criarModalDocumentoEditavel();
+        document.body.appendChild(modal);
+    }
+    
+    preencherDadosEditaveis(pregao);
+    modal.classList.add('show');
+}
+
+function criarModalDocumentoEditavel() {
+    const modal = document.createElement('div');
+    modal.id = 'modalDocumentoEditavel';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Editar Dados da Proposta</h3>
+                <button class="close-modal" onclick="fecharModalDocumentoEditavel()">✕</button>
+            </div>
+            
+            <div class="tabs-container">
+                <div class="tabs-nav">
+                    <button class="tab-btn active" onclick="switchEditavelTab('edit-tab-cabecalho')">Cabeçalho</button>
+                    <button class="tab-btn" onclick="switchEditavelTab('edit-tab-empresa')">Empresa</button>
+                    <button class="tab-btn" onclick="switchEditavelTab('edit-tab-declaracoes')">Declarações</button>
+                    <button class="tab-btn" onclick="switchEditavelTab('edit-tab-assinatura')">Assinatura</button>
+                </div>
+                
+                <div class="tab-content active" id="edit-tab-cabecalho">
+                    <div class="editavel-section">
+                        <h4>Cabeçalho da Proposta</h4>
+                        <div class="form-grid">
+                            <div class="form-group" style="grid-column:1/-1;">
+                                <label>Título</label>
+                                <input type="text" id="editTitulo" value="PROPOSTA" class="editavel-input">
+                            </div>
+                            <div class="form-group" style="grid-column:1/-1;">
+                                <label>Subtítulo (Nº Pregão / UASG)</label>
+                                <input type="text" id="editSubtitulo" class="editavel-input">
+                            </div>
+                            <div class="form-group" style="grid-column:1/-1;">
+                                <label>Dados do Órgão</label>
+                                <textarea id="editDadosOrgao" rows="3" class="editavel-input"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="edit-tab-empresa">
+                    <div class="editavel-section">
+                        <h4>Dados da Empresa</h4>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Nome</label>
+                                <input type="text" id="editEmpresaNome" value="I.R. COMÉRCIO E MATERIAIS ELÉTRICOS LTDA" class="editavel-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Telefone</label>
+                                <input type="text" id="editEmpresaTel" value="(27) 3209-4291" class="editavel-input">
+                            </div>
+                            <div class="form-group">
+                                <label>CNPJ</label>
+                                <input type="text" id="editEmpresaCnpj" value="33.149.502/0001-38" class="editavel-input">
+                            </div>
+                            <div class="form-group" style="grid-column:1/-1;">
+                                <label>Endereço</label>
+                                <input type="text" id="editEmpresaEnd" value="RUA TADORNA, Nº 472, SALA 2" class="editavel-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Bairro</label>
+                                <input type="text" id="editEmpresaBairro" value="NOVO HORIZONTE" class="editavel-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Cidade</label>
+                                <input type="text" id="editEmpresaCidade" value="SERRA" class="editavel-input">
+                            </div>
+                            <div class="form-group">
+                                <label>UF</label>
+                                <input type="text" id="editEmpresaUf" value="ES" class="editavel-input">
+                            </div>
+                            <div class="form-group">
+                                <label>CEP</label>
+                                <input type="text" id="editEmpresaCep" value="29.163-318" class="editavel-input">
+                            </div>
+                            <div class="form-group" style="grid-column:1/-1;">
+                                <label>Dados Bancários</label>
+                                <textarea id="editEmpresaDadosBanc" rows="2" class="editavel-input"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="edit-tab-declaracoes">
+                    <div class="editavel-section">
+                        <h4>Declarações</h4>
+                        <div id="declaracoesContainer">
+                            <!-- Será preenchido via JavaScript -->
+                        </div>
+                        <button onclick="adicionarDeclaracao()" class="btn-add" style="margin-top:1rem;">+ Adicionar Declaração</button>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="edit-tab-assinatura">
+                    <div class="editavel-section">
+                        <h4>Dados da Assinatura</h4>
+                        <div class="form-grid">
+                            <div class="form-group" style="grid-column:1/-1;">
+                                <label>Nome do Signatário</label>
+                                <input type="text" id="editAssNome" value="ROSEMEIRE BICALHO DE LIMA GRAVINO" class="editavel-input">
+                            </div>
+                            <div class="form-group" style="grid-column:1/-1;">
+                                <label>Registro / CPF</label>
+                                <input type="text" id="editAssRegistro" value="MG-10.078.568 / CPF: 045.160.616-78" class="editavel-input">
+                            </div>
+                            <div class="form-group" style="grid-column:1/-1;">
+                                <label>Cargo</label>
+                                <input type="text" id="editAssCargo" value="DIRETORA" class="editavel-input">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="success" onclick="gerarPDFEditavel()">Gerar PDF com Dados Editados</button>
+                <button type="button" class="danger" onclick="fecharModalDocumentoEditavel()">Cancelar</button>
+            </div>
+        </div>
+    `;
+    return modal;
+}
+
+function preencherDadosEditaveis(pregao) {
+    document.getElementById('editSubtitulo').value = dadosEditaveis.cabecalho.subtitulo;
+    document.getElementById('editDadosOrgao').value = dadosEditaveis.cabecalho.dadosOrgao;
+    
+    const container = document.getElementById('declaracoesContainer');
+    container.innerHTML = dadosEditaveis.declaracoes.map((decl, idx) => `
+        <div class="input-with-button" style="margin-bottom:0.5rem;">
+            <textarea class="editavel-input declaracao-item" rows="2" style="flex:1;">${decl}</textarea>
+            <button type="button" onclick="removerDeclaracao(this)" class="btn-remove">−</button>
+        </div>
+    `).join('');
+}
+
+function adicionarDeclaracao() {
+    const container = document.getElementById('declaracoesContainer');
+    const div = document.createElement('div');
+    div.className = 'input-with-button';
+    div.style.marginBottom = '0.5rem';
+    div.innerHTML = `
+        <textarea class="editavel-input declaracao-item" rows="2" style="flex:1;"></textarea>
+        <button type="button" onclick="removerDeclaracao(this)" class="btn-remove">−</button>
+    `;
+    container.appendChild(div);
+}
+
+function removerDeclaracao(btn) {
+    btn.parentElement.remove();
+}
+
+function fecharModalDocumentoEditavel() {
+    const modal = document.getElementById('modalDocumentoEditavel');
+    if (modal) modal.classList.remove('show');
+}
+
+function switchEditavelTab(tabId) {
+    const allTabs = document.querySelectorAll('#modalDocumentoEditavel .tab-content');
+    const allBtns = document.querySelectorAll('#modalDocumentoEditavel .tab-btn');
+    allTabs.forEach(t => t.classList.remove('active'));
+    allBtns.forEach(b => b.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    const idx = ['edit-tab-cabecalho', 'edit-tab-empresa', 'edit-tab-declaracoes', 'edit-tab-assinatura'].indexOf(tabId);
+    if (allBtns[idx]) allBtns[idx].classList.add('active');
+}
+
+function coletarDadosEditados() {
+    return {
+        cabecalho: {
+            titulo: document.getElementById('editTitulo')?.value || 'PROPOSTA',
+            subtitulo: document.getElementById('editSubtitulo')?.value || '',
+            dadosOrgao: document.getElementById('editDadosOrgao')?.value || ''
+        },
+        empresa: {
+            nome: document.getElementById('editEmpresaNome')?.value || 'I.R. COMÉRCIO E MATERIAIS ELÉTRICOS LTDA',
+            telefone: document.getElementById('editEmpresaTel')?.value || '(27) 3209-4291',
+            cnpj: document.getElementById('editEmpresaCnpj')?.value || '33.149.502/0001-38',
+            endereco: document.getElementById('editEmpresaEnd')?.value || 'RUA TADORNA, Nº 472, SALA 2',
+            bairro: document.getElementById('editEmpresaBairro')?.value || 'NOVO HORIZONTE',
+            cidade: document.getElementById('editEmpresaCidade')?.value || 'SERRA',
+            uf: document.getElementById('editEmpresaUf')?.value || 'ES',
+            cep: document.getElementById('editEmpresaCep')?.value || '29.163-318',
+            dadosBancarios: document.getElementById('editEmpresaDadosBanc')?.value || ''
+        },
+        declaracoes: Array.from(document.querySelectorAll('.declaracao-item')).map(el => el.value).filter(v => v.trim()),
+        assinatura: {
+            nome: document.getElementById('editAssNome')?.value || 'ROSEMEIRE BICALHO DE LIMA GRAVINO',
+            registro: document.getElementById('editAssRegistro')?.value || 'MG-10.078.568 / CPF: 045.160.616-78',
+            cargo: document.getElementById('editAssCargo')?.value || 'DIRETORA'
+        }
+    };
+}
+
+async function gerarPDFEditavel() {
+    fecharModalDocumentoEditavel();
+    const dados = coletarDadosEditados();
+    const pregao = pregoes.find(p => p.id === currentPregaoId);
+    if (!pregao) return;
+    
+    const itensSelecionados = itens.filter(item => item.ganho);
+    if (itensSelecionados.length === 0) {
+        showToast('Marque ao menos um item (ganho) para gerar a proposta', 'error');
+        return;
+    }
+    
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    let y = 20;
+    const margin = 15;
+    const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
+    
+    // Cabeçalho editado
+    doc.setFontSize(18);
+    doc.setFont(undefined, 'bold');
+    doc.text(dados.cabecalho.titulo, pageWidth / 2, y, { align: 'center' });
+    y += 8;
+    doc.setFontSize(14);
+    doc.text(dados.cabecalho.subtitulo, pageWidth / 2, y, { align: 'center' });
+    y += 12;
+    
+    // Dados do órgão
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    const linhasOrgao = doc.splitTextToSize(dados.cabecalho.dadosOrgao, pageWidth - 2*margin);
+    linhasOrgao.forEach(linha => {
+        doc.text(linha, margin, y);
+        y += 5;
+    });
+    y += 5;
+    
+    // Dados da empresa
+    doc.setFont(undefined, 'bold');
+    doc.text(dados.empresa.nome, margin, y);
+    doc.setFont(undefined, 'normal');
+    doc.text(`TEL: ${dados.empresa.telefone}`, pageWidth - margin, y, { align: 'right' });
+    y += 5;
+    doc.text(`CNPJ: ${dados.empresa.cnpj}`, margin, y);
+    y += 5;
+    doc.text(`END: ${dados.empresa.endereco}`, margin, y);
+    y += 5;
+    doc.text(`BAIRRO: ${dados.empresa.bairro}`, margin, y);
+    y += 5;
+    doc.text(`CIDADE: ${dados.empresa.cidade} - ${dados.empresa.uf}  CEP: ${dados.empresa.cep}`, margin, y);
+    y += 5;
+    if (dados.empresa.dadosBancarios) {
+        doc.text(`DADOS BANCÁRIOS: ${dados.empresa.dadosBancarios}`, margin, y);
+        y += 5;
+    }
+    y += 5;
+    
+    // Tabela de itens
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'bold');
+    doc.text('ITENS DA PROPOSTA', margin, y);
+    y += 6;
+    
+    const colWidths = {
+        item: 15, descricao: 60, qtd: 12, un: 10, marca: 25, modelo: 25, vunt: 25, vtotal: 28
+    };
+    const tableWidth = Object.values(colWidths).reduce((a,b) => a+b, 0);
+    const startX = (pageWidth - tableWidth) / 2;
+    
+    // Cabeçalho da tabela
+    doc.setFillColor(108, 117, 125);
+    doc.rect(startX, y, tableWidth, 8, 'FD');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(6);
+    let xp = startX;
+    [['ITEM', 'center'], ['DESCRIÇÃO', 'left'], ['QTD', 'center'], ['UN', 'center'], 
+     ['MARCA', 'center'], ['MODELO', 'center'], ['VD.UNT', 'right'], ['VD.TOTAL', 'right']]
+        .forEach(([lbl, align], i) => {
+            doc.text(lbl, xp + colWidths[Object.keys(colWidths)[i]]/2, y + 5, { align: 'center' });
+            xp += colWidths[Object.keys(colWidths)[i]];
+        });
+    y += 8;
+    doc.setTextColor(0,0,0);
+    
+    // Linhas de itens
+    itensSelecionados.forEach((item, idx) => {
+        xp = startX;
+        const vals = [
+            String(item.numero),
+            item.descricao || '-',
+            String(item.qtd || 1),
+            item.unidade || 'UN',
+            item.marca || '-',
+            item.modelo || '-',
+            'R$ ' + (item.venda_unt || 0).toFixed(2),
+            'R$ ' + (item.venda_total || 0).toFixed(2)
+        ];
+        vals.forEach((val, i) => {
+            doc.text(val, xp + colWidths[Object.keys(colWidths)[i]]/2, y + 3, { align: 'center' });
+            xp += colWidths[Object.keys(colWidths)[i]];
+        });
+        y += 5;
+        if (y > pageHeight - 40) {
+            doc.addPage();
+            y = 20;
+        }
+    });
+    
+    y += 5;
+    
+    // Declarações
+    dados.declaracoes.forEach(decl => {
+        if (y > pageHeight - 40) {
+            doc.addPage();
+            y = 20;
+        }
+        const linhas = doc.splitTextToSize(decl, pageWidth - 2*margin);
+        linhas.forEach(linha => {
+            doc.text(linha, pageWidth/2, y, { align: 'center' });
+            y += 5;
+        });
+        y += 2;
+    });
+    
+    y += 10;
+    
+    // Data
+    const dataAtual = new Date();
+    const meses = ['JANEIRO','FEVEREIRO','MARÇO','ABRIL','MAIO','JUNHO','JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'];
+    doc.text(`SERRA/ES, ${dataAtual.getDate()} DE ${meses[dataAtual.getMonth()]} DE ${dataAtual.getFullYear()}`, pageWidth/2, y, { align: 'center' });
+    y += 15;
+    
+    // Assinatura
+    doc.line(pageWidth/2 - 40, y, pageWidth/2 + 40, y);
+    y += 5;
+    doc.setFont(undefined, 'bold');
+    doc.text(dados.assinatura.nome, pageWidth/2, y, { align: 'center' });
+    y += 5;
+    doc.setFont(undefined, 'normal');
+    doc.text(dados.assinatura.registro, pageWidth/2, y, { align: 'center' });
+    y += 5;
+    doc.text(dados.assinatura.cargo, pageWidth/2, y, { align: 'center' });
+    
+    doc.save(`PROPOSTA-EDITADA-${pregao.numero_pregao}.pdf`);
+    showToast('PDF gerado com dados personalizados!', 'success');
+}
+
+// ============================================
+// COMPROVANTE DE EXEQUIBILIDADE
+// ============================================
 
 function abrirModalExequibilidade(pregaoId) {
     currentPregaoId = pregaoId;
@@ -1021,7 +1412,6 @@ function abrirModalExequibilidade(pregaoId) {
         document.body.appendChild(modal);
     }
     
-    // Resetar valores padrão
     document.getElementById('exeIntervalo').value = '';
     document.getElementById('exeImpostoFederal').value = '9.7';
     document.getElementById('exeFreteVenda').value = '5';
@@ -1088,6 +1478,34 @@ function criarModalExequibilidade() {
         </div>
     `;
     return modal;
+}
+
+function parsearIntervalo(intervalo) {
+    if (!intervalo || intervalo.trim() === '') return null;
+    
+    const numeros = [];
+    const partes = intervalo.split(',').map(p => p.trim());
+    
+    for (const parte of partes) {
+        if (parte.includes('-')) {
+            const [inicio, fim] = parte.split('-').map(n => parseInt(n.trim()));
+            if (isNaN(inicio) || isNaN(fim) || inicio > fim) {
+                showToast('Intervalo inválido', 'error');
+                return null;
+            }
+            for (let i = inicio; i <= fim; i++) {
+                numeros.push(i);
+            }
+        } else {
+            const num = parseInt(parte);
+            if (isNaN(num)) {
+                showToast('Número inválido', 'error');
+                return null;
+            }
+            numeros.push(num);
+        }
+    }
+    return numeros;
 }
 
 const exeTabs = ['exe-tab-geral', 'exe-tab-valores'];
@@ -1314,19 +1732,19 @@ function gerarPDFExequibilidade(pregao, itensExe, dadosBancarios, impostoFederal
     
     // Cabeçalho da tabela
     const colWidths = {
-        item: 15,
-        descricao: 50,
-        qtd: 12,
-        un: 10,
-        marca: 20,
-        modelo: 20,
-        custoUnt: 20,
-        freteCompra: 20,
-        impFed: 20,
-        freteVenda: 20,
-        vendaUnt: 20,
-        lucroReal: 20,
-        percLucro: 15
+        item: 12,
+        descricao: 45,
+        qtd: 10,
+        un: 8,
+        marca: 18,
+        modelo: 18,
+        custoUnt: 18,
+        freteCompra: 18,
+        impFed: 18,
+        freteVenda: 18,
+        vendaUnt: 18,
+        lucroReal: 18,
+        percLucro: 12
     };
     
     const tableWidth = Object.values(colWidths).reduce((a, b) => a + b, 0);
@@ -1336,7 +1754,7 @@ function gerarPDFExequibilidade(pregao, itensExe, dadosBancarios, impostoFederal
     doc.setDrawColor(180, 180, 180);
     doc.rect(startX, y, tableWidth, 10, 'FD');
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(6);
+    doc.setFontSize(5);
     doc.setFont(undefined, 'bold');
     
     let xp = startX;
@@ -1368,7 +1786,7 @@ function gerarPDFExequibilidade(pregao, itensExe, dadosBancarios, impostoFederal
     
     y += 10;
     doc.setTextColor(0, 0, 0);
-    doc.setFontSize(6);
+    doc.setFontSize(5);
     doc.setFont(undefined, 'normal');
     
     // Linhas de itens
@@ -1400,7 +1818,8 @@ function gerarPDFExequibilidade(pregao, itensExe, dadosBancarios, impostoFederal
         const custoUnt = item.custo_unt || 0;
         const impostoFederalValor = vendaUnt * (impostoFederal / 100);
         const freteVendaValor = vendaUnt * (freteVenda / 100);
-        const lucroReal = vendaUnt - freteVendaValor - impostoFederalValor - freteCompra - custoUnt;
+        const freteCompraValor = freteCompra; // Por item? Por enquanto valor total dividido pela quantidade
+        const lucroReal = vendaUnt - freteVendaValor - impostoFederalValor - (freteCompra / (itensExe.length || 1)) - custoUnt;
         const percLucro = vendaUnt > 0 ? (lucroReal / vendaUnt) * 100 : 0;
         
         totalGeralVenda += vendaUnt * (item.qtd || 1);
@@ -1419,7 +1838,7 @@ function gerarPDFExequibilidade(pregao, itensExe, dadosBancarios, impostoFederal
             [item.marca || '-', 'center'],
             [item.modelo || '-', 'center'],
             ['R$ ' + custoUnt.toFixed(2), 'right'],
-            ['R$ ' + freteCompra.toFixed(2), 'right'],
+            ['R$ ' + (freteCompra / (itensExe.length || 1)).toFixed(2), 'right'],
             ['R$ ' + impostoFederalValor.toFixed(2), 'right'],
             ['R$ ' + freteVendaValor.toFixed(2), 'right'],
             ['R$ ' + vendaUnt.toFixed(2), 'right'],
@@ -1836,16 +2255,16 @@ function renderGrupos() {
             const rowClass = grupoAllGanho ? 'item-ganho row-won' : (vm ? 'row-venda-alta' : '');
             rowParts[idx] =
                 '<tr class="' + rowClass + '" ondblclick="editarItemGrupoById(\'' + iid + '\')" oncontextmenu="showItemContextMenu(event,\'' + iid + '\')">' +
-                '<td style="text-align:center;"><strong>' + item.numero + '</strong></td>' +
-                '<td class="descricao-cell" style="text-align:left;">' + (item.descricao || '-') + '</td>' +
-                '<td style="text-align:center;">' + (item.qtd || 1) + '</td>' +
-                '<td style="text-align:center;">' + (item.unidade || 'UN') + '</td>' +
-                '<td style="text-align:center;">' + (item.marca || '-') + '</td>' +
-                '<td style="text-align:center;">' + (item.modelo || '-') + '</td>' +
-                '<td style="text-align:right;">' + fmtTot(item.estimado_total || 0) + '</td>' +
-                '<td style="text-align:right;">' + fmtTot(item.custo_total || 0) + '</td>' +
-                '<td style="text-align:right;">' + fmtUnt(item.venda_unt || 0) + '</td>' +
-                '<td style="text-align:right;">' + fmtTot(item.venda_total || 0) + '</td>' +
+                '<td style="text-align:center;padding:4px 6px;"><strong style="font-size:0.7rem;">' + item.numero + '</strong></td>' +
+                '<td class="descricao-cell" style="text-align:left;padding:4px 6px;font-size:0.7rem;">' + (item.descricao || '-') + '</td>' +
+                '<td style="text-align:center;padding:4px 6px;font-size:0.7rem;">' + (item.qtd || 1) + '</td>' +
+                '<td style="text-align:center;padding:4px 6px;font-size:0.7rem;">' + (item.unidade || 'UN') + '</td>' +
+                '<td style="text-align:center;padding:4px 6px;font-size:0.7rem;">' + (item.marca || '-') + '</td>' +
+                '<td style="text-align:center;padding:4px 6px;font-size:0.7rem;">' + (item.modelo || '-') + '</td>' +
+                '<td style="text-align:right;padding:4px 6px;font-size:0.7rem;">' + fmtTot(item.estimado_total || 0) + '</td>' +
+                '<td style="text-align:right;padding:4px 6px;font-size:0.7rem;">' + fmtTot(item.custo_total || 0) + '</td>' +
+                '<td style="text-align:right;padding:4px 6px;font-size:0.7rem;">' + fmtUnt(item.venda_unt || 0) + '</td>' +
+                '<td style="text-align:right;padding:4px 6px;font-size:0.7rem;">' + fmtTot(item.venda_total || 0) + '</td>' +
                 '</tr>';
         }
         const grupoGanho = grupo.itens.length > 0 && grupo.itens.every(i => i.ganho);
@@ -1853,32 +2272,32 @@ function renderGrupos() {
         const grupoGanhoChk = grupoGanho ? ' checked' : '';
 
         cards.push(
-            '<div class="card table-card" style="margin-bottom:1.25rem;">' +
-            '<div style="background:#1e3a5f;display:flex;align-items:center;justify-content:flex-start;padding:8px 14px;border-radius:8px 8px 0 0;gap:0.75rem;">' +
+            '<div class="card table-card" style="margin-bottom:1rem;">' +
+            '<div style="background:#1e3a5f;display:flex;align-items:center;justify-content:flex-start;padding:6px 12px;border-radius:8px 8px 0 0;gap:0.5rem;">' +
             '<div class="checkbox-wrapper" style="position:relative;">' +
             '<input type="checkbox" id="' + grupoGanhoId + '"' + grupoGanhoChk +
             ' onchange="toggleGrupoGanho(\'' + grupo.tipo + '\',' + grupo.numero + ',this.checked)"' +
             ' class="styled-checkbox">' +
-            '<label for="' + grupoGanhoId + '" class="checkbox-label-styled"></label>' +
+            '<label for="' + grupoGanhoId + '" class="checkbox-label-styled" style="width:30px;height:30px;"></label>' +
             '</div>' +
-            '<label for="' + grupoGanhoId + '" style="font-weight:700;font-size:1rem;color:#fff;cursor:pointer;margin:0;">' + lbl + '</label>' +
+            '<label for="' + grupoGanhoId + '" style="font-weight:700;font-size:0.9rem;color:#fff;cursor:pointer;margin:0;">' + lbl + '</label>' +
             '</div>' +
-            '<div style="overflow-x:auto;"><table>' +
+            '<div style="overflow-x:auto;"><table style="font-size:0.7rem;">' +
             '<thead><tr>' +
-            '<th style="width:55px;text-align:center;">ITEM</th>' +
-            '<th style="min-width:220px;text-align:left;">DESCRIÇÃO</th>' +
-            '<th style="width:55px;text-align:center;">QTD</th>' +
-            '<th style="width:50px;text-align:center;">UN</th>' +
-            '<th style="width:90px;text-align:center;">MARCA</th>' +
-            '<th style="width:90px;text-align:center;">MODELO</th>' +
-            '<th style="width:105px;text-align:right;">COMPRA TOTAL</th>' +
-            '<th style="width:100px;text-align:right;">CUSTO TOTAL</th>' +
-            '<th style="width:100px;text-align:right;">VENDA UNT</th>' +
-            '<th style="width:105px;text-align:right;">VENDA TOTAL</th>' +
+            '<th style="width:40px;text-align:center;padding:6px 4px;">ITEM</th>' +
+            '<th style="min-width:180px;text-align:left;padding:6px 4px;">DESCRIÇÃO</th>' +
+            '<th style="width:35px;text-align:center;padding:6px 4px;">QTD</th>' +
+            '<th style="width:35px;text-align:center;padding:6px 4px;">UN</th>' +
+            '<th style="width:60px;text-align:center;padding:6px 4px;">MARCA</th>' +
+            '<th style="width:60px;text-align:center;padding:6px 4px;">MODELO</th>' +
+            '<th style="width:70px;text-align:right;padding:6px 4px;">COMPRA TOTAL</th>' +
+            '<th style="width:70px;text-align:right;padding:6px 4px;">CUSTO TOTAL</th>' +
+            '<th style="width:70px;text-align:right;padding:6px 4px;">VENDA UNT</th>' +
+            '<th style="width:70px;text-align:right;padding:6px 4px;">VENDA TOTAL</th>' +
             '</tr></thead>' +
             '<tbody>' + rowParts.join('') + '</tbody>' +
             '</table></div>' +
-            '<div style="display:flex;gap:3rem;padding:0.75rem 1rem 0.25rem 1rem;font-size:10pt;color:var(--text-primary);">' +
+            '<div style="display:flex;gap:2rem;padding:0.5rem 0.75rem 0.25rem 0.75rem;font-size:8pt;color:var(--text-primary);">' +
             '<span><strong>COMPRA TOTAL:</strong> ' + fmtTot(totC) + '</span>' +
             '<span><strong>CUSTO TOTAL:</strong> ' + fmtTot(totCu) + '</span>' +
             '<span><strong>VENDA TOTAL:</strong> ' + fmtTot(totV) + '</span>' +
@@ -2291,28 +2710,28 @@ function criarTelaItens() {
                 <table>
                     <thead>
                         <tr>
-                            <th style="width: 40px; text-align: center;">
-                                <span style="font-size: 1.1rem;">✓</span>
+                            <th style="width: 30px; text-align: center; padding: 6px 4px;">
+                                <span style="font-size: 1rem;">✓</span>
                             </th>
-                            <th style="width: 60px; text-align: center;">ITEM</th>
-                            <th style="min-width: 300px; text-align: left;">DESCRIÇÃO</th>
-                            <th style="width: 80px; text-align: center;">QTD</th>
-                            <th style="width: 80px; text-align: center;">UNIDADE</th>
-                            <th style="width: 120px; text-align: center;">MARCA</th>
-                            <th style="width: 120px; text-align: center;">MODELO</th>
-                            <th style="width: 120px; text-align: right;">ESTIMADO UNT</th>
-                            <th style="width: 120px; text-align: right;">ESTIMADO TOTAL</th>
-                            <th style="width: 120px; text-align: right;">CUSTO UNT</th>
-                            <th style="width: 120px; text-align: right;">CUSTO TOTAL</th>
-                            <th style="width: 120px; text-align: right;">VENDA UNT</th>
-                            <th style="width: 120px; text-align: right;">VENDA TOTAL</th>
+                            <th style="width: 40px; text-align: center; padding: 6px 4px;">ITEM</th>
+                            <th style="min-width: 220px; text-align: left; padding: 6px 4px;">DESCRIÇÃO</th>
+                            <th style="width: 50px; text-align: center; padding: 6px 4px;">QTD</th>
+                            <th style="width: 50px; text-align: center; padding: 6px 4px;">UN</th>
+                            <th style="width: 80px; text-align: center; padding: 6px 4px;">MARCA</th>
+                            <th style="width: 80px; text-align: center; padding: 6px 4px;">MODELO</th>
+                            <th style="width: 90px; text-align: right; padding: 6px 4px;">ESTIMADO UNT</th>
+                            <th style="width: 90px; text-align: right; padding: 6px 4px;">ESTIMADO TOTAL</th>
+                            <th style="width: 80px; text-align: right; padding: 6px 4px;">CUSTO UNT</th>
+                            <th style="width: 80px; text-align: right; padding: 6px 4px;">CUSTO TOTAL</th>
+                            <th style="width: 80px; text-align: right; padding: 6px 4px;">VENDA UNT</th>
+                            <th style="width: 80px; text-align: right; padding: 6px 4px;">VENDA TOTAL</th>
                         </tr>
                     </thead>
                     <tbody id="itensContainer"></tbody>
                 </table>
             </div>
         </div>
-        <div id="itensTotaisBar" style="display:flex;gap:3rem;padding:0.75rem 1rem 0.25rem 1rem;font-size:10pt;color:var(--text-primary);"></div>
+        <div id="itensTotaisBar" style="display:flex;gap:2rem;padding:0.5rem 0.75rem 0.25rem 0.75rem;font-size:8pt;color:var(--text-primary);"></div>
 
         <div class="modal-overlay" id="modalIntervalo">
             <div class="modal-content" style="max-width:520px;">
@@ -2463,24 +2882,24 @@ function renderItens(itensToRender = itens) {
 
         const iid = item.id;
         parts[idx] = '<tr class="' + rc + '" ondblclick="editarItem(\'' + iid + '\')" oncontextmenu="showItemContextMenu(event,\'' + iid + '\')">' +
-            '<td style="text-align:center;padding:8px;"><div class="checkbox-wrapper">' +
+            '<td style="text-align:center;padding:4px 6px;"><div class="checkbox-wrapper">' +
             '<input type="checkbox" id="' + cbId + '"' + ck +
             (vm ? ' onclick="event.preventDefault();event.stopPropagation()"' : ' onchange="toggleItemGanho(\'' + iid + '\',this.checked)" onclick="event.stopPropagation()"') +
-            ' class="styled-checkbox' + (vm ? ' cb-venda-alta' : '') + '">' +
-            '<label for="' + cbId + '" class="checkbox-label-styled' + (vm ? ' cb-label-venda-alta' : '') + '">' + (vm ? '✕' : '') + '</label>' +
+            ' class="styled-checkbox' + (vm ? ' cb-venda-alta' : '') + '" style="width:30px;height:30px;">' +
+            '<label for="' + cbId + '" class="checkbox-label-styled' + (vm ? ' cb-label-venda-alta' : '') + '" style="width:30px;height:30px;">' + (vm ? '✕' : '') + '</label>' +
             '</div></td>' +
-            '<td style="text-align:center;"><strong>' + item.numero + '</strong></td>' +
-            '<td class="descricao-cell" style="text-align:left;">' + (item.descricao || '-') + '</td>' +
-            '<td style="text-align:center;">' + (item.qtd || 1) + '</td>' +
-            '<td style="text-align:center;">' + (item.unidade || 'UN') + '</td>' +
-            '<td style="text-align:center;">' + (item.marca || '-') + '</td>' +
-            '<td style="text-align:center;">' + (item.modelo || '-') + '</td>' +
-            '<td style="text-align:right;">' + fmtUnt(compraUnt) + '</td>' +
-            '<td style="text-align:right;">' + fmtTotal(estTotal) + '</td>' +
-            '<td style="text-align:right;">' + fmtUnt(item.custo_unt || 0) + '</td>' +
-            '<td style="text-align:right;">' + fmtTotal(custoTotal) + '</td>' +
-            '<td style="text-align:right;">' + fmtUnt(vendaUnt) + '</td>' +
-            '<td style="text-align:right;">' + fmtTotal(vendaTotal) + '</td>' +
+            '<td style="text-align:center;padding:4px 6px;font-size:0.7rem;"><strong>' + item.numero + '</strong></td>' +
+            '<td class="descricao-cell" style="text-align:left;padding:4px 6px;font-size:0.7rem;">' + (item.descricao || '-') + '</td>' +
+            '<td style="text-align:center;padding:4px 6px;font-size:0.7rem;">' + (item.qtd || 1) + '</td>' +
+            '<td style="text-align:center;padding:4px 6px;font-size:0.7rem;">' + (item.unidade || 'UN') + '</td>' +
+            '<td style="text-align:center;padding:4px 6px;font-size:0.7rem;">' + (item.marca || '-') + '</td>' +
+            '<td style="text-align:center;padding:4px 6px;font-size:0.7rem;">' + (item.modelo || '-') + '</td>' +
+            '<td style="text-align:right;padding:4px 6px;font-size:0.7rem;">' + fmtUnt(compraUnt) + '</td>' +
+            '<td style="text-align:right;padding:4px 6px;font-size:0.7rem;">' + fmtTotal(estTotal) + '</td>' +
+            '<td style="text-align:right;padding:4px 6px;font-size:0.7rem;">' + fmtUnt(item.custo_unt || 0) + '</td>' +
+            '<td style="text-align:right;padding:4px 6px;font-size:0.7rem;">' + fmtTotal(custoTotal) + '</td>' +
+            '<td style="text-align:right;padding:4px 6px;font-size:0.7rem;">' + fmtUnt(vendaUnt) + '</td>' +
+            '<td style="text-align:right;padding:4px 6px;font-size:0.7rem;">' + fmtTotal(vendaTotal) + '</td>' +
             '</tr>';
     }
 
@@ -2775,30 +3194,6 @@ async function confirmarExcluirItens() {
     await excluirItensPorIds(idsParaExcluir);
 }
 
-function parsearIntervalo(intervalo) {
-    const numeros = [];
-    const partes = intervalo.split(',').map(p => p.trim());
-    
-    for (const parte of partes) {
-        if (parte.includes('-')) {
-            const [inicio, fim] = parte.split('-').map(n => parseInt(n.trim()));
-            if (isNaN(inicio) || isNaN(fim) || inicio > fim) {
-                showToast('Intervalo inválido', 'error');
-                return null;
-            }
-            for (let i = inicio; i <= fim; i++) numeros.push(i);
-        } else {
-            const num = parseInt(parte);
-            if (isNaN(num)) {
-                showToast('Número inválido', 'error');
-                return null;
-            }
-            numeros.push(num);
-        }
-    }
-    return numeros;
-}
-
 async function excluirItensPorIds(ids) {
     try {
         const headers = {
@@ -3050,7 +3445,8 @@ function criarModalItem() {
                             <div class="form-group" style="margin:0;">
                                 <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">Venda UNT</label>
                                 <input type="number" id="itemVendaUnt" step="any" min="0"
-                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box;">
+                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box;"
+                                       oninput="calcularVendaTotalManual()">
                             </div>
                         </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
@@ -3085,6 +3481,13 @@ function criarModalItem() {
     return modal;
 }
 
+function calcularVendaTotalManual() {
+    const qtd = parseFloat(document.getElementById('itemQtd')?.value) || 0;
+    const vendaUnt = parseFloat(document.getElementById('itemVendaUnt')?.value) || 0;
+    const vendaTotal = qtd * vendaUnt;
+    document.getElementById('itemVendaTotal').value = vendaTotal.toFixed(2);
+}
+
 function calcularValoresItem() {
     const q = parseFloat(document.getElementById('itemQtd')?.value) || 0;
     const eu = parseFloat(document.getElementById('itemEstimadoUnt')?.value) || 0;
@@ -3093,20 +3496,27 @@ function calcularValoresItem() {
     
     const estimadoTotal = q * eu;
     const custoTotal = q * cu;
-    const vendaUnt = cu * (1 + perc / 100);
-    const vendaTotal = vendaUnt * q;
+    const vendaUntCalc = cu * (1 + perc / 100);
+    
+    const vendaUntEl = document.getElementById('itemVendaUnt');
+    const vendaTotalEl = document.getElementById('itemVendaTotal');
+    
+    // Só recalcula se o campo Venda UNT não estiver sendo editado manualmente
+    if (!vendaUntEl._isManualEdit) {
+        vendaUntEl.value = vendaUntCalc.toFixed(4).replace(/\.?0+$/, '');
+        const vendaTotalCalc = vendaUntCalc * q;
+        vendaTotalEl.value = vendaTotalCalc.toFixed(2);
+    } else {
+        // Se foi editado manualmente, recalcula venda total baseado no valor manual
+        const vendaUntManual = parseFloat(vendaUntEl.value) || 0;
+        vendaTotalEl.value = (vendaUntManual * q).toFixed(2);
+    }
     
     const etEl = document.getElementById('itemEstimadoTotal');
     const ctEl = document.getElementById('itemCustoTotal');
-    const vuEl = document.getElementById('itemVendaUnt');
-    const vtEl = document.getElementById('itemVendaTotal');
     
     if (etEl) etEl.value = estimadoTotal.toFixed(2);
     if (ctEl) ctEl.value = custoTotal.toFixed(2);
-    if (vuEl) {
-        vuEl.value = vendaUnt.toFixed(4).replace(/\.?0+$/, '');
-    }
-    if (vtEl) vtEl.value = vendaTotal.toFixed(2);
 }
 
 function configurarCalculosAutomaticos() {
@@ -3120,20 +3530,34 @@ function configurarCalculosAutomaticos() {
     modal._calcListener = function(e) {
         const ids = ['itemQtd', 'itemEstimadoUnt', 'itemCustoUnt', 'itemPorcentagem'];
         if (ids.includes(e.target.id)) {
+            // Marca que não é edição manual do venda unt
+            document.getElementById('itemVendaUnt')._isManualEdit = false;
             requestAnimationFrame(() => {
                 calcularValoresItem();
             });
+        }
+        
+        if (e.target.id === 'itemVendaUnt') {
+            // Marca como edição manual
+            e.target._isManualEdit = true;
+            calcularVendaTotalManual();
         }
     };
     
     modal.addEventListener('input', modal._calcListener);
     
-    const inputs = ['itemQtd', 'itemEstimadoUnt', 'itemCustoUnt', 'itemPorcentagem'];
+    const inputs = ['itemQtd', 'itemEstimadoUnt', 'itemCustoUnt', 'itemPorcentagem', 'itemVendaUnt'];
     inputs.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
             el.removeEventListener('blur', calcularValoresItem);
-            el.addEventListener('blur', calcularValoresItem);
+            el.addEventListener('blur', () => {
+                if (id === 'itemVendaUnt') {
+                    calcularVendaTotalManual();
+                } else {
+                    calcularValoresItem();
+                }
+            });
         }
     });
 }
