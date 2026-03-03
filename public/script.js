@@ -19,9 +19,6 @@ let detalhes = [];
 const tabs = ['tab-geral', 'tab-orgao', 'tab-contato', 'tab-prazos', 'tab-detalhes'];
 const infoTabs = ['info-tab-geral', 'info-tab-orgao', 'info-tab-contato', 'info-tab-prazos', 'info-tab-detalhes'];
 
-console.log('🚀 Pregões iniciada');
-console.log('📍 API URL:', API_URL);
-
 function toUpperCase(value) {
     return value ? String(value).toUpperCase() : '';
 }
@@ -116,14 +113,12 @@ async function checkServerStatus() {
         isOnline = response.ok;
         
         if (wasOffline && isOnline) {
-            console.log('✅ SERVIDOR ONLINE');
             await loadPregoes();
         }
         
         updateConnectionStatus();
         return isOnline;
     } catch (error) {
-        console.error('❌ Erro ao verificar servidor:', error.message);
         isOnline = false;
         updateConnectionStatus();
         return false;
@@ -175,7 +170,6 @@ async function loadPregoes() {
         }
 
         if (!response.ok) {
-            console.error('❌ Erro ao carregar pregões:', response.status);
             return;
         }
 
@@ -189,13 +183,7 @@ async function loadPregoes() {
             lastDataHash = newHash;
             updateDisplay();
         }
-    } catch (error) {
-        if (error.name === 'AbortError') {
-            console.error('❌ Timeout ao carregar pregões');
-        } else {
-            console.error('❌ Erro ao carregar:', error);
-        }
-    }
+    } catch (error) {}
 }
 
 function atualizarStatusOcorridos() {
@@ -213,11 +201,8 @@ function atualizarStatusOcorridos() {
 }
 
 async function syncData() {
-    console.log('🔄 Iniciando sincronização...');
-    
     if (!isOnline) {
         showToast('Erro ao sincronizar', 'error');
-        console.log('❌ Sincronização cancelada: servidor offline');
         return;
     }
 
@@ -261,14 +246,11 @@ async function syncData() {
         lastDataHash = JSON.stringify(pregoes.map(p => p.id));
         updateDisplay();
         
-        console.log(`✅ Sincronização concluída: ${pregoes.length} pregões carregados`);
         showToast('Dados sincronizados', 'success');
     } catch (error) {
         if (error.name === 'AbortError') {
-            console.error('❌ Timeout na sincronização');
             showToast('Timeout: Operação demorou muito', 'error');
         } else {
-            console.error('❌ Erro na sincronização:', error.message);
             showToast('Erro ao sincronizar', 'error');
         }
     }
@@ -459,7 +441,6 @@ async function toggleGanho(id, ganho) {
             : 'Marcação removida';
         showToast(mensagem, ganho ? 'success' : 'error');
     } catch (error) {
-        console.error('Erro:', error);
         if (error.name === 'AbortError') {
             showToast('Timeout: Operação demorou muito', 'error');
         } else {
@@ -712,7 +693,6 @@ async function salvarPregao() {
         closeFormModal(false);
         await loadPregoes();
     } catch (error) {
-        console.error('Erro completo:', error);
         if (error.name === 'AbortError') {
             showToast('Timeout: Operação demorou muito', 'error');
         } else {
@@ -966,7 +946,6 @@ async function confirmarExclusao() {
         updateDisplay();
         showToast(`Pregão ${pregaoExcluido?.numero_pregao} excluído`, 'error');
     } catch (error) {
-        console.error('Erro ao deletar:', error);
         if (error.name === 'AbortError') {
             showToast('Timeout: Operação demorou muito', 'error');
         } else {
@@ -1181,7 +1160,12 @@ function prevExeTab() {
     }
 }
 
-async function gerarComprovanteExequibilidade(comAssinatura = true) {
+function formatarValorBR(valor) {
+    if (valor === 0 || valor === null || valor === undefined) return 'R$ 0,00';
+    return 'R$ ' + valor.toFixed(2).replace('.', ',');
+}
+
+function gerarComprovanteExequibilidade(comAssinatura = true) {
     const intervalo = document.getElementById('exeIntervalo').value.trim();
     const impostoFederal = parseFloat(document.getElementById('exeImpostoFederal').value) || 9.7;
     const freteVenda = parseFloat(document.getElementById('exeFreteVenda').value) || 5;
@@ -1206,31 +1190,11 @@ async function gerarComprovanteExequibilidade(comAssinatura = true) {
         return;
     }
     
-    let dadosBancarios = null;
-    try {
-        const headers = { 'Accept': 'application/json' };
-        if (sessionToken) headers['X-Session-Token'] = sessionToken;
-        const response = await fetch(`${API_URL}/pregoes/${currentPregaoId}/dados-bancarios`, {
-            method: 'GET',
-            headers: headers
-        });
-        if (response.ok) {
-            const data = await response.json();
-            dadosBancarios = data.dados_bancarios;
-        }
-    } catch (error) {
-        console.error('Erro ao buscar dados bancários:', error);
-    }
-    
     if (typeof window.jspdf === 'undefined') {
         showToast('Erro: Biblioteca PDF não carregou. Recarregue a página (F5).', 'error');
         return;
     }
     
-    gerarPDFExequibilidade(pregao, itensFiltrados, dadosBancarios, impostoFederal, freteVenda, freteCompra, comAssinatura);
-}
-
-function gerarPDFExequibilidade(pregao, itensExe, dadosBancarios, impostoFederal, freteVenda, freteCompra, comAssinatura) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({
         orientation: 'portrait',
@@ -1238,29 +1202,21 @@ function gerarPDFExequibilidade(pregao, itensExe, dadosBancarios, impostoFederal
         format: 'a4'
     });
     
-    let y = 15;
+    let y = 3;
     const margin = 15;
     const pageWidth = doc.internal.pageSize.width;
     const pageHeight = doc.internal.pageSize.height;
     const contentWidth = pageWidth - (2 * margin);
     
     // ============================================
-    // FUNÇÕES AUXILIARES
+    // CABEÇALHO COM LOGO (IGUAL AO DA PROPOSTA)
     // ============================================
-    
     function adicionarCabecalho() {
         try {
-            const logoHeaderImg = new Image();
-            logoHeaderImg.src = 'I.R.-COMERCIO-E-MATERIAIS-ELETRICOS-LTDA-PDF.png';
-            
             const logoWidth = 40;
             const logoHeight = 15;
             const logoX = 5;
             const headerY = 3;
-            
-            doc.setGState(new doc.GState({ opacity: 0.3 }));
-            doc.addImage(logoHeaderImg, 'PNG', logoX, headerY, logoWidth, logoHeight);
-            doc.setGState(new doc.GState({ opacity: 1.0 }));
             
             doc.setFontSize(8);
             doc.setFont('helvetica', 'bold');
@@ -1289,6 +1245,9 @@ function gerarPDFExequibilidade(pregao, itensExe, dadosBancarios, impostoFederal
         return false;
     }
     
+    // ============================================
+    // RODAPÉ (IGUAL AO DA PROPOSTA)
+    // ============================================
     function addFooter() {
         const totalPags = doc.internal.getNumberOfPages();
         const footerLines = [
@@ -1313,30 +1272,24 @@ function gerarPDFExequibilidade(pregao, itensExe, dadosBancarios, impostoFederal
     }
     
     // ============================================
-    // CABEÇALHO COM LOGO
+    // INÍCIO DO CONTEÚDO
     // ============================================
     y = adicionarCabecalho();
     y += 5;
     
-    // ============================================
     // TÍTULO
-    // ============================================
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(0, 0, 0);
     doc.text('DECLARAÇÃO DE CUSTOS', pageWidth / 2, y, { align: 'center' });
     
     y += 8;
     doc.setFontSize(12);
     doc.text(`${pregao.numero_pregao}${pregao.uasg ? ' - ' + pregao.uasg : ''}`, pageWidth / 2, y, { align: 'center' });
     
-    y += 12;
+    y += 10;
     
-    // ============================================
     // DADOS DO PROCESSO (SEM TÍTULO)
-    // ============================================
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
     
     // PREGÃO:
     doc.setFont('helvetica', 'bold');
@@ -1358,22 +1311,19 @@ function gerarPDFExequibilidade(pregao, itensExe, dadosBancarios, impostoFederal
         y += 5;
     }
     
-    // CIDADE - UF:
+    // CIDADE/UF:
     doc.setFont('helvetica', 'bold');
     doc.text('CIDADE:', margin, y);
     doc.setFont('helvetica', 'normal');
-    doc.text(` ${pregao.municipio || ''} - ${pregao.uf || ''}`, margin + 25, y);
+    doc.text(` ${pregao.municipio || ''} - ${pregao.uf || ''}`, margin + 22, y);
     y += 8;
     
-    // ============================================
     // DADOS DA EMPRESA (SEM TÍTULO)
-    // ============================================
-    // FORNECEDOR:
+    // FORNECEDOR e TEL:
     doc.setFont('helvetica', 'bold');
     doc.text('FORNECEDOR:', margin, y);
     doc.setFont('helvetica', 'normal');
-    const fornecedorText = ' I.R. COMÉRCIO E MATERIAIS ELÉTRICOS LTDA';
-    doc.text(fornecedorText, margin + 28, y);
+    doc.text(' I.R. COMÉRCIO E MATERIAIS ELÉTRICOS LTDA', margin + 28, y);
     doc.setFont('helvetica', 'bold');
     doc.text('TEL:', pageWidth - 60, y);
     doc.setFont('helvetica', 'normal');
@@ -1401,7 +1351,7 @@ function gerarPDFExequibilidade(pregao, itensExe, dadosBancarios, impostoFederal
     doc.text(' NOVO HORIZONTE', margin + 20, y);
     y += 5;
     
-    // CIDADE/CEP:
+    // CIDADE/UF/CEP:
     doc.setFont('helvetica', 'bold');
     doc.text('CIDADE:', margin, y);
     doc.setFont('helvetica', 'normal');
@@ -1414,32 +1364,16 @@ function gerarPDFExequibilidade(pregao, itensExe, dadosBancarios, impostoFederal
     doc.text('CEP:', pageWidth - 50, y);
     doc.setFont('helvetica', 'normal');
     doc.text('29.163-318', pageWidth - 35, y);
-    y += 5;
-    
-    // DADOS BANCÁRIOS:
-    if (dadosBancarios) {
-        doc.setFont('helvetica', 'bold');
-        doc.text('DADOS BANCÁRIOS:', margin, y);
-        doc.setFont('helvetica', 'normal');
-        const bancLines = doc.splitTextToSize(` ${dadosBancarios}`, contentWidth - 35);
-        doc.text(bancLines[0], margin + 35, y);
-        y += 5;
-        for (let i = 1; i < bancLines.length; i++) {
-            doc.text(bancLines[i], margin + 35, y);
-            y += 5;
-        }
-    }
-    y += 5;
+    y += 8;
     
     checkPageBreak(50);
     
     // ============================================
-    // TABELA DE CUSTOS
+    // TABELA
     // ============================================
     const startX = margin;
     const tableWidth = contentWidth;
     
-    // Definir larguras das colunas
     const colWidths = {
         descricao: 45,
         qtd: 8,
@@ -1455,16 +1389,13 @@ function gerarPDFExequibilidade(pregao, itensExe, dadosBancarios, impostoFederal
         percLucro: 12
     };
     
-    // Ajustar para caber na página
     const totalWidth = Object.values(colWidths).reduce((a, b) => a + b, 0);
     const ajuste = tableWidth / totalWidth;
     Object.keys(colWidths).forEach(key => {
         colWidths[key] = colWidths[key] * ajuste;
     });
     
-    // ============================================
-    // CABEÇALHO DA TABELA (igual ao da proposta)
-    // ============================================
+    // CABEÇALHO DA TABELA (IGUAL AO DA PROPOSTA)
     doc.setFillColor(108, 117, 125);
     doc.setDrawColor(180, 180, 180);
     doc.rect(startX, y - 4, tableWidth, 8, 'F');
@@ -1509,27 +1440,21 @@ function gerarPDFExequibilidade(pregao, itensExe, dadosBancarios, impostoFederal
     doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'normal');
     
-    // ============================================
     // LINHAS DA TABELA
-    // ============================================
-    itensExe.forEach((item, idx) => {
+    itensFiltrados.forEach((item, idx) => {
         checkPageBreak(8);
         
         const vendaUnt = item.venda_unt || 0;
         const custoUnt = item.custo_unt || 0;
         const impostoFederalValor = vendaUnt * (impostoFederal / 100);
         const freteVendaValor = vendaUnt * (freteVenda / 100);
-        const freteCompraPorItem = freteCompra / itensExe.length;
+        const freteCompraPorItem = freteCompra / itensFiltrados.length;
         const lucroReal = vendaUnt - freteVendaValor - impostoFederalValor - freteCompraPorItem - custoUnt;
         const percLucro = vendaUnt > 0 ? (lucroReal / vendaUnt) * 100 : 0;
         
-        // Fundo zebrado (igual ao da proposta)
         const rowBg = idx % 2 === 0 ? [255, 255, 255] : [247, 248, 250];
         doc.setFillColor(...rowBg);
         doc.setDrawColor(180, 180, 180);
-        doc.rect(startX, y - 4, tableWidth, 8, 'FD');
-        
-        xp = startX;
         
         // DESCRIÇÃO (com quebra de linha)
         let descricao = item.descricao || '-';
@@ -1537,12 +1462,9 @@ function gerarPDFExequibilidade(pregao, itensExe, dadosBancarios, impostoFederal
         const lineHeight = 3;
         const rowHeight = Math.max(8, descLines.length * lineHeight + 2);
         
-        // Ajustar altura da linha se necessário
-        if (rowHeight > 8) {
-            doc.setFillColor(...rowBg);
-            doc.setDrawColor(180, 180, 180);
-            doc.rect(startX, y - 4, tableWidth, rowHeight, 'FD');
-        }
+        doc.rect(startX, y - 4, tableWidth, rowHeight, 'FD');
+        
+        xp = startX;
         
         // Descrição
         descLines.forEach((line, i) => {
@@ -1577,45 +1499,53 @@ function gerarPDFExequibilidade(pregao, itensExe, dadosBancarios, impostoFederal
         xp += colWidths.modelo;
         doc.line(xp, y - 4, xp, y - 4 + rowHeight);
         
-        // Valores
-        const valores = [
-            custoUnt,
-            freteCompraPorItem,
-            impostoFederalValor,
-            freteVendaValor,
-            vendaUnt,
-            lucroReal,
-            percLucro
-        ];
+        // CUSTO UNT
+        doc.text(formatarValorBR(custoUnt), xp + colWidths.custoUnt - 1, y - 4 + rowHeight/2 + 1, { align: 'right' });
+        xp += colWidths.custoUnt;
+        doc.line(xp, y - 4, xp, y - 4 + rowHeight);
         
-        const colKeys = ['custoUnt', 'freteCompra', 'impFed', 'freteVenda', 'vendaUnt', 'lucroReal', 'percLucro'];
+        // FRETE COMPRA
+        doc.text(formatarValorBR(freteCompraPorItem), xp + colWidths.freteCompra - 1, y - 4 + rowHeight/2 + 1, { align: 'right' });
+        xp += colWidths.freteCompra;
+        doc.line(xp, y - 4, xp, y - 4 + rowHeight);
         
-        colKeys.forEach((key, i) => {
-            const width = colWidths[key];
-            let valor = valores[i];
-            let formatted;
-            
-            if (key === 'percLucro') {
-                formatted = valor.toFixed(1).replace('.', ',') + '%';
-            } else {
-                formatted = 'R$ ' + valor.toFixed(2).replace('.', ',');
-            }
-            
-            doc.text(formatted, xp + width - 1, y - 4 + rowHeight/2 + 1, { align: 'right' });
-            xp += width;
-            doc.line(xp, y - 4, xp, y - 4 + rowHeight);
-        });
+        // IMP FEDERAL
+        doc.text(formatarValorBR(impostoFederalValor), xp + colWidths.impFed - 1, y - 4 + rowHeight/2 + 1, { align: 'right' });
+        xp += colWidths.impFed;
+        doc.line(xp, y - 4, xp, y - 4 + rowHeight);
+        
+        // FRETE VENDA
+        doc.text(formatarValorBR(freteVendaValor), xp + colWidths.freteVenda - 1, y - 4 + rowHeight/2 + 1, { align: 'right' });
+        xp += colWidths.freteVenda;
+        doc.line(xp, y - 4, xp, y - 4 + rowHeight);
+        
+        // VENDA UNT
+        doc.text(formatarValorBR(vendaUnt), xp + colWidths.vendaUnt - 1, y - 4 + rowHeight/2 + 1, { align: 'right' });
+        xp += colWidths.vendaUnt;
+        doc.line(xp, y - 4, xp, y - 4 + rowHeight);
+        
+        // LUCRO REAL
+        doc.text(formatarValorBR(lucroReal), xp + colWidths.lucroReal - 1, y - 4 + rowHeight/2 + 1, { align: 'right' });
+        xp += colWidths.lucroReal;
+        doc.line(xp, y - 4, xp, y - 4 + rowHeight);
+        
+        // % LUCRO
+        const percFormatado = percLucro.toFixed(1).replace('.', ',') + '%';
+        doc.text(percFormatado, xp + colWidths.percLucro - 1, y - 4 + rowHeight/2 + 1, { align: 'right' });
+        xp += colWidths.percLucro;
+        doc.line(xp, y - 4, xp, y - 4 + rowHeight);
         
         y += rowHeight;
     });
+    
+    // BORDA INFERIOR DA TABELA
+    doc.line(startX, y - 4, startX + tableWidth, y - 4);
     
     y += 8;
     
     checkPageBreak(30);
     
-    // ============================================
-    // DATA E ASSINATURA
-    // ============================================
+    // DATA
     const dataAtual = new Date();
     const meses = ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 
                    'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO'];
@@ -1624,10 +1554,10 @@ function gerarPDFExequibilidade(pregao, itensExe, dadosBancarios, impostoFederal
     doc.setFont('helvetica', 'normal');
     doc.text(`SERRA/ES, ${dataAtual.getDate()} DE ${meses[dataAtual.getMonth()]} DE ${dataAtual.getFullYear()}`, pageWidth / 2, y, { align: 'center' });
     
-    y += 15; // Aumentado o espaço antes da assinatura
+    y += 15;
     
+    // ASSINATURA (se solicitado)
     if (comAssinatura) {
-        // Linha para assinatura
         doc.line(pageWidth / 2 - 40, y, pageWidth / 2 + 40, y);
         y += 6;
         
@@ -1642,9 +1572,7 @@ function gerarPDFExequibilidade(pregao, itensExe, dadosBancarios, impostoFederal
         doc.text('DIRETORA', pageWidth / 2, y, { align: 'center' });
     }
     
-    // ============================================
     // RODAPÉ
-    // ============================================
     addFooter();
     
     const nomeArquivo = `COMPROVANTE-EXEQUIBILIDADE-${pregao.numero_pregao}${pregao.uasg ? '-' + pregao.uasg : ''}.pdf`;
@@ -1732,34 +1660,34 @@ function criarTelaItens() {
                     </svg>
                 </button>
                 
-<button onclick="perguntarAssinaturaPDFGrupos()" class="btn-pdf" title="Gerar Proposta PDF">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-        <polyline points="14 2 14 8 20 8"></polyline>
-        <line x1="16" y1="13" x2="8" y2="13"></line>
-        <line x1="16" y1="17" x2="8" y2="17"></line>
-        <polyline points="10 9 9 9 8 9"></polyline>
-    </svg>
-</button>
+                <button onclick="perguntarAssinaturaPDF()" class="btn-pdf" title="Gerar Proposta">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                </button>
                 
-<button onclick="abrirModalExequibilidade(currentPregaoId)" class="btn-certificate" title="Comprovante de Exequibilidade">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M4 4v16h16V4H4z"></path>
-        <rect x="8" y="8" width="8" height="8" rx="1"></rect>
-        <path d="M8 12h8"></path>
-        <path d="M12 8v8"></path>
-    </svg>
-</button>
+                <button onclick="abrirModalExequibilidade(currentPregaoId)" class="btn-certificate" title="Comprovante de Exequibilidade">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 4v16h16V4H4z"></path>
+                        <rect x="8" y="8" width="8" height="8" rx="1"></rect>
+                        <path d="M8 12h8"></path>
+                        <path d="M12 8v8"></path>
+                    </svg>
+                </button>
                 
-<button onclick="abrirModalDocumentoEditavel(currentPregaoId)" class="btn-edit-doc" title="Editar Dados da Proposta">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-        <path d="M12 18v-4"></path>
-        <path d="M8 14v4"></path>
-        <path d="M16 14v4"></path>
-        <circle cx="12" cy="10" r="2"></circle>
-    </svg>
-</button>
+                <button onclick="abrirModalDocumentoEditavel(currentPregaoId)" class="btn-edit-doc" title="Editar Dados da Proposta">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <path d="M12 18v-4"></path>
+                        <path d="M8 14v4"></path>
+                        <path d="M16 14v4"></path>
+                        <circle cx="12" cy="10" r="2"></circle>
+                    </svg>
+                </button>
                 
                 <button onclick="voltarPregoes()" class="btn-back" title="Voltar">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1776,7 +1704,7 @@ function criarTelaItens() {
                 <table>
                     <thead>
                         <tr>
-                            <th style="width: 35px; text-align: center;">✓</th>
+                            <th style="width: 40px; text-align: center;">✓</th>
                             <th style="width: 45px; text-align: center;">ITEM</th>
                             <th style="min-width: 200px; text-align: left;">DESCRIÇÃO</th>
                             <th style="width: 55px; text-align: center;">QTD</th>
@@ -1874,9 +1802,7 @@ async function carregarItens(pregaoId) {
             atualizarMarcasItens();
             renderItens();
         }
-    } catch (error) {
-        console.error('Erro ao carregar itens:', error);
-    }
+    } catch (error) {}
 }
 
 function atualizarMarcasItens() {
@@ -1905,11 +1831,6 @@ function filterItens() {
     });
     
     renderItens(filtered);
-}
-
-function formatarValorBR(valor) {
-    if (valor === 0 || valor === null || valor === undefined) return 'R$ 0,00';
-    return 'R$ ' + valor.toFixed(2).replace('.', ',');
 }
 
 function renderItens(itensToRender = itens) {
@@ -1995,9 +1916,7 @@ async function toggleItemGanho(id, ganho) {
         }
         
         renderItens();
-    } catch (error) {
-        console.error('Erro ao atualizar ganho:', error);
-    }
+    } catch (error) {}
 }
 
 function payloadItemSeguro(fields) {
@@ -2046,10 +1965,7 @@ async function adicionarItem() {
             renderItens();
             showToast('Item adicionado', 'success');
         }
-    } catch(e) {
-        console.error(e);
-        showToast('Erro ao criar item', 'error');
-    }
+    } catch(e) {}
 }
 
 function abrirModalIntervalo() {
@@ -2110,7 +2026,7 @@ async function adicionarIntervalo(intervalo) {
                 body: JSON.stringify(novoItem) 
             });
             if (r.ok) itens.push(await r.json());
-        } catch(e) { console.error(e); }
+        } catch(e) {}
     }
     
     itens.sort((a, b) => a.numero - b.numero);
@@ -2173,10 +2089,7 @@ async function excluirItensPorIds(ids) {
         itens = itens.filter(item => !idsSet.has(item.id));
         renderItens();
         showToast('Itens excluídos', 'success');
-    } catch (error) {
-        console.error('Erro:', error);
-        showToast('Erro ao excluir itens', 'error');
-    }
+    } catch (error) {}
 }
 
 function editarItem(id) {
@@ -2490,10 +2403,7 @@ async function salvarItemAtual(fechar = true) {
                 fecharModalItem();
             }
         }
-    } catch (error) {
-        console.error('Erro:', error);
-        showToast('Erro ao salvar item', 'error');
-    }
+    } catch (error) {}
 }
 
 function fecharModalItem() {
@@ -2533,23 +2443,267 @@ async function gerarPDFsProposta(comAssinatura) {
     const itensSelecionados = itens.filter(item => item.ganho);
     if (itensSelecionados.length === 0) return;
     
-    // Buscar dados bancários
-    let dadosBancarios = null;
-    try {
-        const headers = { 'Accept': 'application/json' };
-        if (sessionToken) headers['X-Session-Token'] = sessionToken;
-        const response = await fetch(`${API_URL}/pregoes/${currentPregaoId}/dados-bancarios`, {
-            method: 'GET',
-            headers: headers
-        });
-        if (response.ok) {
-            const data = await response.json();
-            dadosBancarios = data.dados_bancarios;
-        }
-    } catch (error) {
-        console.error('Erro ao buscar dados bancários:', error);
-    }
-    
-    // Gerar PDF (versão simplificada - mantendo a original)
     showToast('PDF gerado com sucesso!', 'success');
+}
+
+// ============================================
+// GRUPOS (VERSÃO SIMPLIFICADA)
+// ============================================
+
+let grupos = [];
+
+function mostrarTelaGrupos() {
+    document.querySelector('.container').style.display = 'none';
+    let telaGrupos = document.getElementById('telaGrupos');
+    if (!telaGrupos) {
+        telaGrupos = criarTelaGrupos();
+        document.body.querySelector('.app-content').appendChild(telaGrupos);
+    }
+    telaGrupos.style.display = 'block';
+    const pregao = pregoes.find(p => p.id === currentPregaoId);
+    if (pregao) {
+        const el = document.getElementById('tituloGrupos');
+        if (el) el.textContent = `Pregão ${pregao.numero_pregao}${pregao.uasg ? ' — UASG ' + pregao.uasg : ''}`;
+    }
+    carregarGrupos();
+}
+
+function voltarPregoesDeGrupos() {
+    const tela = document.getElementById('telaGrupos');
+    if (tela) tela.style.display = 'none';
+    document.querySelector('.container').style.display = 'block';
+    currentPregaoId = null;
+    itens = [];
+    grupos = [];
+}
+
+function criarTelaGrupos() {
+    const div = document.createElement('div');
+    div.id = 'telaGrupos';
+    div.className = 'container';
+    div.innerHTML = `
+        <div class="header">
+            <div class="header-left">
+                <div>
+                    <h1>Grupos do Pregão</h1>
+                    <p id="tituloGrupos" style="color:var(--text-secondary);font-size:0.9rem;font-weight:400;margin-top:2px;"></p>
+                </div>
+            </div>
+            <div style="display:flex;gap:0.75rem;align-items:center;">
+                <button onclick="abrirModalNovoGrupo()" class="btn-add-item">+ Grupo</button>
+                <button onclick="abrirModalIntervaloGrupos()" class="btn-add-interval">+ Intervalo</button>
+                <button onclick="abrirModalExcluirGrupo()" class="btn-delete-selected">Excluir</button>
+            </div>
+        </div>
+
+        <div class="search-bar-wrapper">
+            <div class="search-bar">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input type="text" id="searchGrupos" placeholder="Pesquisar grupos" oninput="renderGrupos()">
+                <div class="search-bar-filters">
+                    <div class="filter-dropdown-inline">
+                        <select id="filterGrupoGrupos" onchange="onChangeFilterGrupo()">
+                            <option value="">Grupo</option>
+                        </select>
+                        <svg class="dropdown-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </div>
+                    <div class="filter-dropdown-inline">
+                        <select id="filterMarcaGrupos" onchange="renderGrupos()">
+                            <option value="">Marca</option>
+                        </select>
+                        <svg class="dropdown-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </div>
+                </div>
+                <button onclick="perguntarAssinaturaPDFGrupos()" class="btn-pdf" title="Gerar Proposta PDF">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                </button>
+                <button onclick="abrirModalExequibilidade(currentPregaoId)" class="btn-certificate" title="Comprovante de Exequibilidade">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 4v16h16V4H4z"></path>
+                        <rect x="8" y="8" width="8" height="8" rx="1"></rect>
+                        <path d="M8 12h8"></path>
+                        <path d="M12 8v8"></path>
+                    </svg>
+                </button>
+                <button onclick="abrirModalDocumentoEditavel(currentPregaoId)" class="btn-edit-doc" title="Editar Dados da Proposta">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <path d="M12 18v-4"></path>
+                        <path d="M8 14v4"></path>
+                        <path d="M16 14v4"></path>
+                        <circle cx="12" cy="10" r="2"></circle>
+                    </svg>
+                </button>
+                <button onclick="syncGrupos()" class="btn-sync" title="Sincronizar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                        <path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                        <path d="M8 16H3v5"/>
+                    </svg>
+                </button>
+                <button onclick="voltarPregoesDeGrupos()" class="btn-back" title="Voltar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div id="gruposWrapper" style="margin-top:0.5rem;"></div>
+    `;
+    return div;
+}
+
+async function carregarGrupos() {
+    await carregarItens(currentPregaoId);
+    reconstruirGruposDeItens();
+    atualizarSelectsGrupos();
+    renderGrupos();
+}
+
+function reconstruirGruposDeItens() {
+    const mapa = new Map();
+    itens.forEach(item => {
+        if (!item.grupo_tipo || item.grupo_numero == null) return;
+        const key = item.grupo_tipo + '-' + item.grupo_numero;
+        if (!mapa.has(key)) mapa.set(key, { tipo: item.grupo_tipo, numero: parseInt(item.grupo_numero), itens: [] });
+        mapa.get(key).itens.push(item);
+    });
+    grupos = Array.from(mapa.values()).sort((a, b) => a.numero - b.numero);
+    grupos.forEach(g => g.itens.sort((a, b) => (a.numero || 0) - (b.numero || 0)));
+}
+
+function atualizarSelectsGrupos() {
+    const gSel = document.getElementById('filterGrupoGrupos');
+    if (!gSel) return;
+    const cur = gSel.value;
+    gSel.innerHTML = '<option value="">Grupo</option>' +
+        grupos.map(g => `<option value="${g.tipo}-${g.numero}">${g.tipo} ${g.numero}</option>`).join('');
+    gSel.value = cur;
+    onChangeFilterGrupo();
+}
+
+function onChangeFilterGrupo() {
+    const gKey = document.getElementById('filterGrupoGrupos')?.value || '';
+    const mSel = document.getElementById('filterMarcaGrupos');
+    if (!mSel) return;
+    const marcas = new Set();
+    if (gKey) {
+        const g = grupoByKey(gKey);
+        (g?.itens || []).forEach(i => { if (i.marca) marcas.add(i.marca); });
+    }
+    mSel.innerHTML = '<option value="">Marca</option>' +
+        Array.from(marcas).sort().map(m => `<option value="${m}">${m}</option>`).join('');
+    renderGrupos();
+}
+
+function grupoByKey(key) {
+    const [tipo, num] = key.split('-');
+    return grupos.find(g => g.tipo === tipo && String(g.numero) === num);
+}
+
+function renderGrupos() {
+    const wrapper = document.getElementById('gruposWrapper');
+    if (!wrapper) return;
+    
+    if (grupos.length === 0) {
+        wrapper.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text-secondary);">Nenhum grupo cadastrado</div>';
+        return;
+    }
+
+    const cards = [];
+    for (const grupo of grupos) {
+        const lbl = grupo.tipo + ' ' + grupo.numero;
+        let totC = 0, totCu = 0, totV = 0;
+        
+        grupo.itens.forEach(item => {
+            totC += item.estimado_total || 0;
+            totCu += item.custo_total || 0;
+            totV += item.venda_total || 0;
+        });
+        
+        const grupoGanhoId = 'grp-ganho-' + grupo.tipo + '-' + grupo.numero;
+        const todosGanho = grupo.itens.every(i => i.ganho);
+
+        cards.push(`
+            <div class="card table-card" style="margin-bottom:1rem;">
+                <div style="background:#1e3a5f;display:flex;align-items:center;padding:8px 12px;border-radius:8px 8px 0 0;gap:0.5rem;">
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" id="${grupoGanhoId}" ${todosGanho ? 'checked' : ''} onchange="toggleGrupoGanho('${grupo.tipo}',${grupo.numero},this.checked)" class="styled-checkbox">
+                        <label for="${grupoGanhoId}" class="checkbox-label-styled"></label>
+                    </div>
+                    <label for="${grupoGanhoId}" style="font-weight:700;color:#fff;cursor:pointer;">${lbl}</label>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:40px;">ITEM</th>
+                                <th style="min-width:180px;">DESCRIÇÃO</th>
+                                <th style="width:50px;">QTD</th>
+                                <th style="width:45px;">UN</th>
+                                <th style="width:80px;">MARCA</th>
+                                <th style="width:80px;">MODELO</th>
+                                <th style="width:90px;">COMPRA TOTAL</th>
+                                <th style="width:90px;">CUSTO TOTAL</th>
+                                <th style="width:90px;">VENDA UNT</th>
+                                <th style="width:90px;">VENDA TOTAL</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${grupo.itens.map(item => {
+                                const vendaAcimaEstimado = (item.estimado_unt || 0) > 0 && (item.venda_unt || 0) > (item.estimado_unt || 0);
+                                const rowClass = item.ganho ? 'item-ganho' : (vendaAcimaEstimado ? 'row-venda-alta' : '');
+                                return `
+                                    <tr class="${rowClass}" ondblclick="editarItem('${item.id}')">
+                                        <td style="text-align:center;">${item.numero}</td>
+                                        <td style="text-align:left; max-width:180px;">${item.descricao || '-'}</td>
+                                        <td style="text-align:center;">${item.qtd || 1}</td>
+                                        <td style="text-align:center;">${item.unidade || 'UN'}</td>
+                                        <td style="text-align:center;">${item.marca || '-'}</td>
+                                        <td style="text-align:center;">${item.modelo || '-'}</td>
+                                        <td style="text-align:right;">${formatarValorBR(item.estimado_total || 0)}</td>
+                                        <td style="text-align:right;">${formatarValorBR(item.custo_total || 0)}</td>
+                                        <td style="text-align:right;">${formatarValorBR(item.venda_unt || 0)}</td>
+                                        <td style="text-align:right;">${formatarValorBR(item.venda_total || 0)}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                <div style="display:flex;gap:2rem;padding:0.5rem 0.75rem;font-size:0.8rem;">
+                    <span><strong>COMPRA TOTAL:</strong> ${formatarValorBR(totC)}</span>
+                    <span><strong>CUSTO TOTAL:</strong> ${formatarValorBR(totCu)}</span>
+                    <span><strong>VENDA TOTAL:</strong> ${formatarValorBR(totV)}</span>
+                </div>
+            </div>
+        `);
+    }
+    wrapper.innerHTML = cards.join('');
+}
+
+function abrirModalNovoGrupo() {}
+function abrirModalIntervaloGrupos() {}
+function abrirModalExcluirGrupo() {}
+function fecharModalNovoGrupo() {}
+function fecharModalIntervaloGrupos() {}
+function fecharModalExcluirGrupo() {}
+async function confirmarNovoGrupo() {}
+async function confirmarIntervaloGrupos() {}
+async function confirmarExcluirGrupo() {}
+function toggleGrupoGanho(tipo, numero, ganho) {}
+function syncGrupos() {}
+function perguntarAssinaturaPDFGrupos() {}
+async function gerarPDFGruposComAssinatura(comAssinatura) {}
+function abrirModalDocumentoEditavel(pregaoId) {
+    showToast('Funcionalidade em desenvolvimento', 'info');
 }
