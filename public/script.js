@@ -1244,23 +1244,87 @@ function gerarPDFExequibilidade(pregao, itensExe, dadosBancarios, impostoFederal
     const pageHeight = doc.internal.pageSize.height;
     const contentWidth = pageWidth - (2 * margin);
     
+    // ============================================
+    // FUNÇÕES AUXILIARES
+    // ============================================
+    
+    function adicionarCabecalho() {
+        try {
+            const logoHeaderImg = new Image();
+            logoHeaderImg.src = 'I.R.-COMERCIO-E-MATERIAIS-ELETRICOS-LTDA-PDF.png';
+            
+            const logoWidth = 40;
+            const logoHeight = 15;
+            const logoX = 5;
+            const headerY = 3;
+            
+            doc.setGState(new doc.GState({ opacity: 0.3 }));
+            doc.addImage(logoHeaderImg, 'PNG', logoX, headerY, logoWidth, logoHeight);
+            doc.setGState(new doc.GState({ opacity: 1.0 }));
+            
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(150, 150, 150);
+            const textX = logoX + logoWidth + 1.2;
+            doc.text('I.R COMÉRCIO E', textX, headerY + 5);
+            doc.text('MATERIAIS ELÉTRICOS LTDA', textX, headerY + 10);
+            doc.setTextColor(0, 0, 0);
+            
+            return headerY + logoHeight + 8;
+        } catch (e) {
+            return 20;
+        }
+    }
+    
     function addPageWithHeader() {
         doc.addPage();
-        return 15;
+        return adicionarCabecalho();
     }
     
     function checkPageBreak(requiredSpace) {
-        if (y > pageHeight - 30 - requiredSpace) {
-            y = addPageWithHeader();
+        if (y > pageHeight - 35 - requiredSpace) {
+            y = addPageWithHeader() + 5;
             return true;
         }
         return false;
     }
     
-    // Título
+    function addFooter() {
+        const totalPags = doc.internal.getNumberOfPages();
+        const footerLines = [
+            'I.R. COMÉRCIO E MATERIAIS ELÉTRICOS LTDA  |  CNPJ: 33.149.502/0001-38  |  IE: 083.780.74-2',
+            'RUA TADORNA Nº 472, SALA 2, NOVO HORIZONTE – SERRA/ES  |  CEP: 29.163-318',
+            'TELEFAX: (27) 3209-4291  |  E-MAIL: COMERCIAL.IRCOMERCIO@GMAIL.COM'
+        ];
+        const footerLineH = 4;
+        const footerY = pageHeight - 12;
+        
+        for (let pg = 1; pg <= totalPags; pg++) {
+            doc.setPage(pg);
+            doc.setFontSize(7);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(150, 150, 150);
+            
+            footerLines.forEach((line, i) => {
+                doc.text(line, pageWidth / 2, footerY + (i * footerLineH), { align: 'center' });
+            });
+        }
+        doc.setTextColor(0, 0, 0);
+    }
+    
+    // ============================================
+    // CABEÇALHO COM LOGO
+    // ============================================
+    y = adicionarCabecalho();
+    y += 5;
+    
+    // ============================================
+    // TÍTULO
+    // ============================================
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text('TABELA DE CUSTOS E FORMAÇÃO DE PREÇOS', pageWidth / 2, y, { align: 'center' });
+    doc.setTextColor(0, 0, 0);
+    doc.text('DECLARAÇÃO DE CUSTOS', pageWidth / 2, y, { align: 'center' });
     
     y += 8;
     doc.setFontSize(12);
@@ -1268,77 +1332,141 @@ function gerarPDFExequibilidade(pregao, itensExe, dadosBancarios, impostoFederal
     
     y += 12;
     
-    // INFORMAÇÕES DO PROCESSO
+    // ============================================
+    // DADOS DO PROCESSO (SEM TÍTULO)
+    // ============================================
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('INFORMAÇÕES DO PROCESSO', margin, y);
-    y += 6;
-    doc.setFont('helvetica', 'normal');
-    doc.text(`PREGÃO: ${pregao.numero_pregao}`, margin, y);
-    y += 5;
-    doc.text(`ÓRGÃO: ${pregao.nome_orgao || 'NÃO INFORMADO'} - ${pregao.uasg || ''}`, margin, y);
-    y += 5;
-    doc.text(`${pregao.municipio || ''} - ${pregao.uf || ''}`, margin, y);
-    y += 10;
-    
-    // INFORMAÇÕES DA EMPRESA
-    doc.setFont('helvetica', 'bold');
-    doc.text('INFORMAÇÕES DA EMPRESA', margin, y);
-    y += 6;
     doc.setFont('helvetica', 'normal');
     
-    const telText = `TEL: (27) 3209-4291`;
-    const telWidth = doc.getTextWidth(telText);
-    doc.text('FORNECEDOR: I.R. COMÉRCIO E MATERIAIS ELÉTRICOS LTDA', margin, y);
-    doc.text(telText, pageWidth - margin - telWidth, y);
+    // PREGÃO:
+    doc.setFont('helvetica', 'bold');
+    doc.text('PREGÃO:', margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(` ${pregao.numero_pregao}`, margin + 20, y);
     y += 5;
     
-    doc.text('CNPJ/CPF: 33.149.502/0001-38', margin, y);
+    // ÓRGÃO:
+    doc.setFont('helvetica', 'bold');
+    doc.text('ÓRGÃO:', margin, y);
+    doc.setFont('helvetica', 'normal');
+    const orgaoText = ` ${pregao.nome_orgao || 'NÃO INFORMADO'} - ${pregao.uasg || ''}`;
+    const orgaoLines = doc.splitTextToSize(orgaoText, contentWidth - 25);
+    doc.text(orgaoLines[0], margin + 20, y);
     y += 5;
-    doc.text('ENDEREÇO: RUA TADORNA, Nº 472, SALA 2', margin, y);
-    y += 5;
-    doc.text('BAIRRO: NOVO HORIZONTE', margin, y);
-    y += 5;
-    
-    const cidadeText = `CIDADE: SERRA      UF: ES`;
-    const cepText = `CEP: 29.163-318`;
-    const cepWidth = doc.getTextWidth(cepText);
-    doc.text(cidadeText, margin, y);
-    doc.text(cepText, pageWidth - margin - cepWidth, y);
-    y += 5;
-    
-    if (dadosBancarios) {
-        doc.text(`DADOS BANCÁRIOS: ${dadosBancarios}`, margin, y);
+    for (let i = 1; i < orgaoLines.length; i++) {
+        doc.text(orgaoLines[i], margin + 20, y);
         y += 5;
+    }
+    
+    // CIDADE - UF:
+    doc.setFont('helvetica', 'bold');
+    doc.text('CIDADE:', margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(` ${pregao.municipio || ''} - ${pregao.uf || ''}`, margin + 25, y);
+    y += 8;
+    
+    // ============================================
+    // DADOS DA EMPRESA (SEM TÍTULO)
+    // ============================================
+    // FORNECEDOR:
+    doc.setFont('helvetica', 'bold');
+    doc.text('FORNECEDOR:', margin, y);
+    doc.setFont('helvetica', 'normal');
+    const fornecedorText = ' I.R. COMÉRCIO E MATERIAIS ELÉTRICOS LTDA';
+    doc.text(fornecedorText, margin + 28, y);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TEL:', pageWidth - 60, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text('(27) 3209-4291', pageWidth - 45, y);
+    y += 5;
+    
+    // CNPJ:
+    doc.setFont('helvetica', 'bold');
+    doc.text('CNPJ:', margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(' 33.149.502/0001-38', margin + 18, y);
+    y += 5;
+    
+    // ENDEREÇO:
+    doc.setFont('helvetica', 'bold');
+    doc.text('ENDEREÇO:', margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(' RUA TADORNA, Nº 472, SALA 2', margin + 25, y);
+    y += 5;
+    
+    // BAIRRO:
+    doc.setFont('helvetica', 'bold');
+    doc.text('BAIRRO:', margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(' NOVO HORIZONTE', margin + 20, y);
+    y += 5;
+    
+    // CIDADE/CEP:
+    doc.setFont('helvetica', 'bold');
+    doc.text('CIDADE:', margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(' SERRA', margin + 20, y);
+    doc.setFont('helvetica', 'bold');
+    doc.text('UF:', margin + 50, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text('ES', margin + 65, y);
+    doc.setFont('helvetica', 'bold');
+    doc.text('CEP:', pageWidth - 50, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text('29.163-318', pageWidth - 35, y);
+    y += 5;
+    
+    // DADOS BANCÁRIOS:
+    if (dadosBancarios) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('DADOS BANCÁRIOS:', margin, y);
+        doc.setFont('helvetica', 'normal');
+        const bancLines = doc.splitTextToSize(` ${dadosBancarios}`, contentWidth - 35);
+        doc.text(bancLines[0], margin + 35, y);
+        y += 5;
+        for (let i = 1; i < bancLines.length; i++) {
+            doc.text(bancLines[i], margin + 35, y);
+            y += 5;
+        }
     }
     y += 5;
     
-    checkPageBreak(60);
+    checkPageBreak(50);
     
-    // TABELA
-    doc.setFont('helvetica', 'bold');
-    doc.text('COMPOSIÇÃO DE CUSTOS', margin, y);
-    y += 8;
+    // ============================================
+    // TABELA DE CUSTOS
+    // ============================================
+    const startX = margin;
+    const tableWidth = contentWidth;
     
+    // Definir larguras das colunas
     const colWidths = {
         descricao: 45,
-        qtd: 10,
-        un: 8,
-        marca: 18,
-        modelo: 18,
+        qtd: 8,
+        un: 7,
+        marca: 15,
+        modelo: 15,
         custoUnt: 16,
         freteCompra: 16,
         impFed: 16,
         freteVenda: 16,
         vendaUnt: 16,
-        lucroReal: 16
+        lucroReal: 16,
+        percLucro: 12
     };
     
-    const startX = margin;
-    let tableWidth = Object.values(colWidths).reduce((a, b) => a + b, 0);
+    // Ajustar para caber na página
+    const totalWidth = Object.values(colWidths).reduce((a, b) => a + b, 0);
+    const ajuste = tableWidth / totalWidth;
+    Object.keys(colWidths).forEach(key => {
+        colWidths[key] = colWidths[key] * ajuste;
+    });
     
-    // Cabeçalho
-    doc.setFillColor(60, 60, 60);
+    // ============================================
+    // CABEÇALHO DA TABELA (igual ao da proposta)
+    // ============================================
+    doc.setFillColor(108, 117, 125);
+    doc.setDrawColor(180, 180, 180);
     doc.rect(startX, y - 4, tableWidth, 8, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(6);
@@ -1346,40 +1474,44 @@ function gerarPDFExequibilidade(pregao, itensExe, dadosBancarios, impostoFederal
     
     let xp = startX;
     const headers = [
-        ['DESCRIÇÃO', 'left'],
-        ['QTD', 'center'],
-        ['UN', 'center'],
-        ['MARCA', 'center'],
-        ['MODELO', 'center'],
-        ['CUSTO\nUNT', 'right'],
-        ['FRETE\nCOMPRA', 'right'],
-        ['IMP\nFED', 'right'],
-        ['FRETE\nVENDA', 'right'],
-        ['VENDA\nUNT', 'right'],
-        ['LUCRO\nREAL', 'right']
+        ['DESCRIÇÃO', colWidths.descricao, 'left'],
+        ['QTD', colWidths.qtd, 'center'],
+        ['UN', colWidths.un, 'center'],
+        ['MARCA', colWidths.marca, 'center'],
+        ['MODELO', colWidths.modelo, 'center'],
+        ['CUSTO\nUNT', colWidths.custoUnt, 'right'],
+        ['FRETE\nCOMPRA', colWidths.freteCompra, 'right'],
+        ['IMP\nFEDERAL', colWidths.impFed, 'right'],
+        ['FRETE\nVENDA', colWidths.freteVenda, 'right'],
+        ['VENDA\nUNT', colWidths.vendaUnt, 'right'],
+        ['LUCRO\nREAL', colWidths.lucroReal, 'right'],
+        ['%\nLUCRO', colWidths.percLucro, 'right']
     ];
     
-    headers.forEach(([text, align], i) => {
-        const w = Object.values(colWidths)[i];
+    headers.forEach(([text, width, align]) => {
+        doc.line(xp, y - 4, xp, y + 4);
         const lines = text.split('\n');
         lines.forEach((line, idx) => {
             const yPos = y - 4 + 3 + (idx * 3);
             if (align === 'left') {
                 doc.text(line, xp + 1, yPos);
             } else if (align === 'right') {
-                doc.text(line, xp + w - 1, yPos, { align: 'right' });
+                doc.text(line, xp + width - 1, yPos, { align: 'right' });
             } else {
-                doc.text(line, xp + w / 2, yPos, { align: 'center' });
+                doc.text(line, xp + width / 2, yPos, { align: 'center' });
             }
         });
-        xp += w;
+        xp += width;
     });
+    doc.line(xp, y - 4, xp, y + 4);
     
     y += 4;
     doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'normal');
     
-    // Linhas
+    // ============================================
+    // LINHAS DA TABELA
+    // ============================================
     itensExe.forEach((item, idx) => {
         checkPageBreak(8);
         
@@ -1389,34 +1521,61 @@ function gerarPDFExequibilidade(pregao, itensExe, dadosBancarios, impostoFederal
         const freteVendaValor = vendaUnt * (freteVenda / 100);
         const freteCompraPorItem = freteCompra / itensExe.length;
         const lucroReal = vendaUnt - freteVendaValor - impostoFederalValor - freteCompraPorItem - custoUnt;
+        const percLucro = vendaUnt > 0 ? (lucroReal / vendaUnt) * 100 : 0;
         
-        const rowBg = idx % 2 === 0 ? [255, 255, 255] : [245, 245, 245];
+        // Fundo zebrado (igual ao da proposta)
+        const rowBg = idx % 2 === 0 ? [255, 255, 255] : [247, 248, 250];
         doc.setFillColor(...rowBg);
-        doc.rect(startX, y - 4, tableWidth, 8, 'F');
+        doc.setDrawColor(180, 180, 180);
+        doc.rect(startX, y - 4, tableWidth, 8, 'FD');
         
         xp = startX;
         
-        // Descrição (truncada)
+        // DESCRIÇÃO (com quebra de linha)
         let descricao = item.descricao || '-';
-        if (descricao.length > 35) descricao = descricao.substring(0, 32) + '...';
-        doc.text(descricao, xp + 1, y - 1);
+        const descLines = doc.splitTextToSize(descricao, colWidths.descricao - 2);
+        const lineHeight = 3;
+        const rowHeight = Math.max(8, descLines.length * lineHeight + 2);
+        
+        // Ajustar altura da linha se necessário
+        if (rowHeight > 8) {
+            doc.setFillColor(...rowBg);
+            doc.setDrawColor(180, 180, 180);
+            doc.rect(startX, y - 4, tableWidth, rowHeight, 'FD');
+        }
+        
+        // Descrição
+        descLines.forEach((line, i) => {
+            doc.text(line, xp + 1, y - 4 + 3 + (i * lineHeight));
+        });
         xp += colWidths.descricao;
+        doc.line(xp, y - 4, xp, y - 4 + rowHeight);
         
         // QTD
-        doc.text(String(item.qtd || 1), xp + colWidths.qtd / 2, y - 1, { align: 'center' });
+        doc.text(String(item.qtd || 1), xp + colWidths.qtd / 2, y - 4 + rowHeight/2 + 1, { align: 'center' });
         xp += colWidths.qtd;
+        doc.line(xp, y - 4, xp, y - 4 + rowHeight);
         
         // UN
-        doc.text(item.unidade || 'UN', xp + colWidths.un / 2, y - 1, { align: 'center' });
+        doc.text(item.unidade || 'UN', xp + colWidths.un / 2, y - 4 + rowHeight/2 + 1, { align: 'center' });
         xp += colWidths.un;
+        doc.line(xp, y - 4, xp, y - 4 + rowHeight);
         
-        // Marca
-        doc.text(item.marca || '-', xp + colWidths.marca / 2, y - 1, { align: 'center' });
+        // MARCA
+        const marcaLines = doc.splitTextToSize(item.marca || '-', colWidths.marca - 2);
+        marcaLines.forEach((line, i) => {
+            doc.text(line, xp + colWidths.marca / 2, y - 4 + 3 + (i * lineHeight), { align: 'center' });
+        });
         xp += colWidths.marca;
+        doc.line(xp, y - 4, xp, y - 4 + rowHeight);
         
-        // Modelo
-        doc.text(item.modelo || '-', xp + colWidths.modelo / 2, y - 1, { align: 'center' });
+        // MODELO
+        const modeloLines = doc.splitTextToSize(item.modelo || '-', colWidths.modelo - 2);
+        modeloLines.forEach((line, i) => {
+            doc.text(line, xp + colWidths.modelo / 2, y - 4 + 3 + (i * lineHeight), { align: 'center' });
+        });
         xp += colWidths.modelo;
+        doc.line(xp, y - 4, xp, y - 4 + rowHeight);
         
         // Valores
         const valores = [
@@ -1425,43 +1584,68 @@ function gerarPDFExequibilidade(pregao, itensExe, dadosBancarios, impostoFederal
             impostoFederalValor,
             freteVendaValor,
             vendaUnt,
-            lucroReal
+            lucroReal,
+            percLucro
         ];
         
-        valores.forEach((val, i) => {
-            const w = [colWidths.custoUnt, colWidths.freteCompra, colWidths.impFed, colWidths.freteVenda, colWidths.vendaUnt, colWidths.lucroReal][i];
-            const formatted = 'R$ ' + val.toFixed(2).replace('.', ',');
-            doc.text(formatted, xp + w - 1, y - 1, { align: 'right' });
-            xp += w;
+        const colKeys = ['custoUnt', 'freteCompra', 'impFed', 'freteVenda', 'vendaUnt', 'lucroReal', 'percLucro'];
+        
+        colKeys.forEach((key, i) => {
+            const width = colWidths[key];
+            let valor = valores[i];
+            let formatted;
+            
+            if (key === 'percLucro') {
+                formatted = valor.toFixed(1).replace('.', ',') + '%';
+            } else {
+                formatted = 'R$ ' + valor.toFixed(2).replace('.', ',');
+            }
+            
+            doc.text(formatted, xp + width - 1, y - 4 + rowHeight/2 + 1, { align: 'right' });
+            xp += width;
+            doc.line(xp, y - 4, xp, y - 4 + rowHeight);
         });
         
-        y += 4;
+        y += rowHeight;
     });
     
-    y += 10;
+    y += 8;
     
     checkPageBreak(30);
     
-    // Data e Assinatura
+    // ============================================
+    // DATA E ASSINATURA
+    // ============================================
     const dataAtual = new Date();
     const meses = ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 
                    'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO'];
     
     doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
     doc.text(`SERRA/ES, ${dataAtual.getDate()} DE ${meses[dataAtual.getMonth()]} DE ${dataAtual.getFullYear()}`, pageWidth / 2, y, { align: 'center' });
     
+    y += 15; // Aumentado o espaço antes da assinatura
+    
     if (comAssinatura) {
-        y += 15;
+        // Linha para assinatura
         doc.line(pageWidth / 2 - 40, y, pageWidth / 2 + 40, y);
-        y += 5;
+        y += 6;
+        
         doc.setFont('helvetica', 'bold');
         doc.text('ROSEMEIRE BICALHO DE LIMA GRAVINO', pageWidth / 2, y, { align: 'center' });
         y += 5;
+        
         doc.setFont('helvetica', 'normal');
         doc.text('MG-10.078.568 / CPF: 045.160.616-78', pageWidth / 2, y, { align: 'center' });
         y += 5;
+        
         doc.text('DIRETORA', pageWidth / 2, y, { align: 'center' });
     }
+    
+    // ============================================
+    // RODAPÉ
+    // ============================================
+    addFooter();
     
     const nomeArquivo = `COMPROVANTE-EXEQUIBILIDADE-${pregao.numero_pregao}${pregao.uasg ? '-' + pregao.uasg : ''}.pdf`;
     doc.save(nomeArquivo);
