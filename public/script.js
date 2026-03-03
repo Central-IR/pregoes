@@ -1548,26 +1548,34 @@ function criarTelaItens() {
                     </svg>
                 </button>
                 
-                <button onclick="perguntarAssinaturaPDF()" class="btn-pdf" title="Gerar Proposta">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                    </svg>
-                </button>
+<button onclick="perguntarAssinaturaPDFGrupos()" class="btn-pdf" title="Gerar Proposta PDF">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="16" y1="13" x2="8" y2="13"></line>
+        <line x1="16" y1="17" x2="8" y2="17"></line>
+        <polyline points="10 9 9 9 8 9"></polyline>
+    </svg>
+</button>
                 
-                <button onclick="abrirModalExequibilidade(currentPregaoId)" class="btn-certificate" title="Comprovante de Exequibilidade">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M4 4v16h16V4H4zm2 2h12v12H6V6zm2 2v8h8V8H8zm2 2h4v4h-4v-4z"/>
-                    </svg>
-                </button>
+<button onclick="abrirModalExequibilidade(currentPregaoId)" class="btn-certificate" title="Comprovante de Exequibilidade">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 4v16h16V4H4z"></path>
+        <rect x="8" y="8" width="8" height="8" rx="1"></rect>
+        <path d="M8 12h8"></path>
+        <path d="M12 8v8"></path>
+    </svg>
+</button>
                 
-                <button onclick="abrirModalDocumentoEditavel(currentPregaoId)" class="btn-edit-doc" title="Editar Dados da Proposta">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
-                        <circle cx="12" cy="14" r="2"/>
-                        <path d="M12 10v2M12 16v2"/>
-                    </svg>
-                </button>
+<button onclick="abrirModalDocumentoEditavel(currentPregaoId)" class="btn-edit-doc" title="Editar Dados da Proposta">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <path d="M12 18v-4"></path>
+        <path d="M8 14v4"></path>
+        <path d="M16 14v4"></path>
+        <circle cx="12" cy="10" r="2"></circle>
+    </svg>
+</button>
                 
                 <button onclick="voltarPregoes()" class="btn-back" title="Voltar">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
