@@ -1734,3 +1734,323 @@ tr.row-venda-alta:hover {
 #gruposWrapper table td:nth-child(10) {
     text-align: right !important;
 }
+
+/* ============================================
+   ESTILOS PARA DOCUMENTO EDITÁVEL
+   ============================================ */
+
+.editavel-section {
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-color);
+}
+
+.editavel-section h4 {
+    color: var(--primary);
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    font-weight: 700;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.editavel-input {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.editavel-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(255, 82, 29, 0.1);
+}
+
+/* Botão de documento editável */
+.btn-edit-doc {
+    background: var(--primary) !important;
+    color: white !important;
+    border: 1px solid var(--primary) !important;
+    padding: 8px 10px !important;
+}
+
+.btn-edit-doc:hover {
+    background: #e64a1a !important;
+    transform: translateY(-1px);
+}
+
+/* Estilo para o modal de documento editável */
+#modalDocumentoEditavel .modal-content {
+    max-width: 800px;
+}
+
+#modalDocumentoEditavel .form-grid {
+    gap: 1rem;
+}
+
+#modalDocumentoEditavel .form-group {
+    margin-bottom: 0;
+}
+
+/* Container de declarações */
+#declaracoesContainer {
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+#declaracoesContainer .input-with-button {
+    margin-bottom: 0.75rem;
+}
+
+#declaracoesContainer textarea {
+    min-height: 60px;
+    font-size: 0.85rem;
+}
+
+/* Ajustes para o modal de exequibilidade */
+#modalExequibilidade .modal-content {
+    max-width: 600px;
+}
+
+#modalExequibilidade .form-grid {
+    gap: 1rem;
+}
+
+#modalExequibilidade input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+#modalExequibilidade input[type="number"]::-webkit-outer-spin-button,
+#modalExequibilidade input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Responsividade para os novos modais */
+@media (max-width: 768px) {
+    .editavel-section {
+        padding: 1rem;
+    }
+    
+    #modalDocumentoEditavel .modal-content,
+    #modalExequibilidade .modal-content {
+        padding: 1rem;
+        width: 95%;
+    }
+    
+    #declaracoesContainer {
+        max-height: 250px;
+    }
+}
+
+/* Melhorias visuais para os cards de grupos */
+#gruposWrapper .table-card {
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+#gruposWrapper .table-card > div:first-child {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2c4a6e 100%);
+    color: white;
+}
+
+#gruposWrapper table {
+    font-size: 0.7rem;
+}
+
+#gruposWrapper table th {
+    background: var(--th-bg);
+    color: var(--th-color);
+    font-weight: 600;
+    font-size: 0.65rem;
+    padding: 6px 4px;
+    white-space: nowrap;
+}
+
+#gruposWrapper table td {
+    padding: 4px 6px;
+}
+
+/* Melhorias na tabela de itens */
+#itensContainer tr {
+    transition: background 0.2s ease;
+}
+
+#itensContainer tr:hover {
+    background: var(--table-hover) !important;
+}
+
+#itensContainer .item-ganho {
+    background: rgba(34, 197, 94, 0.15) !important;
+}
+
+#itensContainer .row-venda-alta {
+    background: rgba(239, 68, 68, 0.08) !important;
+}
+
+/* Ajustes para os totais */
+#itensTotaisBar {
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    font-size: 0.75rem;
+}
+
+#itensTotaisBar span {
+    color: var(--text-primary);
+}
+
+#itensTotaisBar strong {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+/* Ajustes para os badges de status */
+.status-badge-success,
+.status-badge-warning,
+.status-badge-danger,
+.status-badge-default {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.status-badge-success {
+    background: rgba(34, 197, 94, 0.12);
+    color: #16a34a;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.status-badge-warning {
+    background: rgba(255, 82, 29, 0.1);
+    color: #ff521d;
+    border: 1px solid rgba(255, 82, 29, 0.25);
+}
+
+.status-badge-danger {
+    background: rgba(30, 30, 30, 0.06);
+    color: #1a1a1a;
+    border: 1px solid rgba(30, 30, 30, 0.15);
+}
+
+.status-badge-default {
+    background: rgba(107, 114, 128, 0.08);
+    color: #6b7280;
+    border: 1px solid rgba(107, 114, 128, 0.15);
+}
+
+/* Ajustes para os checkboxes */
+.checkbox-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.styled-checkbox {
+    position: absolute;
+    opacity: 0;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+}
+
+.checkbox-label-styled {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--input-bg);
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.checkbox-label-styled:hover {
+    border-color: var(--primary);
+    background: rgba(255, 82, 29, 0.05);
+}
+
+.styled-checkbox:checked + .checkbox-label-styled {
+    background: var(--success-color);
+    border-color: var(--success-color);
+    color: white;
+}
+
+.styled-checkbox:checked + .checkbox-label-styled::after {
+    content: '✓';
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+/* Checkbox especial para venda acima do estimado */
+.cb-venda-alta + .checkbox-label-styled {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+.styled-checkbox.cb-venda-alta:checked + .checkbox-label-styled {
+    background: #ef4444;
+    border-color: #ef4444;
+    color: white;
+}
+
+/* Tooltips e dicas */
+[title] {
+    cursor: help;
+}
+
+/* Animações suaves */
+@keyframes fadeInSlide {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-content {
+    animation: fadeInSlide 0.2s ease;
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--text-secondary);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary);
+}
