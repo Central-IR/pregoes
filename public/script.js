@@ -1600,14 +1600,14 @@ function criarTelaGrupos() {
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline>
                     </svg>
                 </button>
-<button onclick="abrirModalExequibilidade(currentPregaoId)" style="background:transparent;border:none;color:var(--text-secondary);cursor:pointer;padding:0.5rem;display:flex;align-items:center;" title="Comprovante de Exequibilidade">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="2" y="3" width="20" height="18" rx="2" ry="2"></rect>
-        <line x1="8" y1="9" x2="16" y2="9"></line>
-        <line x1="8" y1="13" x2="16" y2="13"></line>
-        <line x1="8" y1="17" x2="12" y2="17"></line>
-    </svg>
-</button>
+                <button onclick="abrirModalExequibilidade(currentPregaoId)" style="background:transparent;border:none;color:var(--text-secondary);cursor:pointer;padding:0.5rem;display:flex;align-items:center;" title="Comprovante de Exequibilidade">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="3" width="20" height="18" rx="2" ry="2"></rect>
+                        <line x1="8" y1="9" x2="16" y2="9"></line>
+                        <line x1="8" y1="13" x2="16" y2="13"></line>
+                        <line x1="8" y1="17" x2="12" y2="17"></line>
+                    </svg>
+                </button>
                 <button onclick="syncGrupos()" style="background:transparent;border:none;color:var(--text-secondary);cursor:pointer;padding:0.5rem;display:flex;align-items:center;" title="Sincronizar">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
@@ -1833,16 +1833,16 @@ function renderGrupos() {
             const rowClass = grupoAllGanho ? 'item-ganho row-won' : (vm ? 'row-venda-alta' : '');
             rowParts[idx] =
                 '<tr class="' + rowClass + '" ondblclick="editarItemGrupoById(\'' + iid + '\')" oncontextmenu="showItemContextMenu(event,\'' + iid + '\')">' +
-                '<td style="text-align:center;"><strong>' + item.numero + '</strong></td>' +
-                '<td class="descricao-cell" style="text-align:left; max-width: 180px;">' + (item.descricao || '-') + '</td>' +
-                '<td style="text-align:center;">' + (item.qtd || 1) + '</td>' +
-                '<td style="text-align:center;">' + (item.unidade || 'UN') + '</td>' +
-                '<td style="text-align:center;">' + (item.marca || '-') + '</td>' +
-                '<td style="text-align:center;">' + (item.modelo || '-') + '</td>' +
-                '<td style="text-align:right;">' + fmtTot(item.estimado_total || 0) + '</td>' +
-                '<td style="text-align:right;">' + fmtTot(item.custo_total || 0) + '</td>' +
-                '<td style="text-align:right;">' + fmtUnt(item.venda_unt || 0) + '</td>' +
-                '<td style="text-align:right;">' + fmtTot(item.venda_total || 0) + '</td>' +
+                '<td style="width: 60px; text-align:center;"><strong>' + item.numero + '</strong></td>' +
+                '<td class="descricao-cell" style="min-width: 350px; text-align:left;">' + (item.descricao || '-') + '</td>' +
+                '<td style="width: 80px; text-align:center;">' + (item.qtd || 1) + '</td>' +
+                '<td style="width: 80px; text-align:center;">' + (item.unidade || 'UN') + '</td>' +
+                '<td style="width: 120px; text-align:center;">' + (item.marca || '-') + '</td>' +
+                '<td style="width: 120px; text-align:center;">' + (item.modelo || '-') + '</td>' +
+                '<td style="width: 120px; text-align:right;">' + fmtTot(item.estimado_total || 0) + '</td>' +
+                '<td style="width: 120px; text-align:right;">' + fmtTot(item.custo_total || 0) + '</td>' +
+                '<td style="width: 120px; text-align:right;">' + fmtUnt(item.venda_unt || 0) + '</td>' +
+                '<td style="width: 120px; text-align:right;">' + fmtTot(item.venda_total || 0) + '</td>' +
                 '</tr>';
         }
         const grupoGanho = grupo.itens.length > 0 && grupo.itens.every(i => i.ganho);
@@ -1851,48 +1851,36 @@ function renderGrupos() {
 
         cards.push(
             '<div class="card table-card" style="margin-bottom:0.5rem;">' +
-            '<div style="background:#1e3a5f;display:flex;align-items:center;justify-content:flex-start;padding:8px 14px;border-radius:8px 8px 0 0;gap:0.75rem;">' +
-            '<div class="checkbox-wrapper" style="position:relative;">' +
+            '<div style="background:#1e3a5f;display:flex;align-items:center;justify-content:center;padding:8px 14px;border-radius:8px 8px 0 0;gap:0.75rem;position:relative;">' +
+            '<div class="checkbox-wrapper" style="position:absolute; left: 14px;">' +
             '<input type="checkbox" id="' + grupoGanhoId + '"' + grupoGanhoChk +
             ' onchange="toggleGrupoGanho(\'' + grupo.tipo + '\',' + grupo.numero + ',this.checked)"' +
             ' class="styled-checkbox">' +
             '<label for="' + grupoGanhoId + '" class="checkbox-label-styled"></label>' +
             '</div>' +
-            '<label for="' + grupoGanhoId + '" style="font-weight:700;font-size:1rem;color:#fff;cursor:pointer;margin:0;">' + lbl + '</label>' +
+            '<label for="' + grupoGanhoId + '" style="font-weight:700;font-size:1rem;color:#fff;cursor:pointer;margin:0; text-align:center;">' + lbl + '</label>' +
             '</div>' +
-            '<div style="overflow-x:auto;"><table style="table-layout:fixed; width:100%;">' +
-            '<colgroup>' +
-            '<col style="width: 45px;">' + // ITEM
-            '<col style="width: 180px;">' + // DESCRIÇÃO (reduzida)
-            '<col style="width: 45px;">' + // QTD
-            '<col style="width: 45px;">' + // UN
-            '<col style="width: 80px;">' + // MARCA
-            '<col style="width: 80px;">' + // MODELO
-            '<col style="width: 95px;">' + // COMPRA TOTAL
-            '<col style="width: 90px;">' + // CUSTO TOTAL
-            '<col style="width: 90px;">' + // VENDA UNT
-            '<col style="width: 95px;">' + // VENDA TOTAL
-            '</colgroup>' +
+            '<div style="overflow-x:auto;"><table style="min-width: 1260px; width: 90%; margin: 0 auto; border-collapse: collapse;">' +
             '<thead><tr>' +
-            '<th style="text-align:center;">ITEM</th>' +
-            '<th style="text-align:left;">DESCRIÇÃO</th>' +
-            '<th style="text-align:center;">QTD</th>' +
-            '<th style="text-align:center;">UN</th>' +
-            '<th style="text-align:center;">MARCA</th>' +
-            '<th style="text-align:center;">MODELO</th>' +
-            '<th style="text-align:right;">COMPRA TOTAL</th>' +
-            '<th style="text-align:right;">CUSTO TOTAL</th>' +
-            '<th style="text-align:right;">VENDA UNT</th>' +
-            '<th style="text-align:right;">VENDA TOTAL</th>' +
+            '<th style="width: 60px; text-align: center;">ITEM</th>' +
+            '<th style="min-width: 350px; text-align: left;">DESCRIÇÃO</th>' +
+            '<th style="width: 80px; text-align: center;">QTD</th>' +
+            '<th style="width: 80px; text-align: center;">UN</th>' +
+            '<th style="width: 120px; text-align: center;">MARCA</th>' +
+            '<th style="width: 120px; text-align: center;">MODELO</th>' +
+            '<th style="width: 120px; text-align: right;">COMPRA TOTAL</th>' +
+            '<th style="width: 120px; text-align: right;">CUSTO TOTAL</th>' +
+            '<th style="width: 120px; text-align: right;">VENDA UNT</th>' +
+            '<th style="width: 120px; text-align: right;">VENDA TOTAL</th>' +
             '</tr></thead>' +
             '<tbody>' + rowParts.join('') + '</tbody>' +
             '</table></div>' +
             '</div>'
         );
         
-        // Adicionar a barra de totais SOLTA abaixo do card
+        // Barra de totais com espaçamento extra
         cards.push(
-            '<div style="display:flex;gap:2rem;padding:0.5rem 1rem 0.25rem 1rem;font-size:10pt;color:var(--text-primary);margin-top:-0.25rem;margin-bottom:1.25rem;">' +
+            '<div style="display:flex;gap:3rem;padding:1rem 1rem 0.25rem 1rem;font-size:10pt;color:var(--text-primary);margin-top:0.5rem;margin-bottom:1.5rem;">' +
             '<span><strong>COMPRA TOTAL:</strong> ' + fmtTot(totC) + '</span>' +
             '<span><strong>CUSTO TOTAL:</strong> ' + fmtTot(totCu) + '</span>' +
             '<span><strong>VENDA TOTAL:</strong> ' + fmtTot(totV) + '</span>' +
@@ -2277,14 +2265,14 @@ function criarTelaItens() {
                     </svg>
                 </button>
                 
-<button onclick="abrirModalExequibilidade(currentPregaoId)" style="background:transparent;border:none;color:var(--text-secondary);cursor:pointer;padding:0.5rem;display:flex;align-items:center;" title="Comprovante de Exequibilidade">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="2" y="3" width="20" height="18" rx="2" ry="2"></rect>
-        <line x1="8" y1="9" x2="16" y2="9"></line>
-        <line x1="8" y1="13" x2="16" y2="13"></line>
-        <line x1="8" y1="17" x2="12" y2="17"></line>
-    </svg>
-</button>
+                <button onclick="abrirModalExequibilidade(currentPregaoId)" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; display: flex; align-items: center;" title="Comprovante de Exequibilidade">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="3" width="20" height="18" rx="2" ry="2"></rect>
+                        <line x1="8" y1="9" x2="16" y2="9"></line>
+                        <line x1="8" y1="13" x2="16" y2="13"></line>
+                        <line x1="8" y1="17" x2="12" y2="17"></line>
+                    </svg>
+                </button>
                 
                 <button onclick="syncItens()" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; display: flex; align-items: center;" title="Sincronizar">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2305,14 +2293,14 @@ function criarTelaItens() {
 
         <div class="card table-card">
             <div style="overflow-x: auto;">
-                <table>
+                <table style="min-width: 1260px; width: 90%; margin: 0 auto; border-collapse: collapse;">
                     <thead>
                         <tr>
                             <th style="width: 40px; text-align: center;">
                                 <span style="font-size: 1.1rem;">✓</span>
                             </th>
                             <th style="width: 60px; text-align: center;">ITEM</th>
-                            <th style="min-width: 300px; text-align: left;">DESCRIÇÃO</th>
+                            <th style="min-width: 350px; text-align: left;">DESCRIÇÃO</th>
                             <th style="width: 80px; text-align: center;">QTD</th>
                             <th style="width: 80px; text-align: center;">UNIDADE</th>
                             <th style="width: 120px; text-align: center;">MARCA</th>
@@ -2329,7 +2317,7 @@ function criarTelaItens() {
                 </table>
             </div>
         </div>
-        <div id="itensTotaisBar" style="display:flex;gap:3rem;padding:0.75rem 1rem 0.25rem 1rem;font-size:10pt;color:var(--text-primary);"></div>
+        <div id="itensTotaisBar" style="display:flex;gap:3rem;padding:1rem 1rem 0.25rem 1rem;font-size:10pt;color:var(--text-primary);margin-top:0.5rem;"></div>
 
         <div class="modal-overlay" id="modalIntervalo">
             <div class="modal-content" style="max-width:520px;">
@@ -3111,7 +3099,7 @@ function calcularValoresItem() {
     const estimadoTotal = q * eu;
     const custoTotal = q * cu;
     
-    // Só calcula a venda unitária se o campo não estiver sendo editado manualmente
+    // Campos de venda
     const vendaUntInput = document.getElementById('itemVendaUnt');
     const vendaTotalInput = document.getElementById('itemVendaTotal');
     
@@ -3248,6 +3236,7 @@ async function salvarItemAtual(fechar = true) {
         showToast('Erro ao salvar item', 'error');
     }
 }
+
 function fecharModalItem() {
     const modal = document.getElementById('modalItem');
     if (modal) modal.classList.remove('show');
