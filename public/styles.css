@@ -27,6 +27,7 @@
     --ocorrido-bg: rgba(107, 114, 128, 0.15);
     --ocorrido-color: #4B5563;
     --ocorrido-border: rgba(107, 114, 128, 0.3);
+    --certificate-color: #8B5CF6;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -48,6 +49,7 @@
         --ocorrido-bg: rgba(156, 163, 175, 0.2);
         --ocorrido-color: #D1D5DB;
         --ocorrido-border: rgba(156, 163, 175, 0.3);
+        --certificate-color: #A78BFA;
     }
 }
 
@@ -132,6 +134,55 @@ body {
 .table-card {
     padding: 0;
     overflow: hidden;
+}
+
+/* ============================================
+   TABELA DE ITENS - AUTO AJUSTE
+   ============================================ */
+#telaItens .table-card {
+    overflow-x: auto;
+    overflow-y: visible;
+    max-width: 100%;
+    position: relative;
+    border-radius: 12px;
+}
+
+#telaItens table {
+    min-width: 1400px;
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#telaItens th {
+    position: sticky;
+    top: 0;
+    background: var(--th-bg);
+    z-index: 10;
+    white-space: nowrap;
+}
+
+#telaItens td {
+    white-space: normal;
+    word-wrap: break-word;
+    max-width: 300px;
+}
+
+#telaItens td.descricao-cell {
+    max-width: 400px;
+    min-width: 250px;
+}
+
+/* Ajuste para telas menores */
+@media (max-width: 1600px) {
+    #telaItens table {
+        min-width: 1200px;
+    }
+}
+
+@media (max-width: 1366px) {
+    #telaItens table {
+        min-width: 1100px;
+    }
 }
 
 .header {
@@ -1744,4 +1795,24 @@ tr.row-venda-alta:hover {
 #gruposWrapper table td:nth-child(9),
 #gruposWrapper table td:nth-child(10) {
     text-align: right !important;
+}
+
+/* Scrollbar personalizada para a tabela de itens */
+#telaItens .table-card::-webkit-scrollbar {
+    height: 10px;
+    background: var(--bg-secondary);
+}
+
+#telaItens .table-card::-webkit-scrollbar-thumb {
+    background: var(--text-secondary);
+    border-radius: 5px;
+}
+
+#telaItens .table-card::-webkit-scrollbar-thumb:hover {
+    background: var(--primary);
+}
+
+#telaItens .table-card::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 5px;
 }
