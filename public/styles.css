@@ -135,7 +135,7 @@ body {
 }
 
 /* ============================================
-   TABELA DE ITENS - AUTO AJUSTE (90% da largura)
+   TABELA DE ITENS - OCUPA 100% DA LARGURA
    ============================================ */
 #telaItens .table-card,
 #telaGrupos .table-card {
@@ -148,9 +148,8 @@ body {
 
 #telaItens table,
 #telaGrupos table {
+    width: 100%;
     min-width: 1260px;
-    width: 90%;
-    margin: 0 auto;
     border-collapse: collapse;
 }
 
