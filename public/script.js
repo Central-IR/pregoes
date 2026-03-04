@@ -3203,6 +3203,11 @@ async function salvarItemAtual(fechar = true) {
     item.venda_unt = parseFloat(document.getElementById('itemVendaUnt').value || 0);
     item.venda_total = parseFloat(document.getElementById('itemVendaTotal').value || 0);
     
+    // Se a venda unitária foi editada manualmente, recalcula a porcentagem
+    if (item.custo_unt > 0) {
+        item.porcentagem = ((item.venda_unt / item.custo_unt) - 1) * 100;
+    }
+    
     try {
         const headers = {
             'Content-Type': 'application/json',
@@ -3243,7 +3248,6 @@ async function salvarItemAtual(fechar = true) {
         showToast('Erro ao salvar item', 'error');
     }
 }
-
 function fecharModalItem() {
     const modal = document.getElementById('modalItem');
     if (modal) modal.classList.remove('show');
