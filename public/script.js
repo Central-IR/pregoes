@@ -1875,11 +1875,17 @@ function renderGrupos() {
             '</tr></thead>' +
             '<tbody>' + rowParts.join('') + '</tbody>' +
             '</table></div>' +
-            '<div style="display:flex;gap:3rem;padding:0.75rem 1rem 0.25rem 1rem;font-size:10pt;color:var(--text-primary);">' +
+            // Linha de totais removida de dentro do card - agora fica solta abaixo
+            '</div>'
+        );
+        
+        // Adicionar a barra de totais SOLTA abaixo do card, igual na tela de itens
+        cards.push(
+            '<div id="gruposTotaisBar" style="display:flex;gap:3rem;padding:0.75rem 1rem 0.25rem 1rem;font-size:10pt;color:var(--text-primary);margin-top:-1rem;margin-bottom:1.5rem;">' +
             '<span><strong>COMPRA TOTAL:</strong> ' + fmtTot(totC) + '</span>' +
             '<span><strong>CUSTO TOTAL:</strong> ' + fmtTot(totCu) + '</span>' +
             '<span><strong>VENDA TOTAL:</strong> ' + fmtTot(totV) + '</span>' +
-            '</div></div>'
+            '</div>'
         );
     }
     wrapper.innerHTML = cards.join('');
