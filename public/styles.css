@@ -27,7 +27,6 @@
     --ocorrido-bg: rgba(107, 114, 128, 0.15);
     --ocorrido-color: #4B5563;
     --ocorrido-border: rgba(107, 114, 128, 0.3);
-    --certificate-color: #8B5CF6;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -49,7 +48,6 @@
         --ocorrido-bg: rgba(156, 163, 175, 0.2);
         --ocorrido-color: #D1D5DB;
         --ocorrido-border: rgba(156, 163, 175, 0.3);
-        --certificate-color: #A78BFA;
     }
 }
 
@@ -137,9 +135,10 @@ body {
 }
 
 /* ============================================
-   TABELA DE ITENS - AUTO AJUSTE
+   TABELA DE ITENS - AUTO AJUSTE (90% da largura)
    ============================================ */
-#telaItens .table-card {
+#telaItens .table-card,
+#telaGrupos .table-card {
     overflow-x: auto;
     overflow-y: visible;
     max-width: 100%;
@@ -147,42 +146,75 @@ body {
     border-radius: 12px;
 }
 
-#telaItens table {
-    min-width: 1400px;
-    width: 100%;
+#telaItens table,
+#telaGrupos table {
+    min-width: 1260px;
+    width: 90%;
+    margin: 0 auto;
     border-collapse: collapse;
 }
 
-#telaItens th {
+#telaItens th,
+#telaGrupos th {
     position: sticky;
     top: 0;
     background: var(--th-bg);
     z-index: 10;
     white-space: nowrap;
+    padding: 12px 8px;
 }
 
-#telaItens td {
+#telaItens td,
+#telaGrupos td {
     white-space: normal;
     word-wrap: break-word;
     max-width: 300px;
+    padding: 10px 8px;
 }
 
-#telaItens td.descricao-cell {
-    max-width: 400px;
+#telaItens td.descricao-cell,
+#telaGrupos td.descricao-cell {
+    max-width: 350px;
     min-width: 250px;
 }
 
 /* Ajuste para telas menores */
 @media (max-width: 1600px) {
-    #telaItens table {
-        min-width: 1200px;
+    #telaItens table,
+    #telaGrupos table {
+        min-width: 1100px;
     }
 }
 
 @media (max-width: 1366px) {
-    #telaItens table {
-        min-width: 1100px;
+    #telaItens table,
+    #telaGrupos table {
+        min-width: 1000px;
     }
+}
+
+/* Scrollbar personalizada para a tabela de itens */
+#telaItens .table-card::-webkit-scrollbar,
+#telaGrupos .table-card::-webkit-scrollbar {
+    height: 10px;
+    background: var(--bg-secondary);
+}
+
+#telaItens .table-card::-webkit-scrollbar-thumb,
+#telaGrupos .table-card::-webkit-scrollbar-thumb {
+    background: var(--text-secondary);
+    border-radius: 5px;
+}
+
+#telaItens .table-card::-webkit-scrollbar-thumb:hover,
+#telaGrupos .table-card::-webkit-scrollbar-thumb:hover {
+    background: var(--primary);
+}
+
+#telaItens .table-card::-webkit-scrollbar-track,
+#telaGrupos .table-card::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 5px;
 }
 
 .header {
@@ -796,7 +828,7 @@ tbody tr.row-fechada:hover {
     background: rgba(34, 197, 94, 0.18) !important;
 }
 
-/* Checkbox Customizado */
+/* Checkbox Customizado - mantido tamanho original */
 .checkbox-wrapper {
     display: inline-flex;
     align-items: center;
@@ -1582,7 +1614,7 @@ tr.item-ganho.row-won {
 }
 
 .descricao-cell {
-    max-width: 300px;
+    max-width: 350px;
     word-wrap: break-word;
     white-space: normal;
     text-align: left !important;
@@ -1780,6 +1812,14 @@ tr.row-venda-alta:hover {
     background: rgba(239, 68, 68, 0.14) !important;
 }
 
+/* Barra de totais com espaçamento */
+#itensTotaisBar,
+#gruposWrapper > div[style*="margin-bottom:1.5rem"] {
+    margin-top: 0.75rem !important;
+    padding: 0.75rem 1rem 0.25rem 1rem !important;
+    background: transparent;
+}
+
 /* Alinhamento específico para tabelas de grupos */
 #gruposWrapper table td {
     text-align: center;
@@ -1795,24 +1835,4 @@ tr.row-venda-alta:hover {
 #gruposWrapper table td:nth-child(9),
 #gruposWrapper table td:nth-child(10) {
     text-align: right !important;
-}
-
-/* Scrollbar personalizada para a tabela de itens */
-#telaItens .table-card::-webkit-scrollbar {
-    height: 10px;
-    background: var(--bg-secondary);
-}
-
-#telaItens .table-card::-webkit-scrollbar-thumb {
-    background: var(--text-secondary);
-    border-radius: 5px;
-}
-
-#telaItens .table-card::-webkit-scrollbar-thumb:hover {
-    background: var(--primary);
-}
-
-#telaItens .table-card::-webkit-scrollbar-track {
-    background: var(--bg-secondary);
-    border-radius: 5px;
 }
