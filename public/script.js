@@ -1860,7 +1860,7 @@ function renderGrupos() {
             '</div>' +
             '<label for="' + grupoGanhoId + '" style="font-weight:700;font-size:1rem;color:#fff;cursor:pointer;margin:0; text-align:center;">' + lbl + '</label>' +
             '</div>' +
-            '<div style="overflow-x:auto;"><table style="min-width: 1260px; width: 90%; margin: 0 auto; border-collapse: collapse;">' +
+            '<div style="overflow-x:auto;"><table style="min-width: 1260px; border-collapse: collapse;">' +
             '<thead><tr>' +
             '<th style="width: 60px; text-align: center;">ITEM</th>' +
             '<th style="min-width: 350px; text-align: left;">DESCRIÇÃO</th>' +
@@ -1971,6 +1971,13 @@ function mostrarModalItemGrupo(item, grupo, idxItem) {
     document.getElementById('itemPorcentagem').value = item.porcentagem ?? 149;
     document.getElementById('itemVendaUnt').value = item.venda_unt || '';
     document.getElementById('itemVendaTotal').value = item.venda_total || '';
+    
+    // Resetar flag de edição manual
+    const vendaUntInput = document.getElementById('itemVendaUnt');
+    if (vendaUntInput) {
+        vendaUntInput.dataset.manual = 'false';
+    }
+    
     const tituloEl = document.getElementById('modalItemTitle');
     if (tituloEl) tituloEl.textContent = `Item ${item.numero}`;
     const btnPrev = document.getElementById('btnPrevPagItem');
@@ -2293,7 +2300,7 @@ function criarTelaItens() {
 
         <div class="card table-card">
             <div style="overflow-x: auto;">
-                <table style="min-width: 1260px; width: 90%; margin: 0 auto; border-collapse: collapse;">
+                <table style="min-width: 1260px; border-collapse: collapse;">
                     <thead>
                         <tr>
                             <th style="width: 40px; text-align: center;">
@@ -2901,6 +2908,12 @@ function mostrarModalItem(item) {
     document.getElementById('itemVendaUnt').value = item.venda_unt || 0;
     document.getElementById('itemVendaTotal').value = item.venda_total || 0;
     
+    // Resetar flag de edição manual
+    const vendaUntInput = document.getElementById('itemVendaUnt');
+    if (vendaUntInput) {
+        vendaUntInput.dataset.manual = 'false';
+    }
+    
     modoNavegacaoGrupo = false;
     atualizarTituloModalItem(item);
     
@@ -3103,8 +3116,11 @@ function calcularValoresItem() {
     const vendaUntInput = document.getElementById('itemVendaUnt');
     const vendaTotalInput = document.getElementById('itemVendaTotal');
     
-    // Se o campo venda unitária NÃO está em foco, calcula automaticamente
-    if (document.activeElement !== vendaUntInput) {
+    // Verifica se o usuário editou manualmente (dataset.manual = 'true')
+    const foiEditadoManual = vendaUntInput && vendaUntInput.dataset.manual === 'true';
+    
+    if (!foiEditadoManual) {
+        // Se não foi editado manualmente, calcula automaticamente
         const vendaUnt = cu * (1 + perc / 100);
         if (vendaUntInput) {
             vendaUntInput.value = vendaUnt.toFixed(4).replace(/\.?0+$/, '');
@@ -3113,7 +3129,7 @@ function calcularValoresItem() {
             vendaTotalInput.value = (vendaUnt * q).toFixed(2);
         }
     } else {
-        // Se está editando venda unitária, só atualiza o total baseado nela
+        // Se foi editado manualmente, só atualiza o total baseado no valor manual
         const vendaUnt = parseFloat(vendaUntInput.value) || 0;
         if (vendaTotalInput) {
             vendaTotalInput.value = (vendaUnt * q).toFixed(2);
@@ -3145,6 +3161,14 @@ function configurarCalculosAutomaticos() {
     };
     
     modal.addEventListener('input', modal._calcListener);
+    
+    // Quando o usuário digitar no campo Venda Unitária, marca como manual
+    const vendaUntInput = document.getElementById('itemVendaUnt');
+    if (vendaUntInput) {
+        vendaUntInput.addEventListener('input', function() {
+            this.dataset.manual = 'true';
+        });
+    }
     
     const inputs = ['itemQtd', 'itemEstimadoUnt', 'itemCustoUnt', 'itemPorcentagem', 'itemVendaUnt'];
     inputs.forEach(id => {
