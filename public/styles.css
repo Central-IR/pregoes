@@ -135,7 +135,7 @@ body {
 }
 
 /* ============================================
-   TABELA DE ITENS - AGORA 100% DA LARGURA, SEM ESPAÇOS
+   TABELA DE ITENS - 100% DA LARGURA (REVERTIDO)
    ============================================ */
 #telaItens .table-card,
 #telaGrupos .table-card {
@@ -149,7 +149,7 @@ body {
 #telaItens table,
 #telaGrupos table {
     width: 100%;
-    min-width: 1260px; /* Mantém as colunas largas */
+    min-width: 1260px;
     border-collapse: collapse;
 }
 
@@ -216,7 +216,6 @@ body {
     border-radius: 5px;
 }
 
-/* HEADER */
 .header {
     display: flex;
     justify-content: space-between;
