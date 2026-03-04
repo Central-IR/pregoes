@@ -1834,7 +1834,7 @@ function renderGrupos() {
             rowParts[idx] =
                 '<tr class="' + rowClass + '" ondblclick="editarItemGrupoById(\'' + iid + '\')" oncontextmenu="showItemContextMenu(event,\'' + iid + '\')">' +
                 '<td style="text-align:center;"><strong>' + item.numero + '</strong></td>' +
-                '<td class="descricao-cell" style="text-align:left;">' + (item.descricao || '-') + '</td>' +
+                '<td class="descricao-cell" style="text-align:left; max-width: 180px;">' + (item.descricao || '-') + '</td>' +
                 '<td style="text-align:center;">' + (item.qtd || 1) + '</td>' +
                 '<td style="text-align:center;">' + (item.unidade || 'UN') + '</td>' +
                 '<td style="text-align:center;">' + (item.marca || '-') + '</td>' +
@@ -1850,7 +1850,7 @@ function renderGrupos() {
         const grupoGanhoChk = grupoGanho ? ' checked' : '';
 
         cards.push(
-            '<div class="card table-card" style="margin-bottom:1.25rem;">' +
+            '<div class="card table-card" style="margin-bottom:0.5rem;">' +
             '<div style="background:#1e3a5f;display:flex;align-items:center;justify-content:flex-start;padding:8px 14px;border-radius:8px 8px 0 0;gap:0.75rem;">' +
             '<div class="checkbox-wrapper" style="position:relative;">' +
             '<input type="checkbox" id="' + grupoGanhoId + '"' + grupoGanhoChk +
@@ -1860,28 +1860,39 @@ function renderGrupos() {
             '</div>' +
             '<label for="' + grupoGanhoId + '" style="font-weight:700;font-size:1rem;color:#fff;cursor:pointer;margin:0;">' + lbl + '</label>' +
             '</div>' +
-            '<div style="overflow-x:auto;"><table>' +
+            '<div style="overflow-x:auto;"><table style="table-layout:fixed; width:100%;">' +
+            '<colgroup>' +
+            '<col style="width: 45px;">' + // ITEM
+            '<col style="width: 180px;">' + // DESCRIÇÃO (reduzida)
+            '<col style="width: 45px;">' + // QTD
+            '<col style="width: 45px;">' + // UN
+            '<col style="width: 80px;">' + // MARCA
+            '<col style="width: 80px;">' + // MODELO
+            '<col style="width: 95px;">' + // COMPRA TOTAL
+            '<col style="width: 90px;">' + // CUSTO TOTAL
+            '<col style="width: 90px;">' + // VENDA UNT
+            '<col style="width: 95px;">' + // VENDA TOTAL
+            '</colgroup>' +
             '<thead><tr>' +
-            '<th style="width:55px;text-align:center;">ITEM</th>' +
-            '<th style="min-width:220px;text-align:left;">DESCRIÇÃO</th>' +
-            '<th style="width:55px;text-align:center;">QTD</th>' +
-            '<th style="width:50px;text-align:center;">UN</th>' +
-            '<th style="width:90px;text-align:center;">MARCA</th>' +
-            '<th style="width:90px;text-align:center;">MODELO</th>' +
-            '<th style="width:105px;text-align:right;">COMPRA TOTAL</th>' +
-            '<th style="width:100px;text-align:right;">CUSTO TOTAL</th>' +
-            '<th style="width:100px;text-align:right;">VENDA UNT</th>' +
-            '<th style="width:105px;text-align:right;">VENDA TOTAL</th>' +
+            '<th style="text-align:center;">ITEM</th>' +
+            '<th style="text-align:left;">DESCRIÇÃO</th>' +
+            '<th style="text-align:center;">QTD</th>' +
+            '<th style="text-align:center;">UN</th>' +
+            '<th style="text-align:center;">MARCA</th>' +
+            '<th style="text-align:center;">MODELO</th>' +
+            '<th style="text-align:right;">COMPRA TOTAL</th>' +
+            '<th style="text-align:right;">CUSTO TOTAL</th>' +
+            '<th style="text-align:right;">VENDA UNT</th>' +
+            '<th style="text-align:right;">VENDA TOTAL</th>' +
             '</tr></thead>' +
             '<tbody>' + rowParts.join('') + '</tbody>' +
             '</table></div>' +
-            // Linha de totais removida de dentro do card - agora fica solta abaixo
             '</div>'
         );
         
-        // Adicionar a barra de totais SOLTA abaixo do card, igual na tela de itens
+        // Adicionar a barra de totais SOLTA abaixo do card
         cards.push(
-            '<div id="gruposTotaisBar" style="display:flex;gap:3rem;padding:0.75rem 1rem 0.25rem 1rem;font-size:10pt;color:var(--text-primary);margin-top:-1rem;margin-bottom:1.5rem;">' +
+            '<div style="display:flex;gap:2rem;padding:0.5rem 1rem 0.25rem 1rem;font-size:10pt;color:var(--text-primary);margin-top:-0.25rem;margin-bottom:1.25rem;">' +
             '<span><strong>COMPRA TOTAL:</strong> ' + fmtTot(totC) + '</span>' +
             '<span><strong>CUSTO TOTAL:</strong> ' + fmtTot(totCu) + '</span>' +
             '<span><strong>VENDA TOTAL:</strong> ' + fmtTot(totV) + '</span>' +
