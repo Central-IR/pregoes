@@ -135,7 +135,7 @@ body {
 }
 
 /* ============================================
-   TABELA DE ITENS - OCUPA 100% DA LARGURA
+   TABELA DE ITENS - AGORA 100% DA LARGURA, SEM ESPAÇOS
    ============================================ */
 #telaItens .table-card,
 #telaGrupos .table-card {
@@ -149,7 +149,7 @@ body {
 #telaItens table,
 #telaGrupos table {
     width: 100%;
-    min-width: 1260px;
+    min-width: 1260px; /* Mantém as colunas largas */
     border-collapse: collapse;
 }
 
@@ -192,7 +192,7 @@ body {
     }
 }
 
-/* Scrollbar personalizada para a tabela de itens */
+/* Scrollbar personalizada */
 #telaItens .table-card::-webkit-scrollbar,
 #telaGrupos .table-card::-webkit-scrollbar {
     height: 10px;
@@ -216,6 +216,7 @@ body {
     border-radius: 5px;
 }
 
+/* HEADER */
 .header {
     display: flex;
     justify-content: space-between;
@@ -286,7 +287,7 @@ h2 {
     100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
 
-/* NEW ORDER BUTTON IN HEADER */
+/* NOVO BOTÃO */
 .btn-new-order-header {
     background: var(--btn-register);
     color: white;
@@ -312,7 +313,7 @@ h2 {
 }
 
 /* ============================================
-   SEARCH BAR WITH INTEGRATED FILTERS
+   SEARCH BAR
    ============================================ */
 .search-bar-wrapper {
     margin-bottom: 0.5rem;
@@ -353,7 +354,6 @@ h2 {
     color: var(--text-secondary);
 }
 
-/* FILTERS INTEGRATED IN SEARCH BAR */
 .search-bar-filters {
     display: flex;
     align-items: center;
@@ -400,7 +400,7 @@ h2 {
     color: var(--text-secondary);
 }
 
-/* MONTH NAVIGATION INLINE */
+/* MONTH NAVIGATION */
 .month-navigation-inline {
     display: flex;
     align-items: center;
@@ -457,31 +457,7 @@ h2 {
     color: var(--text-primary);
 }
 
-/* VIEW ICONS */
-.view-icon {
-    background: transparent;
-    border: none;
-    color: var(--text-secondary);
-    cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-}
-
-.view-icon:hover {
-    background: var(--input-bg);
-    color: var(--text-primary);
-}
-
-.view-icon.active {
-    background: var(--input-bg);
-    color: var(--primary);
-}
-
-/* CALENDAR BUTTON */
+/* CALENDAR */
 .calendar-btn {
     background: transparent;
     border: none;
@@ -501,7 +477,6 @@ h2 {
     color: var(--primary);
 }
 
-/* CALENDAR MODAL */
 .calendar-modal {
     display: none;
     position: fixed;
@@ -596,6 +571,7 @@ h2 {
     border-color: var(--primary);
 }
 
+/* DASHBOARD */
 .dashboard-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -684,7 +660,7 @@ h2 {
     font-weight: 500;
 }
 
-/* ALERTA VISUAL - ORDENS ABERTAS */
+/* ALERTA */
 .stat-card.has-alert {
     position: relative;
     animation: pulseAlert 2s ease-in-out infinite;
@@ -727,9 +703,7 @@ h2 {
     }
 }
 
-/* ============================================
-   TABLE
-   ============================================ */
+/* TABELAS GERAIS */
 table {
     width: 100%;
     border-collapse: separate;
@@ -750,7 +724,6 @@ th {
     border-bottom: 1px solid var(--th-border);
 }
 
-/* Alinhamento específico para cabeçalhos */
 th {
     text-align: left;
 }
@@ -785,18 +758,15 @@ td {
     color: var(--text-primary);
 }
 
-/* Alinhamento padrão das células */
 td {
     text-align: center;
 }
 
-/* Exceção para célula de descrição - sempre à esquerda */
 td.descricao-cell,
 td[class*="descricao"] {
     text-align: left !important;
 }
 
-/* Alinhamento de valores monetários à direita */
 td.valor-monetario,
 td[class*="valor"],
 td:contains("R$"),
@@ -827,7 +797,7 @@ tbody tr.row-fechada:hover {
     background: rgba(34, 197, 94, 0.18) !important;
 }
 
-/* Checkbox Customizado - mantido tamanho original */
+/* CHECKBOX */
 .checkbox-wrapper {
     display: inline-flex;
     align-items: center;
@@ -872,7 +842,7 @@ tbody tr.row-fechada:hover {
     font-weight: 700;
 }
 
-/* Badge de status */
+/* BADGE */
 .badge {
     padding: 4px 12px;
     border-radius: 6px;
@@ -894,6 +864,7 @@ tbody tr.row-fechada:hover {
     border: 1px solid rgba(34, 197, 94, 0.2);
 }
 
+/* FORMULÁRIOS */
 .form-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -952,7 +923,6 @@ button {
     transition: all 0.3s ease;
 }
 
-/* EXCEÇÃO: Botão X não deve herdar estilos de button */
 button.close-modal {
     background: transparent !important;
     padding: 0 !important;
@@ -965,7 +935,6 @@ button:hover:not(:disabled) {
     transform: translateY(-1px);
 }
 
-/* EXCEÇÃO: Botão X não deve ter efeito hover de outros botões */
 button.close-modal:hover {
     opacity: 1 !important;
     transform: none !important;
@@ -1001,7 +970,6 @@ button.secondary {
     background: #6B7280;
 }
 
-/* Botões de cancelar permanecem vermelhos, mas não o botão X */
 button[onclick*="closeFormModal"]:not(.close-modal), 
 button[onclick*="closeInfoModal"]:not(.close-modal) {
     background: var(--btn-delete);
@@ -1024,9 +992,7 @@ button.small {
     min-width: 300px;
 }
 
-/* ============================================
-   FLOATING MESSAGES
-   ============================================ */
+/* FLOATING MESSAGES */
 .floating-message {
     position: fixed;
     bottom: 24px;
@@ -1072,9 +1038,7 @@ button.small {
     }
 }
 
-/* ============================================
-   MODAL
-   ============================================ */
+/* MODAL */
 .modal-overlay {
     display: none;
     position: fixed;
@@ -1143,7 +1107,6 @@ button.small {
     margin: 0;
 }
 
-/* BOTÃO X SEM COR DE PREENCHIMENTO */
 .close-modal {
     background: transparent !important;
     border: none !important;
@@ -1177,7 +1140,7 @@ button.small {
     outline: none;
 }
 
-/* MODAL DELETE - IDÊNTICO À TABELA DE PREÇOS */
+/* MODAL DELETE */
 .modal-delete {
     position: relative;
     padding: 2.5rem 2rem 2rem 2rem;
@@ -1205,7 +1168,7 @@ button.small {
     justify-content: center !important;
 }
 
-/* SISTEMA DE ABAS */
+/* TABS */
 .tabs-container {
     margin-bottom: 1.5rem;
 }
@@ -1298,7 +1261,7 @@ button.small {
     line-height: 1.6;
 }
 
-/* TABELA DE ITENS */
+/* ITEMS TABLE (genérica) */
 .items-table {
     width: 100%;
     margin: 1rem 0;
@@ -1321,9 +1284,7 @@ button.small {
     display: none !important;
 }
 
-/* ============================================
-   RESPONSIVE
-   ============================================ */
+/* RESPONSIVE */
 @media (max-width: 768px) {
     .container {
         padding: 0 1rem 5rem 1rem;
@@ -1422,11 +1383,7 @@ button.small {
     }
 }
 
-/* ============================================
-   ESTILOS ESPECÍFICOS DE PREGÕES
-   ============================================ */
-
-/* Row Won (ganho) - pregão ganho com fundo verde*/
+/* ESTILOS ESPECÍFICOS DE PREGÕES */
 tr.row-won {
     background: rgba(34, 197, 94, 0.22) !important;
 }
@@ -1435,7 +1392,6 @@ tr.row-won:hover {
     background: rgba(34, 197, 94, 0.28) !important;
 }
 
-/* Item ganho - mesma cor dos pregões ganhos */
 tr.item-ganho {
     background: rgba(34, 197, 94, 0.22) !important;
 }
@@ -1444,25 +1400,21 @@ tr.item-ganho:hover {
     background: rgba(34, 197, 94, 0.28) !important;
 }
 
-/* Garantir que a classe row-won também seja aplicada */
 tr.item-ganho.row-won {
     background: rgba(34, 197, 94, 0.22) !important;
 }
 
-/* Botão Itens - VERDE */
 .btn-items {
     background: #22C55E !important;
     color: white !important;
 }
 
-/* Botão Documentos - BRANCO com borda preta */
 .btn-docs {
     background: white !important;
     color: #1A1A1A !important;
     border: 1px solid #1A1A1A !important;
 }
 
-/* Tela de Itens */
 .pregao-info {
     font-size: 0.9rem;
     color: var(--text-secondary);
@@ -1619,7 +1571,6 @@ tr.item-ganho.row-won {
     text-align: left !important;
 }
 
-/* Botões acima da tabela de itens */
 .table-actions {
     padding: 1rem 1.5rem;
     border-bottom: 1px solid var(--border-color);
@@ -1696,7 +1647,6 @@ tr.item-ganho.row-won {
     transform: translateY(-1px);
 }
 
-/* ESTILOS DA ABA CONTATO - Botão + LARANJA */
 .btn-add {
     background: var(--primary) !important;
     color: white !important;
@@ -1724,7 +1674,6 @@ tr.item-ganho.row-won {
     flex: 1;
 }
 
-/* ESTILOS DA ABA DETALHES - Itens clicáveis */
 .detalhes-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -1753,7 +1702,6 @@ tr.item-ganho.row-won {
     color: var(--primary);
 }
 
-/* STATUS BADGES */
 .status-badge {
     display: inline-block;
     padding: 4px 12px;
@@ -1765,35 +1713,30 @@ tr.item-ganho.row-won {
     white-space: nowrap;
 }
 
-/* GANHO - verde */
 .status-badge.success, .status-badge-success {
     background: rgba(34, 197, 94, 0.15);
     color: #16a34a;
     border: 1px solid rgba(34, 197, 94, 0.4);
 }
 
-/* ABERTO - laranja */
 .status-badge.warning, .status-badge-warning {
     background: rgba(255, 82, 29, 0.12);
     color: #ff521d;
     border: 1px solid rgba(255, 82, 29, 0.35);
 }
 
-/* OCORRIDO - adaptativo */
 .status-badge.danger, .status-badge-danger {
     background: var(--ocorrido-bg);
     color: var(--ocorrido-color);
     border: 1px solid var(--ocorrido-border);
 }
 
-/* DEFAULT */
 .status-badge.default, .status-badge-default {
     background: rgba(107, 114, 128, 0.08);
     color: #6b7280;
     border: 1px solid rgba(107, 114, 128, 0.2);
 }
 
-/* Stat card color variants */
 .stat-icon-danger {
     background: var(--ocorrido-bg);
     color: var(--ocorrido-color);
@@ -1803,7 +1746,6 @@ tr.item-ganho.row-won {
     color: var(--ocorrido-color);
 }
 
-/* Row venda acima do estimado */
 tr.row-venda-alta {
     background: rgba(239, 68, 68, 0.09) !important;
 }
@@ -1819,7 +1761,6 @@ tr.row-venda-alta:hover {
     background: transparent;
 }
 
-/* Alinhamento específico para tabelas de grupos */
 #gruposWrapper table td {
     text-align: center;
 }
