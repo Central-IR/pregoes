@@ -395,12 +395,6 @@ function displayPregoes(pregoesToDisplay) {
                     <button class="action-btn view" onclick="viewPregao('${pregao.id}')" title="Visualizar">Ver</button>
                     <button class="action-btn edit" onclick="editPregao('${pregao.id}')" title="Editar">Editar</button>
                     <button class="action-btn btn-items" onclick="openItems('${pregao.id}')" title="${pregao.disputa_por === 'GRUPO' ? 'Grupos' : 'Itens'}">${pregao.disputa_por === 'GRUPO' ? 'Grupos' : 'Itens'}</button>
-                    <button class="action-btn btn-certificate" onclick="abrirModalExequibilidade('${pregao.id}')" title="Comprovante de Exequibilidade">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                        </svg>
-                        Comprovante
-                    </button>
                     <button class="action-btn delete" onclick="openDeleteModal('${pregao.id}')" title="Excluir">Excluir</button>
                 </td>
             </tr>
