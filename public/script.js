@@ -3110,20 +3110,33 @@ function calcularValoresItem() {
     
     const estimadoTotal = q * eu;
     const custoTotal = q * cu;
-    const vendaUnt = cu * (1 + perc / 100);
-    const vendaTotal = vendaUnt * q;
+    
+    // Só calcula a venda unitária se o campo não estiver sendo editado manualmente
+    const vendaUntInput = document.getElementById('itemVendaUnt');
+    const vendaTotalInput = document.getElementById('itemVendaTotal');
+    
+    // Se o campo venda unitária NÃO está em foco, calcula automaticamente
+    if (document.activeElement !== vendaUntInput) {
+        const vendaUnt = cu * (1 + perc / 100);
+        if (vendaUntInput) {
+            vendaUntInput.value = vendaUnt.toFixed(4).replace(/\.?0+$/, '');
+        }
+        if (vendaTotalInput) {
+            vendaTotalInput.value = (vendaUnt * q).toFixed(2);
+        }
+    } else {
+        // Se está editando venda unitária, só atualiza o total baseado nela
+        const vendaUnt = parseFloat(vendaUntInput.value) || 0;
+        if (vendaTotalInput) {
+            vendaTotalInput.value = (vendaUnt * q).toFixed(2);
+        }
+    }
     
     const etEl = document.getElementById('itemEstimadoTotal');
     const ctEl = document.getElementById('itemCustoTotal');
-    const vuEl = document.getElementById('itemVendaUnt');
-    const vtEl = document.getElementById('itemVendaTotal');
     
     if (etEl) etEl.value = estimadoTotal.toFixed(2);
     if (ctEl) ctEl.value = custoTotal.toFixed(2);
-    if (vuEl) {
-        vuEl.value = vendaUnt.toFixed(4).replace(/\.?0+$/, '');
-    }
-    if (vtEl) vtEl.value = vendaTotal.toFixed(2);
 }
 
 function configurarCalculosAutomaticos() {
@@ -3135,7 +3148,7 @@ function configurarCalculosAutomaticos() {
     }
     
     modal._calcListener = function(e) {
-        const ids = ['itemQtd', 'itemEstimadoUnt', 'itemCustoUnt', 'itemPorcentagem'];
+        const ids = ['itemQtd', 'itemEstimadoUnt', 'itemCustoUnt', 'itemPorcentagem', 'itemVendaUnt'];
         if (ids.includes(e.target.id)) {
             requestAnimationFrame(() => {
                 calcularValoresItem();
@@ -3145,7 +3158,7 @@ function configurarCalculosAutomaticos() {
     
     modal.addEventListener('input', modal._calcListener);
     
-    const inputs = ['itemQtd', 'itemEstimadoUnt', 'itemCustoUnt', 'itemPorcentagem'];
+    const inputs = ['itemQtd', 'itemEstimadoUnt', 'itemCustoUnt', 'itemPorcentagem', 'itemVendaUnt'];
     inputs.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
