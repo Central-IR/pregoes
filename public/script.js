@@ -1833,16 +1833,16 @@ function renderGrupos() {
             const rowClass = grupoAllGanho ? 'item-ganho row-won' : (vm ? 'row-venda-alta' : '');
             rowParts[idx] =
                 '<tr class="' + rowClass + '" ondblclick="editarItemGrupoById(\'' + iid + '\')" oncontextmenu="showItemContextMenu(event,\'' + iid + '\')">' +
-                '<td style="text-align:center;"><strong>' + item.numero + '</strong></td>' +
-                '<td class="descricao-cell" style="text-align:left; max-width: 180px;">' + (item.descricao || '-') + '</td>' +
-                '<td style="text-align:center;">' + (item.qtd || 1) + '</td>' +
-                '<td style="text-align:center;">' + (item.unidade || 'UN') + '</td>' +
-                '<td style="text-align:center;">' + (item.marca || '-') + '</td>' +
-                '<td style="text-align:center;">' + (item.modelo || '-') + '</td>' +
-                '<td style="text-align:right;">' + fmtTot(item.estimado_total || 0) + '</td>' +
-                '<td style="text-align:right;">' + fmtTot(item.custo_total || 0) + '</td>' +
-                '<td style="text-align:right;">' + fmtUnt(item.venda_unt || 0) + '</td>' +
-                '<td style="text-align:right;">' + fmtTot(item.venda_total || 0) + '</td>' +
+                '<td style="width: 60px; text-align:center;"><strong>' + item.numero + '</strong></td>' +
+                '<td class="descricao-cell" style="min-width: 300px; text-align:left;">' + (item.descricao || '-') + '</td>' +
+                '<td style="width: 80px; text-align:center;">' + (item.qtd || 1) + '</td>' +
+                '<td style="width: 80px; text-align:center;">' + (item.unidade || 'UN') + '</td>' +
+                '<td style="width: 120px; text-align:center;">' + (item.marca || '-') + '</td>' +
+                '<td style="width: 120px; text-align:center;">' + (item.modelo || '-') + '</td>' +
+                '<td style="width: 120px; text-align:right;">' + fmtTot(item.estimado_total || 0) + '</td>' +
+                '<td style="width: 120px; text-align:right;">' + fmtTot(item.custo_total || 0) + '</td>' +
+                '<td style="width: 120px; text-align:right;">' + fmtUnt(item.venda_unt || 0) + '</td>' +
+                '<td style="width: 120px; text-align:right;">' + fmtTot(item.venda_total || 0) + '</td>' +
                 '</tr>';
         }
         const grupoGanho = grupo.itens.length > 0 && grupo.itens.every(i => i.ganho);
@@ -1860,39 +1860,27 @@ function renderGrupos() {
             '</div>' +
             '<label for="' + grupoGanhoId + '" style="font-weight:700;font-size:1rem;color:#fff;cursor:pointer;margin:0;">' + lbl + '</label>' +
             '</div>' +
-            '<div style="overflow-x:auto;"><table style="table-layout:fixed; width:100%;">' +
-            '<colgroup>' +
-            '<col style="width: 45px;">' + // ITEM
-            '<col style="width: 180px;">' + // DESCRIÇÃO (reduzida)
-            '<col style="width: 45px;">' + // QTD
-            '<col style="width: 45px;">' + // UN
-            '<col style="width: 80px;">' + // MARCA
-            '<col style="width: 80px;">' + // MODELO
-            '<col style="width: 95px;">' + // COMPRA TOTAL
-            '<col style="width: 90px;">' + // CUSTO TOTAL
-            '<col style="width: 90px;">' + // VENDA UNT
-            '<col style="width: 95px;">' + // VENDA TOTAL
-            '</colgroup>' +
+            '<div style="overflow-x:auto;"><table style="min-width: 1400px; width: 100%; border-collapse: collapse;">' +
             '<thead><tr>' +
-            '<th style="text-align:center;">ITEM</th>' +
-            '<th style="text-align:left;">DESCRIÇÃO</th>' +
-            '<th style="text-align:center;">QTD</th>' +
-            '<th style="text-align:center;">UN</th>' +
-            '<th style="text-align:center;">MARCA</th>' +
-            '<th style="text-align:center;">MODELO</th>' +
-            '<th style="text-align:right;">COMPRA TOTAL</th>' +
-            '<th style="text-align:right;">CUSTO TOTAL</th>' +
-            '<th style="text-align:right;">VENDA UNT</th>' +
-            '<th style="text-align:right;">VENDA TOTAL</th>' +
+            '<th style="width: 60px; text-align: center;">ITEM</th>' +
+            '<th style="min-width: 300px; text-align: left;">DESCRIÇÃO</th>' +
+            '<th style="width: 80px; text-align: center;">QTD</th>' +
+            '<th style="width: 80px; text-align: center;">UN</th>' +
+            '<th style="width: 120px; text-align: center;">MARCA</th>' +
+            '<th style="width: 120px; text-align: center;">MODELO</th>' +
+            '<th style="width: 120px; text-align: right;">COMPRA TOTAL</th>' +
+            '<th style="width: 120px; text-align: right;">CUSTO TOTAL</th>' +
+            '<th style="width: 120px; text-align: right;">VENDA UNT</th>' +
+            '<th style="width: 120px; text-align: right;">VENDA TOTAL</th>' +
             '</tr></thead>' +
             '<tbody>' + rowParts.join('') + '</tbody>' +
             '</table></div>' +
             '</div>'
         );
         
-        // Adicionar a barra de totais SOLTA abaixo do card
+        // Barra de totais igual à da tela de itens
         cards.push(
-            '<div style="display:flex;gap:2rem;padding:0.5rem 1rem 0.25rem 1rem;font-size:10pt;color:var(--text-primary);margin-top:-0.25rem;margin-bottom:1.25rem;">' +
+            '<div style="display:flex;gap:3rem;padding:0.75rem 1rem 0.25rem 1rem;font-size:10pt;color:var(--text-primary);margin-top:-0.25rem;margin-bottom:1.25rem;">' +
             '<span><strong>COMPRA TOTAL:</strong> ' + fmtTot(totC) + '</span>' +
             '<span><strong>CUSTO TOTAL:</strong> ' + fmtTot(totCu) + '</span>' +
             '<span><strong>VENDA TOTAL:</strong> ' + fmtTot(totV) + '</span>' +
