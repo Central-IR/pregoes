@@ -53,7 +53,9 @@ function renderCalendar() {
 
 function selectMonth(monthIndex) {
     currentMonth = new Date(calendarYear, monthIndex, 1);
-    updateDisplay();
+    isAllMonths = false;
+    updateMonthDisplay();
+    loadPregoes();
     toggleCalendar();
 }
 
