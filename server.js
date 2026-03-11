@@ -360,13 +360,28 @@ app.head('/api/pregoes', (req, res) => {
     res.status(200).end();
 });
 
+// GET /api/pregoes?mes=&ano=  (opcional)
 app.get('/api/pregoes', async (req, res) => {
     try {
         console.log('📋 Listando pregões...');
-        const { data, error } = await supabase
-            .from('pregoes')
-            .select('*')
-            .order('data', { ascending: false });
+        let query = supabase.from('pregoes').select('*');
+        
+        const { mes, ano } = req.query;
+        if (mes && ano) {
+            const mesNum = parseInt(mes);
+            const anoNum = parseInt(ano);
+            if (!isNaN(mesNum) && !isNaN(anoNum)) {
+                const startDate = `${anoNum}-${mesNum.toString().padStart(2,'0')}-01`;
+                const endDate = mesNum === 12 
+                    ? `${anoNum+1}-01-01` 
+                    : `${anoNum}-${(mesNum+1).toString().padStart(2,'0')}-01`;
+                query = query
+                    .filter('data', 'gte', startDate)
+                    .filter('data', 'lt', endDate);
+            }
+        }
+
+        const { data, error } = await query.order('data', { ascending: false });
 
         if (error) {
             console.error('❌ Erro Supabase ao listar pregões:', error);
