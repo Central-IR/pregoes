@@ -1729,19 +1729,29 @@ tr.row-venda-alta:hover {
     background: rgba(239, 68, 68, 0.14) !important;
 }
 
-/* Alinhamento específico para tabelas de grupos */
-#gruposWrapper table td {
-    text-align: center;
+/* ============================================
+   VERTICAL CENTER PARA MARCA E MODELO (TABELAS DE ITENS/GRUPOS)
+   ============================================ */
+#itensContainer td:nth-child(6),  /* MARCA */
+#itensContainer td:nth-child(7),  /* MODELO */
+#gruposWrapper table td:nth-child(5), /* MARCA (grupos) */
+#gruposWrapper table td:nth-child(6)  /* MODELO (grupos) */ {
+    vertical-align: middle !important;
 }
 
-#gruposWrapper table td.descricao-cell,
-#gruposWrapper table td:contains("DESCRIÇÃO") {
-    text-align: left !important;
+/* ============================================
+   TABELAS OCUPAM 100% DO CONTAINER
+   ============================================ */
+.table-card table {
+    width: 100%;
+    table-layout: fixed; /* opcional, mas ajuda a controlar larguras */
 }
 
-#gruposWrapper table td:nth-child(7),
-#gruposWrapper table td:nth-child(8),
-#gruposWrapper table td:nth-child(9),
-#gruposWrapper table td:nth-child(10) {
-    text-align: right !important;
+/* ============================================
+   MODAL DE CONFIGURAÇÃO DA PROPOSTA
+   ============================================ */
+#modalConfigProposta .form-grid {
+    max-height: 60vh;
+    overflow-y: auto;
+    padding-right: 0.5rem;
 }
