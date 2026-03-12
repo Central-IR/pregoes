@@ -866,7 +866,7 @@ async function editPregao(id) {
     detalhes = pregao.detalhes || [];
     document.querySelectorAll('.detalhe-item').forEach(item => {
         item.classList.remove('selected');
-        const nome = item.textContent; // texto direto, sem span
+        const nome = item.textContent;
         if (detalhes.includes(nome)) {
             item.classList.add('selected');
         }
@@ -1722,22 +1722,117 @@ function criarTelaGrupos() {
 
         <!-- MODAL NOVO GRUPO (mantido) -->
         <div class="modal-overlay" id="modalNovoGrupo">
-            <!-- ... -->
+            <div class="modal-content" style="max-width:520px;">
+                <div class="modal-header">
+                    <h3 class="modal-title">Novo Grupo / Lote</h3>
+                    <button class="close-modal" onclick="fecharModalNovoGrupo()">✕</button>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Tipo</label>
+                        <select id="novoGrupoTipo">
+                            <option value="GRUPO">Grupo</option>
+                            <option value="LOTE">Lote</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Número</label>
+                        <input type="number" id="novoGrupoNumero" min="1" placeholder="Nº do grupo">
+                    </div>
+                    <div class="form-group" style="grid-column:1/-1;">
+                        <label>Itens do grupo <span style="color:var(--text-secondary);font-weight:400;">(ex: 1-5, 10, 15-20)</span></label>
+                        <input type="text" id="novoGrupoItens" placeholder="Ex: 1-5, 10, 15-20">
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="secondary" onclick="fecharModalNovoGrupo();showToast('Registro cancelado','error')">Cancelar</button>
+                    <button class="success" onclick="confirmarNovoGrupo()">Criar Grupo</button>
+                </div>
+            </div>
         </div>
 
         <!-- MODAL EXCLUIR GRUPO (mantido) -->
         <div class="modal-overlay" id="modalExcluirGrupo">
-            <!-- ... -->
+            <div class="modal-content" style="max-width:520px;">
+                <div class="modal-header">
+                    <h3 class="modal-title">Excluir Grupo / Lote</h3>
+                    <button class="close-modal" onclick="fecharModalExcluirGrupo()">✕</button>
+                </div>
+                <div class="tabs-container">
+                    <div class="tabs-nav">
+                        <button class="tab-btn active">Selecionar</button>
+                    </div>
+                    <div class="tab-content active">
+                        <div class="form-grid">
+                            <div class="form-group" style="grid-column:1/-1;">
+                                <label>Selecione o grupo a excluir</label>
+                                <select id="excluirGrupoSelect">
+                                    <option value="">Selecione...</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="danger" onclick="confirmarExcluirGrupo()">Excluir</button>
+                    <button class="secondary" onclick="fecharModalExcluirGrupo()">Cancelar</button>
+                </div>
+            </div>
         </div>
 
         <!-- MODAL ASSINATURA GRUPOS (mantido) -->
         <div class="modal-overlay" id="modalAssinaturaGrupos">
-            <!-- ... -->
+            <div class="modal-content modal-delete">
+                <button class="close-modal" onclick="document.getElementById('modalAssinaturaGrupos').classList.remove('show')">✕</button>
+                <div class="modal-message-delete">
+                    Deseja incluir a assinatura padrão na proposta?
+                </div>
+                <div class="modal-actions modal-actions-no-border">
+                    <button class="success" onclick="gerarPDFGruposComAssinatura(true)">Sim</button>
+                    <button class="danger" onclick="gerarPDFGruposComAssinatura(false)">Não</button>
+                </div>
+            </div>
         </div>
 
         <!-- MODAL INTERVALO GRUPOS (mantido) -->
         <div class="modal-overlay" id="modalIntervaloGrupos">
-            <!-- ... -->
+            <div class="modal-content" style="max-width:600px;">
+                <div class="modal-header">
+                    <h3 class="modal-title">Adicionar Grupos em Intervalo</h3>
+                    <button class="close-modal" onclick="fecharModalIntervaloGrupos()">✕</button>
+                </div>
+                <div class="tabs-container">
+                    <div class="tabs-nav">
+                        <button class="tab-btn active" onclick="switchIntervaloTab('intervalo-tab-config')">Configuração</button>
+                        <button class="tab-btn" onclick="switchIntervaloTab('intervalo-tab-itens')">Itens</button>
+                    </div>
+                    <div class="tab-content active" id="intervalo-tab-config">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Tipo</label>
+                                <select id="intervGrupoTipo" onchange="atualizarLinhasIntervalo()">
+                                    <option value="GRUPO">Grupo</option>
+                                    <option value="LOTE">Lote</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Quantidade de grupos</label>
+                                <input type="number" id="intervGrupoQtd" min="1" max="50" value="1" placeholder="Ex: 3" oninput="atualizarLinhasIntervalo()">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="intervalo-tab-itens">
+                        <div id="intervGrupoLinhas" style="display:flex;flex-direction:column;gap:0.75rem;max-height:300px;overflow-y:auto;">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="btnIntervaloPrev" class="secondary" style="display:none;" onclick="prevIntervaloTab()">Anterior</button>
+                    <button type="button" id="btnIntervaloNext" class="secondary" onclick="nextIntervaloTab()">Próximo</button>
+                    <button type="button" id="btnIntervaloCriar" class="success" style="display:none;" onclick="confirmarIntervaloGrupos()">Criar Grupos</button>
+                    <button type="button" class="danger" onclick="fecharModalIntervaloGrupos()">Cancelar</button>
+                </div>
+            </div>
         </div>
     `;
     return div;
@@ -1893,82 +1988,278 @@ function renderGrupos() {
 }
 
 function abrirModalNovoGrupo() {
-    // ... mantido
+    const maxN = grupos.reduce((m, g) => Math.max(m, g.numero), 0);
+    document.getElementById('novoGrupoNumero').value = maxN + 1;
+    document.getElementById('novoGrupoItens').value = '';
+    document.getElementById('novoGrupoTipo').value = 'GRUPO';
+    document.getElementById('modalNovoGrupo').classList.add('show');
 }
 
 function fecharModalNovoGrupo() {
-    // ... mantido
+    document.getElementById('modalNovoGrupo').classList.remove('show');
 }
 
 async function confirmarNovoGrupo() {
-    // ... mantido
+    const tipo = document.getElementById('novoGrupoTipo').value;
+    const numero = parseInt(document.getElementById('novoGrupoNumero').value);
+    const itensStr = document.getElementById('novoGrupoItens').value.trim();
+    if (!numero || !itensStr) { showToast('Preencha número e itens do grupo', 'error'); return; }
+    const numeros = parsearIntervalo(itensStr);
+    if (!numeros || numeros.length === 0) return;
+    fecharModalNovoGrupo();
+    const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+    if (sessionToken) headers['X-Session-Token'] = sessionToken;
+    for (const numItem of numeros) {
+        const jaExiste = itens.find(i => i.grupo_tipo === tipo && i.grupo_numero === numero && i.numero === numItem);
+        if (jaExiste) continue;
+        const novo = payloadItemSeguro({
+            pregao_id: currentPregaoId,
+            numero: numItem, descricao: '', qtd: 1, unidade: 'UN',
+            marca: '', modelo: '',
+            estimado_unt: 0, estimado_total: 0, custo_unt: 0, custo_total: 0,
+            porcentagem: 149, venda_unt: 0, venda_total: 0, ganho: false,
+            grupo_tipo: tipo, grupo_numero: numero
+        });
+        try {
+            const r = await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens`, { method:'POST', headers, body:JSON.stringify(novo) });
+            if (r.ok) itens.push(await r.json());
+        } catch(e) { console.error(e); }
+    }
+    reconstruirGruposDeItens();
+    atualizarSelectsGrupos();
+    renderGrupos();
+    const grupoNovo = grupos.find(g => g.tipo === tipo && g.numero === numero);
+    if (grupoNovo && grupoNovo.itens.length > 0) {
+        showToast('Grupo criado', 'success');
+        abrirEdicaoGrupoItem(grupoNovo, 0);
+    }
 }
 
 function abrirEdicaoGrupoItem(grupo, idxItem) {
-    // ... mantido
+    editandoGrupoIdx = grupos.indexOf(grupo);
+    editandoGrupoItemIdx = idxItem;
+    const item = grupo.itens[idxItem];
+    editingItemIndex = itens.indexOf(item);
+    mostrarModalItemGrupo(item, grupo, idxItem);
 }
 
 function editarItemGrupoById(itemId) {
-    // ... mantido
+    const item = itens.find(i => i.id === itemId);
+    if (!item) return;
+    const grupo = grupos.find(g => g.itens.includes(item));
+    if (!grupo) { editingItemIndex = itens.indexOf(item); mostrarModalItem(item); return; }
+    const idxItem = grupo.itens.indexOf(item);
+    abrirEdicaoGrupoItem(grupo, idxItem);
 }
 
 function mostrarModalItemGrupo(item, grupo, idxItem) {
-    // ... mantido
+    let modal = document.getElementById('modalItem');
+    if (!modal) { modal = criarModalItem(); document.body.appendChild(modal); }
+    document.getElementById('itemNumero').value = item.numero || '';
+    document.getElementById('itemDescricao').value = item.descricao || '';
+    document.getElementById('itemQtd').value = item.qtd || 1;
+    document.getElementById('itemUnidade').value = item.unidade || 'UN';
+    document.getElementById('itemMarca').value = item.marca || '';
+    document.getElementById('itemModelo').value = item.modelo || '';
+    document.getElementById('itemEstimadoUnt').value = item.estimado_unt || '';
+    document.getElementById('itemEstimadoTotal').value = item.estimado_total || '';
+    document.getElementById('itemCustoUnt').value = item.custo_unt || '';
+    document.getElementById('itemCustoTotal').value = item.custo_total || '';
+    document.getElementById('itemPorcentagem').value = item.porcentagem ?? 149;
+    document.getElementById('itemVendaUnt').value = item.venda_unt || '';
+    document.getElementById('itemVendaTotal').value = item.venda_total || '';
+    
+    // Resetar flag de edição manual
+    const vendaUntInput = document.getElementById('itemVendaUnt');
+    if (vendaUntInput) {
+        vendaUntInput.dataset.manual = 'false';
+    }
+    
+    const tituloEl = document.getElementById('modalItemTitle');
+    if (tituloEl) tituloEl.textContent = `Item ${item.numero}`;
+    const btnPrev = document.getElementById('btnPrevPagItem');
+    const btnNext = document.getElementById('btnNextPagItem');
+    const temAnterior = idxItem > 0 || editandoGrupoIdx > 0;
+    const temProximo = idxItem < grupo.itens.length - 1 || editandoGrupoIdx < grupos.length - 1;
+    if (btnPrev) btnPrev.style.visibility = temAnterior ? 'visible' : 'hidden';
+    if (btnNext) btnNext.style.visibility = temProximo ? 'visible' : 'hidden';
+    modoNavegacaoGrupo = true;
+    currentItemTab = 0;
+    switchItemTab(itemTabs[0]);
+    modal.classList.add('show');
+    configurarCalculosAutomaticos();
+    setTimeout(calcularValoresItem, 50);
+    setTimeout(setupUpperCaseInputs, 50);
 }
 
 async function navegarGrupoAnterior() {
-    // ... mantido
+    await salvarItemAtual(false);
+    let gi = editandoGrupoIdx;
+    let ii = editandoGrupoItemIdx - 1;
+    if (ii < 0) { gi--; if (gi < 0) return; ii = grupos[gi].itens.length - 1; }
+    editandoGrupoIdx = gi; editandoGrupoItemIdx = ii;
+    const grupo = grupos[gi];
+    editingItemIndex = itens.indexOf(grupo.itens[ii]);
+    mostrarModalItemGrupo(grupo.itens[ii], grupo, ii);
 }
 
 async function navegarGrupoProximo() {
-    // ... mantido
+    await salvarItemAtual(false);
+    let gi = editandoGrupoIdx;
+    let ii = editandoGrupoItemIdx + 1;
+    if (ii >= grupos[gi].itens.length) { gi++; if (gi >= grupos.length) return; ii = 0; }
+    editandoGrupoIdx = gi; editandoGrupoItemIdx = ii;
+    const grupo = grupos[gi];
+    editingItemIndex = itens.indexOf(grupo.itens[ii]);
+    mostrarModalItemGrupo(grupo.itens[ii], grupo, ii);
 }
 
 function abrirModalExcluirGrupo() {
-    // ... mantido
+    const sel = document.getElementById('excluirGrupoSelect');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Selecione...</option>' +
+        grupos.map(g => `<option value="${g.tipo}-${g.numero}">${g.tipo} ${g.numero} (${g.itens.length} item(s))</option>`).join('');
+    document.getElementById('modalExcluirGrupo').classList.add('show');
 }
 
 function fecharModalExcluirGrupo() {
-    // ... mantido
+    document.getElementById('modalExcluirGrupo').classList.remove('show');
 }
 
 async function confirmarExcluirGrupo() {
-    // ... mantido
+    const val = document.getElementById('excluirGrupoSelect').value;
+    if (!val) { showToast('Selecione um grupo', 'error'); return; }
+    const grupo = grupoByKey(val);
+    if (!grupo) return;
+    fecharModalExcluirGrupo();
+    const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+    if (sessionToken) headers['X-Session-Token'] = sessionToken;
+    const ids = grupo.itens.map(i => i.id).filter(id => !String(id).startsWith('temp-'));
+    for (const id of ids) {
+        try {
+            await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens/${id}`, { method:'DELETE', headers });
+        } catch(e) {}
+    }
+    itens = itens.filter(i => !(i.grupo_tipo === grupo.tipo && i.grupo_numero === grupo.numero));
+    reconstruirGruposDeItens();
+    atualizarSelectsGrupos();
+    renderGrupos();
+    showToast('Item excluído', 'error');
 }
 
 const intervaloTabs = ['intervalo-tab-config', 'intervalo-tab-itens'];
 let currentIntervaloTab = 0;
 
 function switchIntervaloTab(tabId) {
-    // ... mantido
+    const allTabs = document.querySelectorAll('#modalIntervaloGrupos .tab-content');
+    const allBtns = document.querySelectorAll('#modalIntervaloGrupos .tab-btn');
+    allTabs.forEach(t => t.classList.remove('active'));
+    allBtns.forEach(b => b.classList.remove('active'));
+    const active = document.getElementById(tabId);
+    if (active) active.classList.add('active');
+    currentIntervaloTab = intervaloTabs.indexOf(tabId);
+    if (allBtns[currentIntervaloTab]) allBtns[currentIntervaloTab].classList.add('active');
+    const isLast = currentIntervaloTab === intervaloTabs.length - 1;
+    const prev = document.getElementById('btnIntervaloPrev');
+    const next = document.getElementById('btnIntervaloNext');
+    const criar = document.getElementById('btnIntervaloCriar');
+    if (prev) prev.style.display = currentIntervaloTab === 0 ? 'none' : 'inline-block';
+    if (next) next.style.display = isLast ? 'none' : 'inline-block';
+    if (criar) criar.style.display = isLast ? 'inline-block' : 'none';
 }
 
 function nextIntervaloTab() {
-    // ... mantido
+    if (currentIntervaloTab < intervaloTabs.length - 1) {
+        currentIntervaloTab++;
+        switchIntervaloTab(intervaloTabs[currentIntervaloTab]);
+    }
 }
 
 function prevIntervaloTab() {
-    // ... mantido
+    if (currentIntervaloTab > 0) {
+        currentIntervaloTab--;
+        switchIntervaloTab(intervaloTabs[currentIntervaloTab]);
+    }
 }
 
 function abrirModalIntervaloGrupos() {
-    // ... mantido
+    document.getElementById('intervGrupoTipo').value = 'GRUPO';
+    document.getElementById('intervGrupoQtd').value = 1;
+    atualizarLinhasIntervalo();
+    switchIntervaloTab('intervalo-tab-config');
+    document.getElementById('modalIntervaloGrupos').classList.add('show');
 }
 
 function fecharModalIntervaloGrupos() {
-    // ... mantido
+    document.getElementById('modalIntervaloGrupos').classList.remove('show');
 }
 
 function atualizarLinhasIntervalo() {
-    // ... mantido
+    const tipo = document.getElementById('intervGrupoTipo').value;
+    const qtd = parseInt(document.getElementById('intervGrupoQtd').value) || 1;
+    const container = document.getElementById('intervGrupoLinhas');
+    const maxN = grupos.reduce((m, g) => Math.max(m, g.numero), 0);
+    let html = '';
+    for (let i = 0; i < qtd; i++) {
+        const n = maxN + i + 1;
+        html += `<div style="display:grid;grid-template-columns:auto 1fr 2fr;gap:0.75rem;align-items:end;padding:0.75rem;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border-color);">
+            <div style="font-weight:700;font-size:0.9rem;color:var(--primary);white-space:nowrap;">${tipo} ${n}</div>
+            <div class="form-group" style="margin:0;">
+                <label style="font-size:0.8rem;">Número</label>
+                <input type="number" class="ig-numero" value="${n}" min="1" style="width:100%;padding:0.5rem 0.65rem;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-card);color:var(--text-primary);font-size:0.9rem;">
+            </div>
+            <div class="form-group" style="margin:0;">
+                <label style="font-size:0.8rem;">Itens (ex: 1-5, 10)</label>
+                <input type="text" class="ig-itens" placeholder="Ex: 1-5, 10" style="width:100%;padding:0.5rem 0.65rem;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-card);color:var(--text-primary);font-size:0.9rem;">
+            </div>
+        </div>`;
+    }
+    container.innerHTML = html;
 }
 
 async function confirmarIntervaloGrupos() {
-    // ... mantido
+    const tipo = document.getElementById('intervGrupoTipo').value;
+    const linhas = document.getElementById('intervGrupoLinhas').querySelectorAll('div[style*="grid"]');
+    if (linhas.length === 0) { showToast('Adicione ao menos um grupo', 'error'); return; }
+    const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+    if (sessionToken) headers['X-Session-Token'] = sessionToken;
+    let totalCriados = 0;
+    fecharModalIntervaloGrupos();
+    for (const linha of linhas) {
+        const numGrupo = parseInt(linha.querySelector('.ig-numero').value);
+        const itensStr = linha.querySelector('.ig-itens').value.trim();
+        if (!numGrupo || !itensStr) continue;
+        const numerosItens = parsearIntervalo(itensStr);
+        if (!numerosItens) continue;
+        for (const numItem of numerosItens) {
+            const jaExiste = itens.find(i => i.grupo_tipo === tipo && i.grupo_numero === numGrupo && String(i.numero) === String(numItem));
+            if (jaExiste) continue;
+            const novo = payloadItemSeguro({ pregao_id: currentPregaoId, numero: numItem, grupo_tipo: tipo, grupo_numero: numGrupo });
+            try {
+                const r = await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens`, { method:'POST', headers, body:JSON.stringify(novo) });
+                if (r.ok) { itens.push(await r.json()); totalCriados++; }
+            } catch(e) { console.error(e); }
+        }
+    }
+    reconstruirGruposDeItens();
+    atualizarSelectsGrupos();
+    renderGrupos();
+    showToast('Grupos criados', 'success');
 }
 
 async function toggleGrupoGanho(tipo, numero, ganho) {
-    // ... mantido
+    const grupoItens = itens.filter(i => i.grupo_tipo === tipo && parseInt(i.grupo_numero) === parseInt(numero));
+    const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+    if (sessionToken) headers['X-Session-Token'] = sessionToken;
+    for (const item of grupoItens) {
+        item.ganho = ganho;
+        if (!String(item.id).startsWith('temp-')) {
+            fetch(`${API_URL}/pregoes/${currentPregaoId}/itens/${item.id}`, {
+                method: 'PUT', headers, body: JSON.stringify(item)
+            }).catch(e => console.error(e));
+        }
+    }
+    renderGrupos();
 }
 
 function syncGrupos() {
@@ -1977,11 +2268,53 @@ function syncGrupos() {
 }
 
 function perguntarAssinaturaPDFGrupos() {
-    // ... mantido
+    const temGanho = itens.some(i => i.ganho && i.grupo_tipo);
+    if (!temGanho) { showToast('Marque ao menos um item (ganho) para gerar a proposta', 'error'); return; }
+    document.getElementById('modalAssinaturaGrupos').classList.add('show');
 }
 
 async function gerarPDFGruposComAssinatura(comAssinatura) {
-    // ... mantido, mas usar configProposta se necessário
+    document.getElementById('modalAssinaturaGrupos').classList.remove('show');
+    const pregao = pregoes.find(p => p.id === currentPregaoId);
+    if (!pregao) return;
+    let dadosBancarios = null;
+    try {
+        const h = { 'Accept': 'application/json' };
+        if (sessionToken) h['X-Session-Token'] = sessionToken;
+        const r = await fetch(`${API_URL}/pregoes/${pregao.id}/dados-bancarios`, { headers: h });
+        if (r.ok) { const d = await r.json(); dadosBancarios = d.dados_bancarios || null; }
+    } catch(e) {}
+    const estrutura = grupos.map(g => ({ grupo: g, itens: g.itens.filter(i => i.ganho) })).filter(e => e.itens.length > 0);
+    if (estrutura.length === 0) { showToast('Nenhum item ganho encontrado', 'error'); return; }
+    if (typeof window.jspdf === 'undefined') { showToast('Biblioteca PDF não carregou. Recarregue (F5).', 'error'); return; }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const margin = 20, pageWidth = doc.internal.pageSize.width, pageHeight = doc.internal.pageSize.height;
+    const lineHeight = 5, maxWidth = pageWidth - 2 * margin;
+    let addTextWithWrap;
+    const logo = new Image();
+    logo.crossOrigin = 'anonymous';
+    logo.src = 'I.R.-COMERCIO-E-MATERIAIS-ELETRICOS-LTDA-PDF.png';
+    logo.onload = () => iniciarPDFGrupos(true);
+    logo.onerror = () => iniciarPDFGrupos(false);
+    function iniciarPDFGrupos(logoOk) {
+        let y = 3;
+        try {
+            if (logoOk) {
+                const lw = 40, lh = (logo.height / logo.width) * lw;
+                doc.setGState(new doc.GState({ opacity: 0.3 }));
+                doc.addImage(logo, 'PNG', 5, 3, lw, lh);
+                doc.setGState(new doc.GState({ opacity: 1.0 }));
+                const fs = lh * 0.5;
+                doc.setFontSize(fs); doc.setFont(undefined, 'bold'); doc.setTextColor(150,150,150);
+                doc.text('I.R COMÉRCIO E', 5 + lw + 1.2, 3 + fs * 0.85);
+                doc.text('MATERIAIS ELÉTRICOS LTDA', 5 + lw + 1.2, 3 + fs * 0.85 + fs * 0.5);
+                doc.setTextColor(0, 0, 0);
+                y = 3 + lh + 8;
+            } else { y = 25; }
+        } catch(e) { y = 25; }
+        continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pageWidth, pageHeight, lineHeight, maxWidth, addTextWithWrap, comAssinatura, estrutura);
+    }
 }
 
 function criarTelaItens() {
@@ -2101,18 +2434,58 @@ function criarTelaItens() {
 
         <!-- MODAL INTERVALO (mantido) -->
         <div class="modal-overlay" id="modalIntervalo">
-            <!-- ... -->
+            <div class="modal-content" style="max-width:520px;">
+                <div class="modal-header">
+                    <h3 class="modal-title">Adicionar Intervalo</h3>
+                    <button class="close-modal" onclick="fecharModalIntervalo()">✕</button>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group" style="grid-column:1/-1;">
+                        <label>Intervalo de itens <span style="color:var(--text-secondary);font-weight:400;">(ex: 1-5, 10, 15-20)</span></label>
+                        <input type="text" id="inputIntervalo" placeholder="Ex: 1-5, 10, 15-20">
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="secondary" onclick="fecharModalIntervalo();showToast('Registro cancelado','error')">Cancelar</button>
+                    <button class="success" onclick="confirmarAdicionarIntervalo()">Adicionar</button>
+                </div>
+            </div>
         </div>
 
         <!-- MODAL EXCLUIR ITENS (mantido) -->
         <div class="modal-overlay" id="modalExcluirItens">
-            <!-- ... -->
+            <div class="modal-content" style="max-width:520px;">
+                <div class="modal-header">
+                    <h3 class="modal-title">Excluir Itens</h3>
+                    <button class="close-modal" onclick="fecharModalExcluirItens()">✕</button>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group" style="grid-column:1/-1;">
+                        <label>Intervalo a excluir <span style="color:var(--text-secondary);font-weight:400;">(ex: 1-5, 10)</span></label>
+                        <input type="text" id="inputExcluirIntervalo" placeholder="Ex: 1-5, 10">
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="secondary" onclick="fecharModalExcluirItens();showToast('Registro cancelado','error')">Cancelar</button>
+                    <button class="danger" onclick="confirmarExcluirItens()">Excluir</button>
+                </div>
+            </div>
         </div>
 
         <!-- MODAL ASSINATURA (mantido) -->
         <div class="modal-overlay" id="modalAssinatura">
-            <!-- ... -->
+            <div class="modal-content modal-delete">
+                <button class="close-modal" onclick="fecharModalAssinatura()">✕</button>
+                <div class="modal-message-delete">
+                    Deseja incluir a assinatura padrão na proposta?
+                </div>
+                <div class="modal-actions modal-actions-no-border">
+                    <button class="success" onclick="gerarPDFsProposta(true)">Sim</button>
+                    <button class="danger" onclick="gerarPDFsProposta(false)">Não</button>
+                </div>
+            </div>
         </div>
+
     `;
     return div;
 }
@@ -2244,23 +2617,124 @@ function renderItens(itensToRender = itens) {
 }
 
 function showItemContextMenu(event, itemId) {
-    // ... mantido
+    event.preventDefault();
+    
+    const existingMenu = document.getElementById('contextMenu');
+    if (existingMenu) existingMenu.remove();
+    
+    const menu = document.createElement('div');
+    menu.id = 'contextMenu';
+    menu.style.cssText = `
+        position: fixed;
+        left: ${event.clientX}px;
+        top: ${event.clientY}px;
+        background: white;
+        border: 1px solid #E5E7EB;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10000;
+        min-width: 150px;
+        padding: 0.5rem 0;
+    `;
+    
+    menu.innerHTML = `
+        <div onclick="excluirItemContexto('${itemId}')" style="
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            color: #EF4444;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        " onmouseover="this.style.background='#FEE2E2'" onmouseout="this.style.background='white'">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            Excluir
+        </div>
+    `;
+    
+    document.body.appendChild(menu);
+    
+    const closeMenu = () => {
+        menu.remove();
+        document.removeEventListener('click', closeMenu);
+    };
+    setTimeout(() => document.addEventListener('click', closeMenu), 100);
 }
 
 async function excluirItemContexto(itemId) {
-    // ... mantido
+    try {
+        const headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        };
+        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        
+        if (!itemId.startsWith('temp-')) {
+            const response = await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens/${itemId}`, {
+                method: 'DELETE',
+                headers: headers
+            });
+            
+            if (!response.ok) throw new Error('Erro ao excluir');
+        }
+        
+        itens = itens.filter(item => item.id !== itemId);
+        selectedItens.delete(itemId);
+        renderItens();
+        showToast('Item excluído', 'success');
+    } catch (error) {
+        console.error('Erro:', error);
+        showToast('Erro ao excluir item', 'error');
+    }
 }
 
 async function toggleItemGanho(id, ganho) {
-    // ... mantido
+    const item = itens.find(i => i.id === id);
+    if (!item) return;
+    item.ganho = ganho;
+
+    const cb = document.getElementById('ig-' + id) || document.getElementById('grp-' + id);
+    if (cb) {
+        cb.checked = ganho;
+        const row = cb.closest('tr');
+        if (row) {
+            if (ganho) row.classList.add('item-ganho', 'row-won');
+            else row.classList.remove('item-ganho', 'row-won');
+        }
+    }
+
+    try {
+        const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        if (!String(id).startsWith('temp-')) {
+            fetch(`${API_URL}/pregoes/${currentPregaoId}/itens/${id}`, {
+                method: 'PUT', headers, body: JSON.stringify(item)
+            }).catch(e => console.error('Erro ao salvar ganho:', e));
+        }
+    } catch (error) {
+        console.error('Erro ao atualizar ganho:', error);
+    }
 }
 
 function toggleItemSelection(id) {
-    // ... mantido
+    if (selectedItens.has(id)) {
+        selectedItens.delete(id);
+    } else {
+        selectedItens.add(id);
+    }
 }
 
 function toggleSelectAllItens() {
-    // ... mantido
+    const checkbox = document.getElementById('selectAllItens');
+    if (checkbox.checked) {
+        itens.forEach(item => selectedItens.add(item.id));
+    } else {
+        selectedItens.clear();
+    }
+    renderItens();
 }
 
 const _fmtBRL = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2296,110 +2770,617 @@ function payloadItemSeguro(fields) {
 }
 
 async function adicionarItem() {
-    // ... mantido
+    const numero = itens.length > 0 ? Math.max(...itens.map(i => i.numero)) + 1 : 1;
+    const novoItem = payloadItemSeguro({
+        pregao_id: currentPregaoId,
+        numero
+    });
+    try {
+        const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        const r = await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens`, { method:'POST', headers, body:JSON.stringify(novoItem) });
+        if (r.ok) {
+            const saved = await r.json();
+            itens.push(saved);
+            renderItens();
+            showToast('Item salvo', 'success');
+        } else { throw new Error('Erro ' + r.status); }
+    } catch(e) {
+        console.error(e);
+        showToast('Erro ao criar item', 'error');
+    }
 }
 
 function abrirModalIntervalo() {
-    // ... mantido
+    const modal = document.getElementById('modalIntervalo');
+    if (modal) {
+        document.getElementById('inputIntervalo').value = '';
+        modal.classList.add('show');
+    }
 }
 
 function fecharModalIntervalo() {
-    // ... mantido
+    const modal = document.getElementById('modalIntervalo');
+    if (modal) modal.classList.remove('show');
+    showToast('Registro cancelado', 'error');
 }
 
 function confirmarAdicionarIntervalo() {
-    // ... mantido
+    const intervalo = document.getElementById('inputIntervalo').value.trim();
+    fecharModalIntervalo();
+    if (!intervalo) return;
+    adicionarIntervalo(intervalo);
 }
 
 async function adicionarIntervalo(intervalo) {
-    // ... mantido
+    let numeros = [];
+    const partes = intervalo.split(',').map(p => p.trim());
+    
+    for (const parte of partes) {
+        if (parte.includes('-')) {
+            const [inicio, fim] = parte.split('-').map(n => parseInt(n.trim()));
+            if (isNaN(inicio) || isNaN(fim) || inicio > fim) {
+                showToast('Intervalo inválido', 'error');
+                return;
+            }
+            for (let i = inicio; i <= fim; i++) {
+                numeros.push(i);
+            }
+        } else {
+            const num = parseInt(parte);
+            if (isNaN(num)) {
+                showToast('Número inválido', 'error');
+                return;
+            }
+            numeros.push(num);
+        }
+    }
+    
+    const numerosExistentes = new Set(itens.map(i => i.numero));
+    const duplicatas = numeros.filter(n => numerosExistentes.has(n));
+    if (duplicatas.length > 0) {
+        showToast(`Itens ${duplicatas.join(', ')} já existem — ignorados`, 'error');
+        numeros = numeros.filter(n => !numerosExistentes.has(n));
+        if (numeros.length === 0) return;
+    }
+    
+    const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+    if (sessionToken) headers['X-Session-Token'] = sessionToken;
+    let criados = 0;
+    for (const numero of numeros) {
+        const novoItem = payloadItemSeguro({ pregao_id: currentPregaoId, numero });
+        try {
+            const r = await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens`, { method:'POST', headers, body:JSON.stringify(novoItem) });
+            if (r.ok) { itens.push(await r.json()); criados++; }
+        } catch(e) { console.error(e); }
+    }
+    itens.sort((a, b) => a.numero - b.numero);
+    renderItens();
+    showToast('Item salvo', 'success');
 }
 
 function abrirModalExcluirItens() {
-    // ... mantido
+    const modal = document.getElementById('modalExcluirItens');
+    if (modal) {
+        document.getElementById('inputExcluirIntervalo').value = '';
+        modal.classList.add('show');
+    }
 }
 
 function fecharModalExcluirItens() {
-    // ... mantido
+    const modal = document.getElementById('modalExcluirItens');
+    if (modal) modal.classList.remove('show');
 }
 
 async function confirmarExcluirItens() {
-    // ... mantido
+    const intervalo = document.getElementById('inputExcluirIntervalo').value.trim();
+    fecharModalExcluirItens();
+    
+    if (!intervalo) {
+        showToast('Digite um intervalo para excluir', 'error');
+        return;
+    }
+    
+    const numeros = parsearIntervalo(intervalo);
+    if (!numeros) return;
+    
+    const idsParaExcluir = itens
+        .filter(item => numeros.includes(item.numero))
+        .map(item => item.id);
+    
+    if (idsParaExcluir.length === 0) {
+        showToast('Nenhum item encontrado no intervalo informado', 'error');
+        return;
+    }
+    
+    await excluirItensPorIds(idsParaExcluir);
 }
 
 function parsearIntervalo(intervalo) {
-    // ... mantido
+    const numeros = [];
+    const partes = intervalo.split(',').map(p => p.trim());
+    
+    for (const parte of partes) {
+        if (parte.includes('-')) {
+            const [inicio, fim] = parte.split('-').map(n => parseInt(n.trim()));
+            if (isNaN(inicio) || isNaN(fim) || inicio > fim) {
+                showToast('Intervalo inválido', 'error');
+                return null;
+            }
+            for (let i = inicio; i <= fim; i++) numeros.push(i);
+        } else {
+            const num = parseInt(parte);
+            if (isNaN(num)) {
+                showToast('Número inválido', 'error');
+                return null;
+            }
+            numeros.push(num);
+        }
+    }
+    return numeros;
 }
 
 async function excluirItensPorIds(ids) {
-    // ... mantido
+    try {
+        const headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        };
+        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        
+        const idsServidor = ids.filter(id => !id.startsWith('temp-'));
+        
+        if (idsServidor.length > 0) {
+            const response = await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens/delete-multiple`, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({ ids: idsServidor })
+            });
+            if (!response.ok) throw new Error('Erro ao excluir');
+        }
+        
+        const idsSet = new Set(ids);
+        itens = itens.filter(item => !idsSet.has(item.id));
+        ids.forEach(id => selectedItens.delete(id));
+        renderItens();
+        showToast('Itens excluídos', 'success');
+    } catch (error) {
+        console.error('Erro:', error);
+        showToast('Erro ao excluir itens', 'error');
+    }
 }
 
 async function excluirItensSelecionados() {
-    // ... mantido
+    if (selectedItens.size === 0) {
+        showToast('Selecione itens para excluir', 'error');
+        return;
+    }
+    
+    try {
+        const headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        };
+        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        
+        const idsParaExcluir = Array.from(selectedItens).filter(id => !id.startsWith('temp-'));
+        
+        if (idsParaExcluir.length > 0) {
+            const response = await fetch(`${API_URL}/pregoes/${currentPregaoId}/itens/delete-multiple`, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({ ids: idsParaExcluir })
+            });
+            
+            if (!response.ok) throw new Error('Erro ao excluir');
+        }
+        
+        itens = itens.filter(item => !selectedItens.has(item.id));
+        selectedItens.clear();
+        renderItens();
+        showToast('Itens excluídos', 'success');
+    } catch (error) {
+        console.error('Erro:', error);
+        showToast('Erro ao excluir itens', 'error');
+    }
 }
 
 function editarItem(id) {
-    // ... mantido
+    const item = itens.find(i => i.id === id);
+    if (!item) return;
+    
+    editingItemIndex = itens.indexOf(item);
+    mostrarModalItem(item);
 }
 
 let currentItemTab = 0;
 const itemTabs = ['item-tab-item', 'item-tab-fornecedor', 'item-tab-valores'];
 
 function mostrarModalItem(item) {
-    // ... mantido
+    let modal = document.getElementById('modalItem');
+    if (!modal) {
+        modal = criarModalItem();
+        document.body.appendChild(modal);
+    }
+    
+    document.getElementById('itemNumero').value = item.numero;
+    document.getElementById('itemDescricao').value = item.descricao;
+    document.getElementById('itemQtd').value = item.qtd;
+    document.getElementById('itemUnidade').value = item.unidade || 'UN';
+    document.getElementById('itemMarca').value = item.marca || '';
+    document.getElementById('itemModelo').value = item.modelo || '';
+    document.getElementById('itemEstimadoUnt').value = item.estimado_unt || 0;
+    document.getElementById('itemEstimadoTotal').value = item.estimado_total || 0;
+    document.getElementById('itemCustoUnt').value = item.custo_unt || 0;
+    document.getElementById('itemCustoTotal').value = item.custo_total || 0;
+    document.getElementById('itemPorcentagem').value = item.porcentagem !== undefined ? item.porcentagem : 149;
+    document.getElementById('itemVendaUnt').value = item.venda_unt || 0;
+    document.getElementById('itemVendaTotal').value = item.venda_total || 0;
+    
+    // Resetar flag de edição manual
+    const vendaUntInput = document.getElementById('itemVendaUnt');
+    if (vendaUntInput) {
+        vendaUntInput.dataset.manual = 'false';
+    }
+    
+    modoNavegacaoGrupo = false;
+    atualizarTituloModalItem(item);
+    
+    currentItemTab = 0;
+    switchItemTab(itemTabs[0]);
+    
+    modal.classList.add('show');
+    configurarCalculosAutomaticos();
+    setTimeout(calcularValoresItem, 50);
+    setTimeout(setupUpperCaseInputs, 50);
 }
 
 function atualizarTituloModalItem(item) {
-    // ... mantido
+    const totalItens = itens.length;
+    const posicao = editingItemIndex + 1;
+    
+    const titleEl = document.getElementById('modalItemTitle');
+    const prevPag = document.getElementById('btnPrevPagItem');
+    const nextPag = document.getElementById('btnNextPagItem');
+    
+    if (titleEl) titleEl.textContent = `Item ${item.numero}`;
+    if (prevPag) prevPag.style.visibility = editingItemIndex > 0 ? 'visible' : 'hidden';
+    if (nextPag) nextPag.style.visibility = editingItemIndex < itens.length - 1 ? 'visible' : 'hidden';
 }
 
 function switchItemTab(tabId) {
-    // ... mantido
+    itemTabs.forEach((tab, idx) => {
+        const el = document.getElementById(tab);
+        const btn = document.querySelectorAll('#modalItem .tab-btn')[idx];
+        if (el) el.classList.remove('active');
+        if (btn) btn.classList.remove('active');
+    });
+    
+    const activeEl = document.getElementById(tabId);
+    const activeIdx = itemTabs.indexOf(tabId);
+    const activeBtn = document.querySelectorAll('#modalItem .tab-btn')[activeIdx];
+    
+    if (activeEl) activeEl.classList.add('active');
+    if (activeBtn) activeBtn.classList.add('active');
+    
+    currentItemTab = activeIdx;
+    atualizarNavegacaoAbasItem();
 }
 
 function atualizarNavegacaoAbasItem() {
-    // ... mantido
+    const btnPrev   = document.getElementById('btnItemTabPrev');
+    const btnNext   = document.getElementById('btnItemTabNext');
+    const btnSalvar = document.getElementById('btnSalvarItem');
+    const isLast = currentItemTab === itemTabs.length - 1;
+    if (btnPrev)   btnPrev.style.display   = currentItemTab === 0 ? 'none' : 'inline-block';
+    if (btnNext)   btnNext.style.display   = isLast ? 'none' : 'inline-block';
+    if (btnSalvar) btnSalvar.style.display = isLast ? 'inline-block' : 'none';
 }
 
 function nextItemTab() {
-    // ... mantido
+    if (currentItemTab < itemTabs.length - 1) {
+        currentItemTab++;
+        switchItemTab(itemTabs[currentItemTab]);
+    }
 }
 
 function prevItemTab() {
-    // ... mantido
+    if (currentItemTab > 0) {
+        currentItemTab--;
+        switchItemTab(itemTabs[currentItemTab]);
+    }
 }
 
 function criarModalItem() {
-    // ... mantido
+    const modal = document.createElement('div');
+    modal.id = 'modalItem';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content large" style="max-width: 680px; width: 90vw;">
+            <div class="modal-header" style="align-items: center;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <button id="btnPrevPagItem" onclick="navegarItemAnterior()" 
+                            style="background: none; border: none; cursor: pointer; color: var(--text-secondary); font-size: 1.1rem; padding: 0 0.25rem; visibility: hidden;">‹</button>
+                    <h3 class="modal-title" id="modalItemTitle">Item</h3>
+                    <button id="btnNextPagItem" onclick="navegarProximoItem()"
+                            style="background: none; border: none; cursor: pointer; color: var(--text-secondary); font-size: 1.1rem; padding: 0 0.25rem; visibility: hidden;">›</button>
+                </div>
+                <button class="close-modal" onclick="fecharModalItem()">✕</button>
+            </div>
+            
+            <div class="tabs-container">
+                <div class="tabs-nav">
+                    <button class="tab-btn active" onclick="switchItemTab('item-tab-item')">Item</button>
+                    <button class="tab-btn" onclick="switchItemTab('item-tab-fornecedor')">Fornecedor</button>
+                    <button class="tab-btn" onclick="switchItemTab('item-tab-valores')">Valores</button>
+                </div>
+                
+                <div class="tab-content active" id="item-tab-item">
+                    <input type="hidden" id="itemNumero">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Quantidade *</label>
+                            <input type="number" id="itemQtd" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Unidade *</label>
+                            <select id="itemUnidade">
+                                <option value="UN">UN</option>
+                                <option value="MT">MT</option>
+                                <option value="PÇ">PÇ</option>
+                                <option value="CX">CX</option>
+                                <option value="PT">PT</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label>Descrição *</label>
+                            <textarea id="itemDescricao" rows="4" required></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="item-tab-fornecedor">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Marca</label>
+                            <input type="text" id="itemMarca">
+                        </div>
+                        <div class="form-group">
+                            <label>Modelo</label>
+                            <input type="text" id="itemModelo">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="item-tab-valores">
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 0.75rem; padding: 0.25rem 0;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
+                            <div class="form-group" style="margin:0;">
+                                <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">Porcentagem (%)</label>
+                                <input type="number" id="itemPorcentagem" min="0" step="any" value="149" 
+                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box;">
+                            </div>
+                            <div></div>
+                            <div></div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
+                            <div class="form-group" style="margin:0;">
+                                <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">Compra UNT</label>
+                                <input type="number" id="itemEstimadoUnt" step="any" min="0"
+                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box;">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">Custo UNT</label>
+                                <input type="number" id="itemCustoUnt" step="any" min="0"
+                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box;">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">Venda UNT</label>
+                                <input type="number" id="itemVendaUnt" step="any" min="0"
+                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box;">
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
+                            <div class="form-group" style="margin:0;">
+                                <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">Compra Total</label>
+                                <input type="number" id="itemEstimadoTotal" step="any" min="0"
+                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box;">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">Custo Total</label>
+                                <input type="number" id="itemCustoTotal" step="any" min="0"
+                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box;">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">Venda Total</label>
+                                <input type="number" id="itemVendaTotal" step="any" min="0"
+                                       style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.9rem; box-sizing:border-box;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" id="btnItemTabPrev" onclick="prevItemTab()" class="secondary" style="display: none;">Anterior</button>
+                <button type="button" id="btnItemTabNext" onclick="nextItemTab()" class="secondary">Próximo</button>
+                <button type="button" id="btnSalvarItem" onclick="salvarItemAtual()" class="success" style="display:none;">Salvar</button>
+                <button type="button" onclick="fecharModalItem()" class="danger">Cancelar</button>
+            </div>
+        </div>
+    `;
+    return modal;
 }
 
 function calcularValoresItem() {
-    // ... mantido
+    const q = parseFloat(document.getElementById('itemQtd')?.value) || 0;
+    const eu = parseFloat(document.getElementById('itemEstimadoUnt')?.value) || 0;
+    const cu = parseFloat(document.getElementById('itemCustoUnt')?.value) || 0;
+    const perc = parseFloat(document.getElementById('itemPorcentagem')?.value) || 0;
+    
+    const estimadoTotal = q * eu;
+    const custoTotal = q * cu;
+    
+    // Campos de venda
+    const vendaUntInput = document.getElementById('itemVendaUnt');
+    const vendaTotalInput = document.getElementById('itemVendaTotal');
+    
+    // Verifica se o usuário editou manualmente (dataset.manual = 'true')
+    const foiEditadoManual = vendaUntInput && vendaUntInput.dataset.manual === 'true';
+    
+    if (!foiEditadoManual) {
+        // Se não foi editado manualmente, calcula automaticamente
+        const vendaUnt = cu * (1 + perc / 100);
+        if (vendaUntInput) {
+            vendaUntInput.value = vendaUnt.toFixed(4).replace(/\.?0+$/, '');
+        }
+        if (vendaTotalInput) {
+            vendaTotalInput.value = (vendaUnt * q).toFixed(2);
+        }
+    } else {
+        // Se foi editado manualmente, só atualiza o total baseado no valor manual
+        const vendaUnt = parseFloat(vendaUntInput.value) || 0;
+        if (vendaTotalInput) {
+            vendaTotalInput.value = (vendaUnt * q).toFixed(2);
+        }
+    }
+    
+    const etEl = document.getElementById('itemEstimadoTotal');
+    const ctEl = document.getElementById('itemCustoTotal');
+    
+    if (etEl) etEl.value = estimadoTotal.toFixed(2);
+    if (ctEl) ctEl.value = custoTotal.toFixed(2);
 }
 
 function configurarCalculosAutomaticos() {
-    // ... mantido
+    const modal = document.getElementById('modalItem');
+    if (!modal) return;
+    
+    if (modal._calcListener) {
+        modal.removeEventListener('input', modal._calcListener);
+    }
+    
+    modal._calcListener = function(e) {
+        const ids = ['itemQtd', 'itemEstimadoUnt', 'itemCustoUnt', 'itemPorcentagem', 'itemVendaUnt'];
+        if (ids.includes(e.target.id)) {
+            requestAnimationFrame(() => {
+                calcularValoresItem();
+            });
+        }
+    };
+    
+    modal.addEventListener('input', modal._calcListener);
+    
+    // Quando o usuário digitar no campo Venda Unitária, marca como manual
+    const vendaUntInput = document.getElementById('itemVendaUnt');
+    if (vendaUntInput) {
+        vendaUntInput.addEventListener('input', function() {
+            this.dataset.manual = 'true';
+        });
+    }
+    
+    const inputs = ['itemQtd', 'itemEstimadoUnt', 'itemCustoUnt', 'itemPorcentagem', 'itemVendaUnt'];
+    inputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.removeEventListener('blur', calcularValoresItem);
+            el.addEventListener('blur', calcularValoresItem);
+        }
+    });
 }
     
 function navegarItemAnterior() {
-    // ... mantido
+    if (modoNavegacaoGrupo) { navegarGrupoAnterior(); return; }
+    if (editingItemIndex > 0) {
+        salvarItemAtual(false);
+        editingItemIndex--;
+        mostrarModalItem(itens[editingItemIndex]);
+    }
 }
 
 function navegarProximoItem() {
-    // ... mantido
+    if (modoNavegacaoGrupo) { navegarGrupoProximo(); return; }
+    if (editingItemIndex < itens.length - 1) {
+        salvarItemAtual(false);
+        editingItemIndex++;
+        mostrarModalItem(itens[editingItemIndex]);
+    }
 }
 
 async function salvarItemAtual(fechar = true) {
-    // ... mantido
+    const item = itens[editingItemIndex];
+    
+    item.numero = parseInt(document.getElementById('itemNumero').value) || item.numero;
+    item.descricao = toUpperCase(document.getElementById('itemDescricao').value);
+    item.qtd = parseInt(document.getElementById('itemQtd').value);
+    item.unidade = document.getElementById('itemUnidade').value;
+    item.marca = toUpperCase(document.getElementById('itemMarca').value);
+    item.modelo = toUpperCase(document.getElementById('itemModelo').value);
+    item.estimado_unt = parseFloat(document.getElementById('itemEstimadoUnt').value || 0);
+    item.estimado_total = parseFloat(document.getElementById('itemEstimadoTotal').value || 0);
+    item.custo_unt = parseFloat(document.getElementById('itemCustoUnt').value || 0);
+    item.custo_total = parseFloat(document.getElementById('itemCustoTotal').value || 0);
+    item.porcentagem = parseFloat(document.getElementById('itemPorcentagem').value || 149);
+    item.venda_unt = parseFloat(document.getElementById('itemVendaUnt').value || 0);
+    item.venda_total = parseFloat(document.getElementById('itemVendaTotal').value || 0);
+    
+    // Se a venda unitária foi editada manualmente, recalcula a porcentagem
+    if (item.custo_unt > 0) {
+        item.porcentagem = ((item.venda_unt / item.custo_unt) - 1) * 100;
+    }
+    
+    try {
+        const headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        };
+        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        
+        const isNew = item.id.startsWith('temp-');
+        const url = isNew 
+            ? `${API_URL}/pregoes/${currentPregaoId}/itens`
+            : `${API_URL}/pregoes/${currentPregaoId}/itens/${item.id}`;
+        const method = isNew ? 'POST' : 'PUT';
+        
+        const response = await fetch(url, {
+            method: method,
+            headers: headers,
+            body: JSON.stringify(item)
+        });
+        
+        if (response.ok) {
+            const savedItem = await response.json();
+            itens[editingItemIndex] = savedItem;
+            if (fechar) {
+                if (editandoGrupoIdx !== null) {
+                    reconstruirGruposDeItens();
+                    atualizarSelectsGrupos();
+                    renderGrupos();
+                } else {
+                    atualizarMarcasItens();
+                    renderItens();
+                }
+                showToast('Item salvo', 'success');
+                fecharModalItemContexto();
+            }
+        }
+    } catch (error) {
+        console.error('Erro:', error);
+        showToast('Erro ao salvar item', 'error');
+    }
 }
 
 function fecharModalItem() {
-    // ... mantido
+    const modal = document.getElementById('modalItem');
+    if (modal) modal.classList.remove('show');
+    editingItemIndex = null;
+    editandoGrupoIdx = null;
+    editandoGrupoItemIdx = null;
+    modoNavegacaoGrupo = false;
 }
 
 function fecharModalItemContexto() {
-    // ... mantido
+    fecharModalItem();
 }
 
 function syncItens() {
@@ -2408,11 +3389,22 @@ function syncItens() {
 }
 
 function perguntarAssinaturaPDF() {
-    // ... mantido
+    if (!currentPregaoId) {
+        showToast('Erro: Pregão não identificado', 'error');
+        return;
+    }
+    const itensSelecionados = itens.filter(item => item.ganho);
+    if (itensSelecionados.length === 0) {
+        showToast('Marque ao menos um item (ganho) para gerar a proposta', 'error');
+        return;
+    }
+    const modal = document.getElementById('modalAssinatura');
+    if (modal) modal.classList.add('show');
 }
 
 function fecharModalAssinatura() {
-    // ... mantido
+    const modal = document.getElementById('modalAssinatura');
+    if (modal) modal.classList.remove('show');
 }
 
 let fornecedoresDisponiveis = [];
@@ -2470,7 +3462,85 @@ function copiarMensagemCotacao() {
 }
 
 function numeroPorExtenso(valor) {
-    // ... mantido
+    if (valor === 0) return 'ZERO REAIS';
+    
+    const unidades = ['', 'UM', 'DOIS', 'TRÊS', 'QUATRO', 'CINCO', 'SEIS', 'SETE', 'OITO', 'NOVE'];
+    const dezenas = ['', 'DEZ', 'VINTE', 'TRINTA', 'QUARENTA', 'CINQUENTA', 'SESSENTA', 'SETENTA', 'OITENTA', 'NOVENTA'];
+    const especiais = ['ONZE', 'DOZE', 'TREZE', 'CATORZE', 'QUINZE', 'DEZESSEIS', 'DEZESSETE', 'DEZOITO', 'DEZENOVE'];
+    const centenas = ['', 'CENTO', 'DUZENTOS', 'TREZENTOS', 'QUATROCENTOS', 'QUINHENTOS', 'SEISCENTOS', 'SETECENTOS', 'OITOCENTOS', 'NOVECENTOS'];
+    
+    let inteiro = Math.floor(valor);
+    let centavos = Math.round((valor - inteiro) * 100);
+    
+    function converterTresDigitos(num) {
+        if (num === 0) return '';
+        if (num === 100) return 'CEM';
+        
+        let resultado = [];
+        let centena = Math.floor(num / 100);
+        let resto = num % 100;
+        
+        if (centena > 0) {
+            resultado.push(centenas[centena]);
+        }
+        
+        if (resto > 0) {
+            if (resto < 10) {
+                resultado.push(unidades[resto]);
+            } else if (resto < 20) {
+                resultado.push(especiais[resto - 11]);
+            } else {
+                let dezena = Math.floor(resto / 10);
+                let unidade = resto % 10;
+                if (dezena > 0) {
+                    resultado.push(dezenas[dezena]);
+                }
+                if (unidade > 0) {
+                    resultado.push(unidades[unidade]);
+                }
+            }
+        }
+        
+        return resultado.join(' E ');
+    }
+    
+    let partes = [];
+    
+    if (inteiro > 0) {
+        let milhares = Math.floor(inteiro / 1000);
+        let restante = inteiro % 1000;
+        
+        if (milhares > 0) {
+            if (milhares === 1) {
+                partes.push('MIL');
+            } else {
+                let milharTexto = converterTresDigitos(milhares);
+                partes.push(milharTexto + (milharTexto.endsWith('O') ? ' MIL' : ' MIL'));
+            }
+        }
+        
+        if (restante > 0) {
+            partes.push(converterTresDigitos(restante));
+        }
+        
+        let textoInteiro = partes.join(' E ');
+        if (inteiro === 1) {
+            textoInteiro = 'UM REAL';
+        } else {
+            textoInteiro += ' REAIS';
+        }
+        partes = [textoInteiro];
+    }
+    
+    if (centavos > 0) {
+        if (centavos === 1) {
+            partes.push('UM CENTAVO');
+        } else {
+            partes.push(converterTresDigitos(centavos) + ' CENTAVOS');
+        }
+    }
+    
+    return partes.join(' E ');
 }
 
 // ============================================
@@ -2567,16 +3637,50 @@ async function gerarPDFPropostaInterno(pregao, comAssinatura = true) {
         console.error('Erro ao buscar dados bancários:', error);
     }
     
+    // Usar configurações salvas
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
+  // ============================================
+// FUNÇÃO COMPLETA DE GERAÇÃO DO PDF DA PROPOSTA
+// ============================================
+async function gerarPDFPropostaInterno(pregao, comAssinatura = true) {
+    let dadosBancarios = null;
+    try {
+        const headers = { 'Accept': 'application/json' };
+        if (sessionToken) headers['X-Session-Token'] = sessionToken;
+        
+        const response = await fetch(`${API_URL}/pregoes/${currentPregaoId}/dados-bancarios`, {
+            method: 'GET',
+            headers: headers
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            dadosBancarios = data.dados_bancarios;
+        }
+    } catch (error) {
+        console.error('Erro ao buscar dados bancários:', error);
+    }
+
+    // Usa as configurações salvas, mas permite sobrescrever com os valores do pregão se existirem
+    const validade = configProposta.validade || pregao.validade_proposta || '';
+    const prazoEntrega = configProposta.prazoEntrega || pregao.prazo_entrega || '';
+    const prazoPagamento = configProposta.prazoPagamento || pregao.prazo_pagamento || '';
+    const dadosBancariosTexto = configProposta.dadosBancarios || dadosBancarios || '';
+    const incluirAssinatura = configProposta.assinatura ? comAssinatura : false;
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
     let y = 3;
     const margin = 15;
     const pageWidth = doc.internal.pageSize.width;
     const pageHeight = doc.internal.pageSize.height;
     const lineHeight = 5;
     const maxWidth = pageWidth - (2 * margin);
-    
+
+    // Função auxiliar para adicionar texto com quebra de linha
     function addTextWithWrap(text, x, yStart, maxW, lineH = 5) {
         const lines = doc.splitTextToSize(text, maxW);
         lines.forEach((line, index) => {
@@ -2587,128 +3691,348 @@ async function gerarPDFPropostaInterno(pregao, comAssinatura = true) {
         });
         return yStart + (lines.length * lineH);
     }
-    
+
+    // Cabeçalho com logo (igual ao original)
     const logoHeader = new Image();
     logoHeader.crossOrigin = 'anonymous';
     logoHeader.src = 'I.R.-COMERCIO-E-MATERIAIS-ELETRICOS-LTDA-PDF.png';
-    
+
     logoHeader.onload = function() {
         try {
             const logoWidth = 40;
             const logoHeight = (logoHeader.height / logoHeader.width) * logoWidth;
             const logoX = 5;
             const logoY = y;
-            
+
             doc.setGState(new doc.GState({ opacity: 0.3 }));
             doc.addImage(logoHeader, 'PNG', logoX, logoY, logoWidth, logoHeight);
             doc.setGState(new doc.GState({ opacity: 1.0 }));
-            
+
             const fontSize = logoHeight * 0.5;
             doc.setFontSize(fontSize);
             doc.setFont(undefined, 'bold');
             doc.setTextColor(150, 150, 150);
             const textX = logoX + logoWidth + 1.2;
-            
             const lineSpacing = fontSize * 0.5;
             const textY1 = logoY + fontSize * 0.85;
             doc.text('I.R COMÉRCIO E', textX, textY1);
-            
             const textY2 = textY1 + lineSpacing;
             doc.text('MATERIAIS ELÉTRICOS LTDA', textX, textY2);
-            
             doc.setTextColor(0, 0, 0);
+
             y = logoY + logoHeight + 8;
-            
-            continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pageWidth, pageHeight, lineHeight, maxWidth, addTextWithWrap, comAssinatura);
-            
+
+            continuarGeracaoPDFProposta(doc, pregao, dadosBancariosTexto, y, margin, pageWidth, pageHeight, lineHeight, maxWidth, addTextWithWrap, incluirAssinatura, validade, prazoEntrega, prazoPagamento);
         } catch (e) {
             console.log('Erro ao adicionar logo:', e);
             y = 25;
-            continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pageWidth, pageHeight, lineHeight, maxWidth, addTextWithWrap, comAssinatura);
+            continuarGeracaoPDFProposta(doc, pregao, dadosBancariosTexto, y, margin, pageWidth, pageHeight, lineHeight, maxWidth, addTextWithWrap, incluirAssinatura, validade, prazoEntrega, prazoPagamento);
         }
     };
-    
+
     logoHeader.onerror = function() {
         console.log('Erro ao carregar logo, gerando PDF sem ela');
         y = 25;
-        continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pageWidth, pageHeight, lineHeight, maxWidth, addTextWithWrap, comAssinatura);
+        continuarGeracaoPDFProposta(doc, pregao, dadosBancariosTexto, y, margin, pageWidth, pageHeight, lineHeight, maxWidth, addTextWithWrap, incluirAssinatura, validade, prazoEntrega, prazoPagamento);
     };
 }
 
-function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pageWidth, pageHeight, lineHeight, maxWidth, addTextWithWrap, comAssinatura = true, gruposEstrutura = null) {
-    const logoHeaderImg = new Image();
-    logoHeaderImg.crossOrigin = 'anonymous';
-    logoHeaderImg.src = 'I.R.-COMERCIO-E-MATERIAIS-ELETRICOS-LTDA-PDF.png';
-    
-    logoHeaderImg.onload = function() {
-        gerarPDFPropostaComCabecalho();
+function continuarGeracaoPDFProposta(doc, pregao, dadosBancariosTexto, y, margin, pageWidth, pageHeight, lineHeight, maxWidth, addTextWithWrap, comAssinatura, validade, prazoEntrega, prazoPagamento) {
+    // Função para adicionar cabeçalho em novas páginas
+    function adicionarCabecalho() {
+        const logoHeaderImg = new Image();
+        logoHeaderImg.crossOrigin = 'anonymous';
+        logoHeaderImg.src = 'I.R.-COMERCIO-E-MATERIAIS-ELETRICOS-LTDA-PDF.png';
+        if (!logoHeaderImg.complete) {
+            return 20; // fallback se a imagem não carregar
+        }
+        const headerY = 3;
+        const logoWidth = 40;
+        const logoHeight = (logoHeaderImg.height / logoHeaderImg.width) * logoWidth;
+        const logoX = 5;
+        doc.setGState(new doc.GState({ opacity: 0.3 }));
+        doc.addImage(logoHeaderImg, 'PNG', logoX, headerY, logoWidth, logoHeight);
+        doc.setGState(new doc.GState({ opacity: 1.0 }));
+        const fontSize = logoHeight * 0.5;
+        doc.setFontSize(fontSize);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(150, 150, 150);
+        const textX = logoX + logoWidth + 1.2;
+        const lineSpacing = fontSize * 0.5;
+        const textY1 = headerY + fontSize * 0.85;
+        doc.text('I.R COMÉRCIO E', textX, textY1);
+        const textY2 = textY1 + lineSpacing;
+        doc.text('MATERIAIS ELÉTRICOS LTDA', textX, textY2);
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'normal');
+        return headerY + logoHeight + 8;
+    }
+
+    function addPageWithHeader() {
+        doc.addPage();
+        return adicionarCabecalho();
+    }
+
+    function paginaCheia(yAtual, espaco = 40) {
+        return yAtual > pageHeight - 30 - espaco;
+    }
+
+    // Título
+    doc.setFontSize(18);
+    doc.setFont(undefined, 'bold');
+    doc.text('PROPOSTA', pageWidth / 2, y, { align: 'center' });
+    y += 8;
+    doc.setFontSize(14);
+    doc.text(`${pregao.numero_pregao}${pregao.uasg ? ' - ' + pregao.uasg : ''}`, pageWidth / 2, y, { align: 'center' });
+    y += 12;
+
+    // Destinatário
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    doc.text('AO', margin, y);
+    y += lineHeight + 1;
+    if (pregao.nome_orgao) {
+        doc.setFont(undefined, 'bold');
+        doc.text(toUpperCase(pregao.nome_orgao), margin, y);
+        doc.setFont(undefined, 'normal');
+        y += lineHeight + 1;
+    }
+    doc.text('COMISSÃO PERMANENTE DE LICITAÇÃO', margin, y);
+    y += lineHeight + 1;
+    doc.text(`PREGÃO ELETRÔNICO: ${pregao.numero_pregao}${pregao.uasg ? '  UASG: ' + pregao.uasg : ''}`, margin, y);
+    y += 10;
+
+    if (paginaCheia(y, 50)) y = addPageWithHeader();
+
+    // Tabela de itens
+    const itensSelecionados = itens.filter(item => item.ganho);
+    const fmtValorPdf = (v, decimals = 2) => {
+        return 'R$ ' + (v || 0).toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
     };
-    
-    logoHeaderImg.onerror = function() {
-        console.log('Erro ao carregar logo do cabeçalho');
-        gerarPDFPropostaComCabecalho();
+    const fmtUntPdf = (v) => {
+        const n = v || 0;
+        const s = n.toFixed(4).replace(/(\.(\d*?)?)0+$/, '$1').replace(/\.$/, '');
+        return 'R$ ' + parseFloat(s || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
     };
-    
-    function gerarPDFPropostaComCabecalho() {
-        const logoCarregada = logoHeaderImg.complete && logoHeaderImg.naturalHeight !== 0;
-        
-        function adicionarCabecalho() {
-            if (!logoCarregada) {
-                return 20;
+
+    const tableWidth = pageWidth - (2 * margin);
+    const colWidths = {
+        item:     tableWidth * 0.05,
+        descricao:tableWidth * 0.30,
+        qtd:      tableWidth * 0.06,
+        unid:     tableWidth * 0.05,
+        marca:    tableWidth * 0.12,
+        modelo:   tableWidth * 0.12,
+        vunt:     tableWidth * 0.14,
+        total:    tableWidth * 0.16
+    };
+    const itemRowHeight = 10;
+
+    function desenharCabecalhoTabela() {
+        doc.setFillColor(108, 117, 125);
+        doc.setDrawColor(180, 180, 180);
+        doc.rect(margin, y, tableWidth, itemRowHeight, 'FD');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(7.5);
+        doc.setFont(undefined, 'bold');
+        let xp = margin;
+        [
+            ['ITEM', colWidths.item, 'center'],
+            ['DESCRIÇÃO', colWidths.descricao, 'left'],
+            ['QTD', colWidths.qtd, 'center'],
+            ['UN', colWidths.unid, 'center'],
+            ['MARCA', colWidths.marca, 'center'],
+            ['MODELO', colWidths.modelo, 'center'],
+            ['VD. UNT', colWidths.vunt, 'right'],
+            ['VD. TOTAL', colWidths.total, 'right']
+        ].forEach(([lbl, w, align]) => {
+            doc.line(xp, y, xp, y + itemRowHeight);
+            doc.text(lbl, xp + w / 2, y + 6.5, { align: align === 'center' ? 'center' : align === 'left' ? 'left' : 'right' });
+            xp += w;
+        });
+        doc.line(xp, y, xp, y + itemRowHeight);
+        y += itemRowHeight;
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(7.5);
+        doc.setFont(undefined, 'normal');
+    }
+
+    function desenharLinhaItem(item, rowIndex) {
+        const descricaoUpper = toUpperCase(item.descricao);
+        const descLines = doc.splitTextToSize(descricaoUpper, colWidths.descricao - 4);
+        const marcaWrap = doc.splitTextToSize(item.marca || '-', colWidths.marca - 2);
+        const modeloWrap = doc.splitTextToSize(item.modelo || '-', colWidths.modelo - 2);
+        const lineCount = Math.max(descLines.length, marcaWrap.length, modeloWrap.length);
+        const rowH = Math.max(itemRowHeight, lineCount * 3.5 + 4);
+        if (paginaCheia(y, rowH + 10)) {
+            y = addPageWithHeader();
+            desenharCabecalhoTabela();
+        }
+        const rowBg = (rowIndex % 2 === 0) ? [255,255,255] : [247,248,250];
+        doc.setFillColor(...rowBg);
+        doc.setDrawColor(180, 180, 180);
+        doc.rect(margin, y, tableWidth, rowH, 'FD');
+        let xp = margin;
+        const cy = y + (rowH / 2) + 1.5;
+        doc.line(xp, y, xp, y + rowH);
+        doc.text(String(item.numero), xp + colWidths.item/2, cy, { align: 'center' });
+        xp += colWidths.item; doc.line(xp, y, xp, y + rowH);
+        let yt = y + 4; descLines.forEach(l => { doc.text(l, xp + 2, yt); yt += 3.5; });
+        xp += colWidths.descricao; doc.line(xp, y, xp, y + rowH);
+        doc.text(String(item.qtd || 1), xp + colWidths.qtd/2, cy, { align: 'center' });
+        xp += colWidths.qtd; doc.line(xp, y, xp, y + rowH);
+        doc.text(item.unidade || 'UN', xp + colWidths.unid/2, cy, { align: 'center' });
+        xp += colWidths.unid; doc.line(xp, y, xp, y + rowH);
+        let ym = y + 4; marcaWrap.forEach(ml => { doc.text(ml, xp + colWidths.marca/2, ym, { align:'center' }); ym += 3.5; });
+        xp += colWidths.marca; doc.line(xp, y, xp, y + rowH);
+        let ymo = y + 4; modeloWrap.forEach(ml => { doc.text(ml, xp + colWidths.modelo/2, ymo, { align:'center' }); ymo += 3.5; });
+        xp += colWidths.modelo; doc.line(xp, y, xp, y + rowH);
+        doc.text(fmtUntPdf(item.venda_unt), xp + colWidths.vunt/2, cy, { align: 'center' });
+        xp += colWidths.vunt; doc.line(xp, y, xp, y + rowH);
+        doc.text(fmtValorPdf(item.venda_total), xp + colWidths.total/2, cy, { align: 'center' });
+        xp += colWidths.total; doc.line(xp, y, xp, y + rowH);
+        y += rowH;
+    }
+
+    function desenharRodapeTabela(totalValor) {
+        doc.setFillColor(240, 240, 240);
+        doc.setFont(undefined, 'bold');
+        doc.rect(margin, y, tableWidth, 8, 'FD');
+        doc.text('TOTAL GERAL:', margin + tableWidth - colWidths.total - colWidths.vunt - 4, y + 5.5, { align: 'right' });
+        doc.text(fmtValorPdf(totalValor), margin + tableWidth - 2, y + 5.5, { align: 'right' });
+        doc.setFont(undefined, 'normal');
+        y += 8;
+    }
+
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'bold');
+    doc.text('ITENS DA PROPOSTA', margin, y);
+    y += 6;
+    desenharCabecalhoTabela();
+    itensSelecionados.forEach((item, index) => desenharLinhaItem(item, index));
+    const totalGeral = itensSelecionados.reduce((acc, item) => acc + (item.venda_total || 0), 0);
+    desenharRodapeTabela(totalGeral);
+
+    y += 8;
+    if (paginaCheia(y, 60)) y = addPageWithHeader();
+
+    // Condições
+    doc.setFontSize(10);
+    function addCampoCondicao(label, valor) {
+        if (!valor || valor.toString().trim() === '') return;
+        doc.setFont(undefined, 'bold');
+        const lw = doc.getTextWidth(label + ': ');
+        doc.text(label + ': ', margin, y);
+        doc.setFont(undefined, 'normal');
+        const linhas = doc.splitTextToSize(valor.toString(), maxWidth - lw);
+        doc.text(linhas[0], margin + lw, y);
+        y += lineHeight;
+        for (let i = 1; i < linhas.length; i++) {
+            doc.text(linhas[i], margin, y);
+            y += lineHeight;
+        }
+        y += 3;
+    }
+
+    const valorExtenso = numeroPorExtenso(totalGeral);
+    addCampoCondicao('VALOR TOTAL DA PROPOSTA', `${fmtValorPdf(totalGeral)} (${valorExtenso})`);
+
+    if (validade) addCampoCondicao('VALIDADE DA PROPOSTA', validade);
+    if (prazoEntrega) addCampoCondicao('PRAZO DE ENTREGA', prazoEntrega);
+    if (prazoPagamento) addCampoCondicao('FORMA DE PAGAMENTO', prazoPagamento);
+    if (dadosBancariosTexto) addCampoCondicao('DADOS BANCÁRIOS', dadosBancariosTexto);
+
+    y += 16;
+    if (paginaCheia(y, 60)) y = addPageWithHeader();
+
+    // Declarações padrão
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    const declaracoes = [
+        'DECLARAMOS QUE NOS PREÇOS COTADOS ESTÃO INCLUÍDAS TODAS AS DESPESAS TAIS COMO FRETE (CIF), IMPOSTOS, TAXAS, SEGUROS, TRIBUTOS E DEMAIS ENCARGOS DE QUALQUER NATUREZA INCIDENTES SOBRE O OBJETO DO PREGÃO.',
+        'DECLARAMOS QUE SOMOS OPTANTES PELO SIMPLES NACIONAL.',
+        'DECLARAMOS QUE O OBJETO FORNECIDO NÃO É REMANUFATURADO OU RECONDICIONADO.'
+    ];
+    declaracoes.forEach(decl => {
+        if (paginaCheia(y, 20)) y = addPageWithHeader();
+        const linhas = doc.splitTextToSize(decl, maxWidth);
+        linhas.forEach(linha => {
+            if (paginaCheia(y, 10)) y = addPageWithHeader();
+            doc.text(linha, pageWidth / 2, y, { align: 'center' });
+            y += lineHeight;
+        });
+        y += 3;
+    });
+    y += 12;
+
+    if (paginaCheia(y, 40)) y = addPageWithHeader();
+
+    // Data atual
+    const dataAtual = new Date();
+    const dia = dataAtual.getDate();
+    const meses = ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO',
+                   'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO'];
+    const mes = meses[dataAtual.getMonth()];
+    const ano = dataAtual.getFullYear();
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.text(`SERRA/ES, ${dia} DE ${mes} DE ${ano}`, pageWidth / 2, y, { align: 'center' });
+    y += 5;
+
+    // Assinatura (se solicitada)
+    if (comAssinatura) {
+        const assinatura = new Image();
+        assinatura.crossOrigin = 'anonymous';
+        assinatura.src = 'assinatura.png';
+        assinatura.onload = function() {
+            try {
+                const imgWidth = 50;
+                const imgHeight = (assinatura.height / assinatura.width) * imgWidth;
+                doc.addImage(assinatura, 'PNG', (pageWidth / 2) - (imgWidth / 2), y + 2, imgWidth, imgHeight);
+                let yFinal = y + imgHeight + 5;
+                yFinal += 5;
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'bold');
+                doc.text('ROSEMEIRE BICALHO DE LIMA GRAVINO', pageWidth / 2, yFinal, { align: 'center' });
+                yFinal += 5;
+                doc.setFontSize(9);
+                doc.setFont(undefined, 'normal');
+                doc.text('MG-10.078.568 / CPF: 045.160.616-78', pageWidth / 2, yFinal, { align: 'center' });
+                yFinal += 5;
+                doc.text('DIRETORA', pageWidth / 2, yFinal, { align: 'center' });
+                finalizarPDF();
+            } catch (e) {
+                console.log('Erro ao adicionar assinatura:', e);
+                gerarPDFSemAssinatura();
             }
-            
-            const headerY = 3;
-            const logoWidth = 40;
-            const logoHeight = (logoHeaderImg.height / logoHeaderImg.width) * logoWidth;
-            const logoX = 5;
-            
-            doc.setGState(new doc.GState({ opacity: 0.3 }));
-            doc.addImage(logoHeaderImg, 'PNG', logoX, headerY, logoWidth, logoHeight);
-            doc.setGState(new doc.GState({ opacity: 1.0 }));
-            
-            const fontSize = logoHeight * 0.5;
-            doc.setFontSize(fontSize);
-            doc.setFont(undefined, 'bold');
-            doc.setTextColor(150, 150, 150);
-            const textX = logoX + logoWidth + 1.2;
-            
-            const lineSpacing = fontSize * 0.5;
-            const textY1 = headerY + fontSize * 0.85;
-            doc.text('I.R COMÉRCIO E', textX, textY1);
-            
-            const textY2 = textY1 + lineSpacing;
-            doc.text('MATERIAIS ELÉTRICOS LTDA', textX, textY2);
-            
-            doc.setTextColor(0, 0, 0);
-            doc.setFontSize(10);
-            doc.setFont(undefined, 'normal');
-            doc.setDrawColor(0, 0, 0);
-            doc.setLineWidth(0.2);
-            
-            return headerY + logoHeight + 8;
-        }
-        
-        function addPageWithHeader() {
-            doc.addPage();
-            const newY = adicionarCabecalho();
-            return newY;
-        }
-        
-        function paginaCheia(yAtual, espaco = 40) {
-            return yAtual > pageHeight - footerMargin - espaco;
-        }
-        
-        addTextWithWrap = function(text, x, yStart, maxW, lineH = 5) {
-            const lines = doc.splitTextToSize(text, maxW);
-            lines.forEach((line, index) => {
-                if (yStart + (index * lineH) > pageHeight - 30) {
-                    yStart = addPageWithHeader();
-                }
-                doc.text(line, x, yStart + (index * lineH));
-            });
-            return yStart + (lines.length * lineH);
         };
-        
+        assinatura.onerror = function() {
+            console.log('Erro ao carregar assinatura, gerando PDF sem ela');
+            gerarPDFSemAssinatura();
+        };
+    } else {
+        gerarPDFSemAssinatura();
+    }
+
+    function gerarPDFSemAssinatura() {
+        y += 20;
+        doc.setDrawColor(0, 0, 0);
+        doc.line(pageWidth / 2 - 40, y, pageWidth / 2 + 40, y);
+        y += 5;
+        doc.setFont(undefined, 'bold');
+        doc.text('ROSEMEIRE BICALHO DE LIMA GRAVINO', pageWidth / 2, y, { align: 'center' });
+        y += 5;
+        doc.setFont(undefined, 'normal');
+        doc.text('MG-10.078.568 / CPF: 045.160.616-78', pageWidth / 2, y, { align: 'center' });
+        y += 5;
+        doc.setFont(undefined, 'bold');
+        doc.text('DIRETORA', pageWidth / 2, y, { align: 'center' });
+        finalizarPDF();
+    }
+
+    function finalizarPDF() {
+        // Rodapé
         const footerLines = [
             'I.R. COMÉRCIO E MATERIAIS ELÉTRICOS LTDA  |  CNPJ: 33.149.502/0001-38  |  IE: 083.780.74-2',
             'RUA TADORNA Nº 472, SALA 2, NOVO HORIZONTE – SERRA/ES  |  CEP: 29.163-318',
@@ -2716,336 +4040,20 @@ function continuarGeracaoPDFProposta(doc, pregao, dadosBancarios, y, margin, pag
         ];
         const footerLineH = 5;
         const footerH = footerLines.length * footerLineH + 4;
-        
-        function addFooter(docRef) {
-            const totalPags = docRef.internal.getNumberOfPages();
-            for (let pg = 1; pg <= totalPags; pg++) {
-                docRef.setPage(pg);
-                docRef.setFontSize(8);
-                docRef.setFont(undefined, 'normal');
-                docRef.setTextColor(150, 150, 150);
-                const fyBase = pageHeight - footerH + 2;
-                footerLines.forEach((line, i) => {
-                    docRef.text(line, pageWidth / 2, fyBase + (i * footerLineH), { align: 'center' });
-                });
-                docRef.setTextColor(0, 0, 0);
-            }
-        }
-
-        const footerMargin = footerH + 4;
-        
-        doc.setFontSize(18);
-        doc.setFont(undefined, 'bold');
-        doc.setTextColor(0, 0, 0);
-        doc.text('PROPOSTA', pageWidth / 2, y, { align: 'center' });
-        
-        y += 8;
-        doc.setFontSize(14);
-        doc.text(`${pregao.numero_pregao}${pregao.uasg ? ' - ' + pregao.uasg : ''}`, pageWidth / 2, y, { align: 'center' });
-        
-        y += 12;
-        
-        const fs = 10;
-        doc.setFontSize(fs);
-        doc.setTextColor(0, 0, 0);
-        
-        doc.text('AO', margin, y);
-        y += lineHeight + 1;
-        if (pregao.nome_orgao) {
-            doc.setFont(undefined, 'bold');
-            doc.text(toUpperCase(pregao.nome_orgao), margin, y);
+        const totalPags = doc.internal.getNumberOfPages();
+        for (let pg = 1; pg <= totalPags; pg++) {
+            doc.setPage(pg);
+            doc.setFontSize(8);
             doc.setFont(undefined, 'normal');
-            y += lineHeight + 1;
-        }
-        doc.text('COMISSÃO PERMANENTE DE LICITAÇÃO', margin, y);
-        y += lineHeight + 1;
-        doc.text(`PREGÃO ELETRÔNICO: ${pregao.numero_pregao}${pregao.uasg ? '  UASG: ' + pregao.uasg : ''}`, margin, y);
-        y += 10;
-        
-        if (y > pageHeight - footerMargin - 50) {
-            y = addPageWithHeader();
-        }
-        
-        const fmtValorPdf = (v, decimals = 2) => {
-            return 'R$ ' + (v || 0).toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
-        };
-        const fmtUntPdf = (v) => {
-            const n = v || 0;
-            const s = n.toFixed(4).replace(/(\.(\d*?)?)0+$/, '$1').replace(/\.$/, '');
-            return 'R$ ' + parseFloat(s || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
-        };
-
-        const tableWidth = pageWidth - (2 * margin);
-        const colWidths = {
-            item:     tableWidth * 0.05,
-            descricao:tableWidth * 0.30,
-            qtd:      tableWidth * 0.06,
-            unid:     tableWidth * 0.05,
-            marca:    tableWidth * 0.12,
-            modelo:   tableWidth * 0.12,
-            vunt:     tableWidth * 0.14,
-            total:    tableWidth * 0.16
-        };
-        const itemRowHeight = 10;
-
-        function desenharCabecalhoTabela() {
-            doc.setFillColor(108, 117, 125);
-            doc.setDrawColor(180, 180, 180);
-            doc.rect(margin, y, tableWidth, itemRowHeight, 'FD');
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(7.5);
-            doc.setFont(undefined, 'bold');
-            let xp = margin;
-            [['ITEM', colWidths.item, 'center'],
-             ['DESCRIÇÃO', colWidths.descricao, 'left'],
-             ['QTD', colWidths.qtd, 'center'],
-             ['UN', colWidths.unid, 'center'],
-             ['MARCA', colWidths.marca, 'center'],
-             ['MODELO', colWidths.modelo, 'center'],
-             ['VD. UNT', colWidths.vunt, 'right'],
-             ['VD. TOTAL', colWidths.total, 'right']].forEach(([lbl, w, align]) => {
-                doc.line(xp, y, xp, y + itemRowHeight);
-                doc.text(lbl, xp + w / 2, y + 6.5, { align: align === 'center' ? 'center' : align === 'left' ? 'left' : 'right' });
-                xp += w;
+            doc.setTextColor(150, 150, 150);
+            const fyBase = pageHeight - footerH + 2;
+            footerLines.forEach((line, i) => {
+                doc.text(line, pageWidth / 2, fyBase + (i * footerLineH), { align: 'center' });
             });
-            doc.line(xp, y, xp, y + itemRowHeight);
-            y += itemRowHeight;
             doc.setTextColor(0, 0, 0);
-            doc.setFontSize(7.5);
-            doc.setFont(undefined, 'normal');
         }
-
-        function desenharLinhaItem(item, rowIndex) {
-            const descricaoUpper = toUpperCase(item.descricao);
-            const descLines = doc.splitTextToSize(descricaoUpper, colWidths.descricao - 4);
-            const marcaWrap = doc.splitTextToSize(item.marca || '-', colWidths.marca - 2);
-            const modeloWrap = doc.splitTextToSize(item.modelo || '-', colWidths.modelo - 2);
-            const lineCount = Math.max(descLines.length, marcaWrap.length, modeloWrap.length);
-            const rowH = Math.max(itemRowHeight, lineCount * 3.5 + 4);
-            if (paginaCheia(y, rowH + 10)) {
-                y = addPageWithHeader();
-                desenharCabecalhoTabela();
-            }
-            const rowBg = (rowIndex % 2 === 0) ? [255,255,255] : [247,248,250];
-            doc.setFillColor(...rowBg);
-            doc.setDrawColor(180, 180, 180);
-            doc.rect(margin, y, tableWidth, rowH, 'FD');
-            let xp = margin;
-            const cy = y + (rowH / 2) + 1.5;
-            doc.line(xp, y, xp, y + rowH);
-            doc.text(String(item.numero), xp + colWidths.item/2, cy, { align: 'center' });
-            xp += colWidths.item; doc.line(xp, y, xp, y + rowH);
-            let yt = y + 4; descLines.forEach(l => { doc.text(l, xp + 2, yt); yt += 3.5; });
-            xp += colWidths.descricao; doc.line(xp, y, xp, y + rowH);
-            doc.text(String(item.qtd || 1), xp + colWidths.qtd/2, cy, { align: 'center' });
-            xp += colWidths.qtd; doc.line(xp, y, xp, y + rowH);
-            doc.text(item.unidade || 'UN', xp + colWidths.unid/2, cy, { align: 'center' });
-            xp += colWidths.unid; doc.line(xp, y, xp, y + rowH);
-            let ym = y + 4; marcaWrap.forEach(ml => { doc.text(ml, xp + colWidths.marca/2, ym, { align:'center' }); ym += 3.5; });
-            xp += colWidths.marca; doc.line(xp, y, xp, y + rowH);
-            let ymo = y + 4; modeloWrap.forEach(ml => { doc.text(ml, xp + colWidths.modelo/2, ymo, { align:'center' }); ymo += 3.5; });
-            xp += colWidths.modelo; doc.line(xp, y, xp, y + rowH);
-            doc.text(fmtUntPdf(item.venda_unt), xp + colWidths.vunt/2, cy, { align: 'center' });
-            xp += colWidths.vunt; doc.line(xp, y, xp, y + rowH);
-            doc.text(fmtValorPdf(item.venda_total), xp + colWidths.total/2, cy, { align: 'center' });
-            xp += colWidths.total; doc.line(xp, y, xp, y + rowH);
-            y += rowH;
-        }
-
-        function desenharRodapeTabela(totalValor) {
-            doc.setFillColor(240, 240, 240);
-            doc.setFont(undefined, 'bold');
-            doc.rect(margin, y, tableWidth, 8, 'FD');
-            doc.text('TOTAL GERAL:', margin + tableWidth - colWidths.total - colWidths.vunt - 4, y + 5.5, { align: 'right' });
-            doc.text(fmtValorPdf(totalValor), margin + tableWidth - 2, y + 5.5, { align: 'right' });
-            doc.setFont(undefined, 'normal');
-            y += 8;
-        }
-
-        let totalFinalProposta = 0;
-        if (gruposEstrutura) {
-            doc.setFontSize(11); doc.setFont(undefined, 'bold');
-            doc.text('ITENS DA PROPOSTA', margin, y);
-            y += 8;
-            let totalGeralGlobal = 0;
-            gruposEstrutura.forEach(({ grupo, itens: iGrupo }) => {
-                if (paginaCheia(y, 30)) y = addPageWithHeader();
-                doc.setFontSize(10); doc.setFont(undefined, 'bold');
-                doc.text(`${grupo.tipo} ${grupo.numero}`, margin, y);
-                y += 6;
-                desenharCabecalhoTabela();
-                iGrupo.forEach((item, idx) => desenharLinhaItem(item, idx));
-                const totalGrupo = iGrupo.reduce((acc, i) => acc + (i.venda_total || 0), 0);
-                totalGeralGlobal += totalGrupo;
-                desenharRodapeTabela(totalGrupo);
-                y += 6;
-            });
-            if (gruposEstrutura.length > 1) {
-                doc.setFillColor(80, 80, 80); doc.setFont(undefined, 'bold');
-                doc.setTextColor(255,255,255);
-                doc.rect(margin, y, tableWidth, 8, 'FD');
-                doc.text('TOTAL GLOBAL:', margin + tableWidth - colWidths.total - colWidths.vunt - 4, y + 5.5, { align: 'right' });
-                doc.text(fmtValorPdf(totalGeralGlobal), margin + tableWidth - 2, y + 5.5, { align: 'right' });
-                doc.setTextColor(0,0,0); doc.setFont(undefined, 'normal');
-                y += 8;
-            }
-            totalFinalProposta = totalGeralGlobal;
-        } else {
-            doc.setFontSize(11); doc.setFont(undefined, 'bold');
-            doc.text('ITENS DA PROPOSTA', margin, y);
-            y += 6;
-            desenharCabecalhoTabela();
-            const itensSelecionados = itens.filter(item => item.ganho);
-            itensSelecionados.forEach((item, index) => desenharLinhaItem(item, index));
-            const totalGeral = itensSelecionados.reduce((acc, item) => acc + (item.venda_total || 0), 0);
-            totalFinalProposta = totalGeral;
-        }
-
-        y += 8;
-        
-        if (y > pageHeight - footerMargin - 60) {
-            y = addPageWithHeader();
-        }
-        
-        doc.setFontSize(10);
-        
-        function addCampoCondicao(label, valor) {
-            if (!valor || valor.toString().trim() === '') return;
-            doc.setFont(undefined, 'bold');
-            const lw = doc.getTextWidth(label + ': ');
-            doc.text(label + ': ', margin, y);
-            doc.setFont(undefined, 'normal');
-            const linhas = doc.splitTextToSize(valor.toString(), maxWidth - lw);
-            doc.text(linhas[0], margin + lw, y);
-            y += lineHeight;
-            for (let i = 1; i < linhas.length; i++) {
-                doc.text(linhas[i], margin, y);
-                y += lineHeight;
-            }
-            y += 3;
-        }
-
-        const valorExtenso = numeroPorExtenso(totalFinalProposta);
-        addCampoCondicao('VALOR TOTAL DA PROPOSTA', `${fmtValorPdf(totalFinalProposta)} (${valorExtenso})`);
-
-        addCampoCondicao('VALIDADE DA PROPOSTA', pregao.validade_proposta);
-        addCampoCondicao('PRAZO DE ENTREGA', pregao.prazo_entrega);
-        addCampoCondicao('FORMA DE PAGAMENTO', pregao.prazo_pagamento);
-        
-        if (dadosBancarios) {
-            addCampoCondicao('DADOS BANCÁRIOS', dadosBancarios);
-        }
-        
-        y += 16;
-        
-        if (y > pageHeight - footerMargin - 60) {
-            y = addPageWithHeader();
-        }
-        
-        doc.setFontSize(10);
-        doc.setFont(undefined, 'normal');
-        const declaracoes = [
-            'DECLARAMOS QUE NOS PREÇOS COTADOS ESTÃO INCLUÍDAS TODAS AS DESPESAS TAIS COMO FRETE (CIF), IMPOSTOS, TAXAS, SEGUROS, TRIBUTOS E DEMAIS ENCARGOS DE QUALQUER NATUREZA INCIDENTES SOBRE O OBJETO DO PREGÃO.',
-            'DECLARAMOS QUE SOMOS OPTANTES PELO SIMPLES NACIONAL.',
-            'DECLARAMOS QUE O OBJETO FORNECIDO NÃO É REMANUFATURADO OU RECONDICIONADO.'
-        ];
-        declaracoes.forEach(decl => {
-            if (paginaCheia(y, 20)) y = addPageWithHeader();
-            const linhas = doc.splitTextToSize(decl, maxWidth);
-            linhas.forEach(linha => {
-                if (paginaCheia(y, 10)) y = addPageWithHeader();
-                doc.text(linha, pageWidth / 2, y, { align: 'center' });
-                y += lineHeight;
-            });
-            y += 3;
-        });
-        
-        y += 12;
-        
-        if (y > pageHeight - footerMargin - 40) {
-            y = addPageWithHeader();
-        }
-        
-        const dataAtual = new Date();
-        const dia = dataAtual.getDate();
-        const meses = ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 
-                       'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO'];
-        const mes = meses[dataAtual.getMonth()];
-        const ano = dataAtual.getFullYear();
-        
-        doc.setFontSize(10);
-        doc.setFont(undefined, 'normal');
-        doc.text(`SERRA/ES, ${dia} DE ${mes} DE ${ano}`, pageWidth / 2, y, { align: 'center' });
-        
-        y += 5;
-        
-        if (comAssinatura) {
-            const assinatura = new Image();
-            assinatura.crossOrigin = 'anonymous';
-            assinatura.src = 'assinatura.png';
-            
-            assinatura.onload = function() {
-                try {
-                    const imgWidth = 50;
-                    const imgHeight = (assinatura.height / assinatura.width) * imgWidth;
-                    
-                    doc.addImage(assinatura, 'PNG', (pageWidth / 2) - (imgWidth / 2), y + 2, imgWidth, imgHeight);
-                    
-                    let yFinal = y + imgHeight + 5;
-                    
-                    yFinal += 5;
-                    doc.setFontSize(10);
-                    doc.setFont(undefined, 'bold');
-                    doc.text('ROSEMEIRE BICALHO DE LIMA GRAVINO', pageWidth / 2, yFinal, { align: 'center' });
-                    
-                    yFinal += 5;
-                    doc.setFontSize(9);
-                    doc.setFont(undefined, 'normal');
-                    doc.text('MG-10.078.568 / CPF: 045.160.616-78', pageWidth / 2, yFinal, { align: 'center' });
-                    
-                    yFinal += 5;
-                    doc.text('DIRETORA', pageWidth / 2, yFinal, { align: 'center' });
-                    
-                    const nomeArquivo = `PROPOSTA-${pregao.numero_pregao}${pregao.uasg ? '-' + pregao.uasg : ''}.pdf`;
-                    addFooter(doc);
-                    doc.save(nomeArquivo);
-                    showToast('PDF gerado com sucesso!', 'success');
-                    
-                } catch (e) {
-                    console.log('Erro ao adicionar assinatura:', e);
-                    gerarPDFSemAssinatura();
-                }
-            };
-            
-            assinatura.onerror = function() {
-                console.log('Erro ao carregar assinatura, gerando PDF sem ela');
-                gerarPDFSemAssinatura();
-            };
-        } else {
-            gerarPDFSemAssinatura();
-        }
-        
-        function gerarPDFSemAssinatura() {
-            y += 20;
-            doc.setDrawColor(0, 0, 0);
-            doc.line(pageWidth / 2 - 40, y, pageWidth / 2 + 40, y);
-            
-            y += 5;
-            doc.setFont(undefined, 'bold');
-            doc.text('ROSEMEIRE BICALHO DE LIMA GRAVINO', pageWidth / 2, y, { align: 'center' });
-            
-            y += 5;
-            doc.setFont(undefined, 'normal');
-            doc.text('MG-10.078.568 / CPF: 045.160.616-78', pageWidth / 2, y, { align: 'center' });
-            
-            y += 5;
-            doc.setFont(undefined, 'bold');
-            doc.text('DIRETORA', pageWidth / 2, y, { align: 'center' });
-            
-            const nomeArquivo = `PROPOSTA-${pregao.numero_pregao}${pregao.uasg ? '-' + pregao.uasg : ''}.pdf`;
-            addFooter(doc);
-            doc.save(nomeArquivo);
-            showToast('PDF gerado (sem assinatura)', 'success');
-        }
+        const nomeArquivo = `PROPOSTA-${pregao.numero_pregao}${pregao.uasg ? '-' + pregao.uasg : ''}.pdf`;
+        doc.save(nomeArquivo);
+        showToast('PDF gerado com sucesso!', 'success');
     }
 }
